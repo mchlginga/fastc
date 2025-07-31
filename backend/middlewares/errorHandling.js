@@ -6,4 +6,4 @@ const errorHandling = (error, req, res, next) => {
     res.status(error.statusCode || statusCodes.SERVER_ERROR).json({ message: `Caught an error: ${error.message}` });
 };
 
-module.export = errorHandling;
+module.exports = errorHandling;
