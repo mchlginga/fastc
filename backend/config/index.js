@@ -7,4 +7,4 @@ const env = process.env.NODE_ENV || "development";
 
 const config = env === "development" ? dev : prod;
 
-module.exports = config;
+module.exports = config; 
