@@ -12,7 +12,10 @@ const ensureFileExist = require("./utils/ensureFileExist");
 const { PATHS, statusCodes } = require("./utils/constant");
 
 // routes
-const auth = require("./routes/auth");
+const {
+    auth,
+    user
+} = require("./routes/index");
 
 const app = express();
 
@@ -29,6 +32,7 @@ if (process.env.NODE_ENV === "development") {
 }
 
 app.use("/api/auth", auth);
+app.use("/api/user", user);
 
 app.use( (req, res) => {
     res.status(statusCodes.NOT_FOUND).json({ message: "Invalid route." });
