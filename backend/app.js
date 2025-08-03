@@ -14,7 +14,8 @@ const { PATHS, statusCodes } = require("./utils/constant");
 // routes
 const {
     auth,
-    user
+    user,
+    upload
 } = require("./routes/index");
 
 const app = express();
@@ -33,6 +34,7 @@ if (process.env.NODE_ENV === "development") {
 
 app.use("/api/auth", auth);
 app.use("/api/user", user);
+app.use("/api/upload", upload);
 
 app.use( (req, res) => {
     res.status(statusCodes.NOT_FOUND).json({ message: "Invalid route." });
