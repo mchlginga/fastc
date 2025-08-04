@@ -13,7 +13,9 @@ const statusCodes = {
 
 const PATHS = {
     logFile: path.join(__dirname, "..", "data", "access.log"),
-    profileDir: path.join(__dirname, "..", "data", "upload", "profiles")
+    profileDir: path.join(__dirname, "..", "data", "upload", "profiles"),
+    certsHbsFile: path.join(__dirname, "..", "templates", "certificate.hbs")
+
 };
 
 module.exports = {
