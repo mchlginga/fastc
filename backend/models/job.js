@@ -10,16 +10,12 @@ const jobSchema = new mongoose.Schema ({
         type: String
     },
 
-    skillsRequired: {
-        type: [String]
-    },
-
     certsRequired: {
         type: [String]
     },
 
     postedBy: {
-        type: mongoose.Schema.Types.ObjectId, ref: "Job"
+        type: mongoose.Schema.Types.ObjectId, ref: "User"
     }
 }, {
     timestamps: true
