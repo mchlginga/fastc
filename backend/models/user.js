@@ -20,11 +20,6 @@ const userSchema = new mongoose.Schema ({
         required: true
     },
 
-    skills: {
-        type: [String],
-        default: []
-    },
-
     certificates: [
         {
             name: String,
