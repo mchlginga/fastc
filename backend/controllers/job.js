@@ -1,5 +1,4 @@
 const Job = require("../models/job");
-const { job } = require("../routes");
 const { statusCodes } = require("../utils/constant");
 
 // post job
