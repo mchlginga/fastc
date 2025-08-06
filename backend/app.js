@@ -17,7 +17,8 @@ const {
     user,
     upload,
     certificate,
-    job
+    job,
+    match
 } = require("./routes/index");
 
 const app = express();
@@ -39,6 +40,7 @@ app.use("/api/user", user);
 app.use("/api/upload", upload);
 app.use("/api/certificate", certificate);
 app.use("/api/job", job);
+app.use("/api/match", match);
 
 app.use( (req, res) => {
     res.status(statusCodes.NOT_FOUND).json({ message: "Invalid route." });
