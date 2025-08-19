@@ -1,9 +1,7 @@
-
-const App = () => {
+function App () {
     return (
-        <div>
-            <h1>Hello,</h1>
-            <p>World</p>
+        <div className="border-2 border-red-500">
+            <h1 className="bg-gray-100">Hi</h1>
         </div>
     );
 };
