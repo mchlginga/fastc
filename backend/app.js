@@ -3,6 +3,8 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const path = require("path");
 const fs = require("fs");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
 
 // custom middleware
 const errorHandling = require("./middlewares/errorHandling");
@@ -25,6 +27,15 @@ const app = express();
 
 app.use(helmet());
 app.use(express.json());
+app.use(cookieParser());
+
+// allow frontend to send tsaka recieve cookies
+app.use(
+    cors({
+        origin: process.env.FRONTEND_URL,
+        credentials: true
+    })
+);
 
 // morgan access logs
 ensureFileExist(PATHS.logFile);
