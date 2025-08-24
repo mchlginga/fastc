@@ -5,23 +5,25 @@ const config = require("../config/index");
 const { statusCodes } = require("../utils/constant");
 
 const protect = async (req, res, next) => {
-    let token;
+    try {
+        const token = req.cookies.token;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-        try {
-            token = req.headers.authorization.split(' ')[1];
-
-            const decoded = await jwt.verify(token, config.jwtSecret);
-
-            req.user = await User.findById(decoded.id).select("-password");
-
-            next();
-            
-        } catch (error) {
-            next(error);
+        if (!token) {
+            return res.status(statusCodes.UNAUTHORIZED).json({
+                message: "Not authorized, no token."
+            });
         }
-    } else {
-        res.stauts(statusCodes.UNAUTHORIZED).json({ message: "Not authorized, no token."})
+
+        const decoded = jwt.verify(token, config.jwtSecret);
+
+        req.user = await User.findById(decoded.id).select("-password");
+
+        next();
+
+    } catch (error) {
+        res.status(statusCodes.UNAUTHORIZED).json({
+            message: "Not authorized, token failed."
+        });
     }
 };
 
