@@ -66,6 +66,18 @@ exports.login = async (req, res, next) => {
     }
 };
 
+exports.getMe = async (req, res, next) => {
+    const { _id, name, email, role } = req.user;
+
+    try {
+        res.status(statusCodes.OK).json({
+            user: { _id, name, email, role }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.logout = (req, res, next) => {
     try {
         res.clearCookie(COOKIE_NAME, {
