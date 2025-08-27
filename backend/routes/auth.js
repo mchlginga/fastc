@@ -12,7 +12,7 @@ const { protect } = require("../middlewares/index");
 
 router.post("/register", register);
 router.post("/login", login);
-router.get("/me",)
-router.post("/logout", protect, logout);
+router.get("/me", protect, getMe);
+router.post("/logout", logout);
 
 module.exports = router;
