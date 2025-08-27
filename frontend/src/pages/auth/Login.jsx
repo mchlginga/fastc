@@ -1,0 +1,64 @@
+// TEMPORARY
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { login } from "../../services/authService";
+import Input from "../../components/Input";
+import Button from "../../components/Button";
+
+const Login = () => {
+    const [form, setForm] = useState({ email: "", password: "" });
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const navigate = useNavigate();
+
+    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value});
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+
+        try {
+            await login(form.email, form.password);
+            navigate("/dashboard");
+        } catch (error) {
+            setError(error.response?.data?.message || "Login failed.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div>
+            <form action="" onSubmit={handleSubmit} className="">
+                <h2>Login</h2>
+
+                {error && <p>{error}</p>}
+
+                <Input
+                    label="Email"
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                />
+                <Input
+                    label="Password"
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                />
+                <Button type="submit" disabled={loading}>
+                    {loading ? "Logging in..." : "Login"}
+                </Button>
+            </form>
+        </div>
+    );
+
+};
+
+export default Login;
