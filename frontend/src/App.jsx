@@ -1,8 +1,16 @@
-function App () {
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Login from "./pages/auth/Login";
+import Dashboard from "./pages/dashboard/Dashboard";
+
+function App() {
     return (
-        <div className="border-2 border-red-500">
-            <h1 className="bg-gray-100">Hi</h1>
-        </div>
+        <BrowserRouter>
+            <Routes>
+                <Route path="/login" element={ <Login /> } />
+                <Route path="/dashboard" element={ <Dashboard /> } />
+            </Routes>
+        </BrowserRouter>
     );
 };
 
