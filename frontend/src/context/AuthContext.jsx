@@ -21,15 +21,15 @@ export function AuthProvider() {
             }
         })();
     }, []);
-};
 
-const handleLogout = async () => {
-    await logout();
-    setUser(null);
-};
+    const handleLogout = async () => {
+        await logout();
+        setUser(null);
+    };
 
-return(
-    <AuthContext.Provider value={{ user, loading, handleLogout}}>
-        {!loading && children}
-    </AuthContext.Provider>
-);
+    return(
+        <AuthContext.Provider value={{ user, loading, handleLogout }}>
+            {!loading && children}
+        </AuthContext.Provider>
+    );
+};
