@@ -1,13 +1,16 @@
 // TEMPORARY
-
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { login } from "../../services/authService";
+import { login, getMe } from "../../services/authService";
+import { AuthContext } from "../../context/AuthContext";
+
 import Input from "../../components/Input";
 import Button from "../../components/Button";
 
 const Login = () => {
+    const { setUser } = useContext(AuthContext);
+
     const [form, setForm] = useState({ email: "", password: "" });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -23,6 +26,10 @@ const Login = () => {
 
         try {
             await login(form.email, form.password);
+
+            const userData = await getMe();
+            setUser(userData);
+
             navigate("/dashboard");
         } catch (error) {
             setError(error.response?.data?.message || "Login failed.");
