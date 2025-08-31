@@ -4,7 +4,7 @@ import { getMe, logout } from "../services/authService";
 
 export const AuthContext = createContext();
 
-export function AuthProvider() {
+export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -28,7 +28,7 @@ export function AuthProvider() {
     };
 
     return(
-        <AuthContext.Provider value={{ user, loading, handleLogout }}>
+        <AuthContext.Provider value={{ user, loading, handleLogout, setUser }}>
             {!loading && children}
         </AuthContext.Provider>
     );
