@@ -1,10 +1,9 @@
-import { useContext } from "react";
-
-import { AuthContext } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
+// import { AuthContext } from "../../context/AuthContext";
 import Button from "../../components/Button";
 
 export default function Dashboard() {
-    const { user, handleLogout } = useContext(AuthContext);
+    const { user, handleLogout } = useAuth();
     
     return (
         <div>

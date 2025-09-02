@@ -1,15 +1,16 @@
 // TEMPORARY
-import { useState, useContext } from "react";
+import { useState, /* useContext */ } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { login, getMe } from "../../services/authService";
-import { AuthContext } from "../../context/AuthContext";
+// import { AuthContext } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 import Input from "../../components/Input";
 import Button from "../../components/Button";
 
 const Login = () => {
-    const { setUser } = useContext(AuthContext);
+    const { setUser } = useAuth();
 
     const [form, setForm] = useState({ email: "", password: "" });
     const [error, setError] = useState("");
