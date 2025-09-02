@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useContext } from "react";
 
 import { getMe, logout } from "../services/authService";
 
@@ -32,4 +32,14 @@ export function AuthProvider({ children }) {
             {!loading && children}
         </AuthContext.Provider>
     );
+};
+
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+
+    if (!context) {
+        throw new Error("useAuth must be used within AuthProvider");
+    }
+
+    return context;
 };
