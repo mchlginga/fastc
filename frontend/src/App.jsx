@@ -1,33 +1,55 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Login from "./pages/auth/Login";
-import Dashboard from "./pages/dashboard/Dashboard";
+import Homepage from "./pages/HomePage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserDashboard from "./pages/user/UserDashboard";
+import CompanyDashboard from "./pages/company/CompanyDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Unauthorized from "./pages/errors/Unauthorized";
+import Unauthorized from "./pages/Unauthorized";
+import NotFound from "./pages/NotFound";
 
 function App() {
     return (
         <BrowserRouter>
             <Routes>
                 {/* Public Routes */}
+                <Route path="/" element={<Homepage />} />
                 <Route path="/login" element={ <Login /> } />
-
                 <Route path="/unauthorized" element={ <Unauthorized /> } />
 
                 
-                {/* Trainee-only Routes */}
+                {/* User or Trainee Routes */}
                 <Route 
-                    path="/dashboard" 
+                    path="/user/*" 
                     element={ 
-                        <ProtectedRoute allowedRoles={["user", "admin"]}>
-                            <Dashboard />
+                        <ProtectedRoute allowedRoles={["user"]}>
+                            <UserDashboard />
                         </ProtectedRoute>
                     } 
                 />
 
-                {/* Admin-only Routes */}
+                {/* Admin Routes */}
+                <Route 
+                    path="/admin/*" 
+                    element={ 
+                        <ProtectedRoute allowedRoles={["admin"]}>
+                            <AdminDashboard />
+                        </ProtectedRoute>
+                    } 
+                />
 
-                {/* Company-only Routes */}
+                {/* Company Routes */}
+                <Route 
+                    path="/company/*" 
+                    element={ 
+                        <ProtectedRoute allowedRoles={["company", "admin"]}>
+                            <CompanyDashboard />
+                        </ProtectedRoute>
+                    } 
+                />
+
+                <Route path="*" element={<NotFound /> }/>
 
             </Routes>
         </BrowserRouter>
