@@ -18,6 +18,16 @@ const Login = () => {
 
     const navigate = useNavigate();
 
+    const getRedirectpath = (role) => {
+        const rolePaths = {
+            "admin": "/admin",
+            "company": "/company",
+            "user": "/user",
+        };
+
+        return rolePaths[role] || "/user";
+    };
+
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value});
 
     const handleSubmit = async (e) => {
@@ -31,7 +41,9 @@ const Login = () => {
             const userData = await getMe();
             setUser(userData);
 
-            navigate("/dashboard");
+            const redirectPath = getRedirectpath(userData.role);
+            navigate(redirectPath);
+
         } catch (error) {
             setError(error.response?.data?.message || "Login failed.");
         } finally {
