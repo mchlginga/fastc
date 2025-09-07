@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 import Homepage from "./pages/HomePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserDashboard from "./pages/user/UserDashboard";
@@ -16,6 +17,7 @@ function App() {
                 {/* Public Routes */}
                 <Route path="/" element={<Homepage />} />
                 <Route path="/login" element={ <Login /> } />
+                <Route path="/register" element={ <Register /> } />
                 <Route path="/unauthorized" element={ <Unauthorized /> } />
 
                 
