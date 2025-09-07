@@ -2,9 +2,27 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema ({
-    name: {
+    username: {
         type: String,
         required: true,
+        unique: true,
+        trim: true
+    },
+
+    firstName: {
+        type: String,
+        required: true,
+        trim: true
+    },
+
+    surname: {
+        type: String,
+        required: true,
+        trim: true
+    },
+
+    name: {
+        type: String,
         trim: true
     },
 
@@ -18,6 +36,17 @@ const userSchema = new mongoose.Schema ({
     password: {
         type: String,
         required: true
+    },
+
+    city: {
+        type: String,
+        trim: true
+    },
+
+    country: {
+        type: String,
+        trim: true,
+        default: "Philippines"
     },
 
     certificates: [
@@ -44,6 +73,10 @@ const userSchema = new mongoose.Schema ({
 });
 
 userSchema.pre("save", async function (next) {
+    if (this.isModified("firstName") || this.isModified("surname")) {
+        this.name = `${this.firstName} ${this.surname}`.trim();
+    }
+
     if (!this.isModified("password")) {
         return next();
     }
