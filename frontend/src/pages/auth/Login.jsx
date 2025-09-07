@@ -20,9 +20,9 @@ const Login = () => {
 
     const getRedirectpath = (role) => {
         const rolePaths = {
-            "admin": "/admin",
-            "company": "/company",
-            "user": "/user",
+            admin: "/admin",
+            company: "/company",
+            user: "/user",
         };
 
         return rolePaths[role] || "/user";
