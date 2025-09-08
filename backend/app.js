@@ -6,6 +6,9 @@ const fs = require("fs");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
+// config 
+const config = require("./config/index");
+
 // custom middleware
 const errorHandling = require("./middlewares/errorHandling");
 
@@ -32,7 +35,7 @@ app.use(cookieParser());
 // allow frontend to send tsaka recieve cookies
 app.use(
     cors({
-        origin: process.env.FRONTEND_URL,
+        origin: config.frontendUrl,
         credentials: true
     })
 );
