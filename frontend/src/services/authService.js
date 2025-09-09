@@ -30,3 +30,15 @@ export const getMe = async() => {
 export const logout = async() => {
     await api.post("/auth/logout");
 };
+
+export const requestPasswordReset = async (email) => {
+    const { data } = await api.post("/auth/request-password-reset", { email });
+
+    return data;
+};
+
+export const resetPassword = async ({ token, newPassword }) => {
+    const { data } = await api.post("/auth/reset-password", { token, newPassword });
+
+    return data;
+};
