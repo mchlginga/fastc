@@ -9,6 +9,7 @@ import CompanyDashboard from "./pages/company/CompanyDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 function App() {
     return (
@@ -19,7 +20,7 @@ function App() {
                 <Route path="/login" element={ <Login /> } />
                 <Route path="/register" element={ <Register /> } />
                 <Route path="/unauthorized" element={ <Unauthorized /> } />
-
+                <Route path="/reset-password/:token?" element={<ResetPassword />}/>
                 
                 {/* User or Trainee Routes */}
                 <Route 
