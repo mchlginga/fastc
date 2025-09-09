@@ -1,9 +1,8 @@
 // TEMPORARY
-import { useState, /* useContext */ } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 
 import { login, getMe } from "../../services/authService";
-// import { AuthContext } from "../../context/AuthContext";
 import { useAuth } from "../../context/AuthContext";
 
 import Input from "../../components/Input";
@@ -75,6 +74,19 @@ const Login = () => {
                 <Button type="submit" disabled={loading}>
                     {loading ? "Logging in..." : "Login"}
                 </Button>
+                <div className="mt-3">
+                    <p>
+                        <Link to="/reset-password" className="text-blue-500 hover:underline">
+                            Forgot Password?
+                        </Link>
+                    </p>
+                    <p>
+                        Don't have an accout?{" "}
+                        <Link to="/register" className="text-blue-500 hover:underline">
+                            Register
+                        </Link>
+                    </p>
+                </div>
             </form>
         </div>
     );
