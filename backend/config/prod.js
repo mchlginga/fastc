@@ -7,7 +7,7 @@ module.exports = {
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || "1d",
     frontendUrl: process.env.FRONTEND_URL,
     email: {
-        user: process.env.EMAIL_SERVICE,
+        user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
         service: process.env.EMAIL_SERVICE
     }
