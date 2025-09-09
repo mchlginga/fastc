@@ -131,7 +131,7 @@ exports.requestPasswordReset = async (req, res, next) => {
         const resetToken = crypto.randomBytes(32).toString("hex");
         user.resetPasswordToken = resetToken;
         user.resetPasswordExpires = Date.now() + 3600000;
-        await user.save;
+        await user.save();
 
         const resetUrl = `${config.frontendUrl}/reset-password/${resetToken}`;
         const message = `You requested a password reset. Click this link to reset your password: ${resetUrl}`;
