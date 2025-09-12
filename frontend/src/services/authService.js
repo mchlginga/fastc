@@ -43,8 +43,9 @@ export const resetPassword = async ({ token, newPassword }) => {
     return data;
 };
 
-export const generateCertificate = async () => {
-    const response = await api.get("/certificate", {
+export const generateCertificate = async (certificateName = "") => {
+    const url = certificateName ? `/certificate?certificateName=${encodeURIComponent(certificateName)}` : "/certificate";
+    const response = await api.get(url, {
         responseType: "blob"
     })
 
