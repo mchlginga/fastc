@@ -42,3 +42,11 @@ export const resetPassword = async ({ token, newPassword }) => {
 
     return data;
 };
+
+export const generateCertificate = async () => {
+    const response = await api.get("/certificate", {
+        responseType: "blob"
+    })
+
+    return response.data;
+};
