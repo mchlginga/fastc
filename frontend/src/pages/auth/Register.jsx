@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { register, getMe } from "../../services/authService";
+import { register} from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import Input from "../../components/Input";
 import Button from "../../components/Button";
@@ -12,22 +12,15 @@ const Register = () => {
     const { setUser } = useAuth();
 
     const [form, setForm] = useState({
-        // choose your username and password
         username: "",
         password: "",
         passwordConfirm: "",
-
-        // more details
         email: "",
         emailConfirm: "",
         firstName: "",
         surname: "",
         city: "",
         country: "Philippines",
-
-        role: "user",
-
-        // privacy agreement
         privacyAgreement: false
     });
 
@@ -78,7 +71,7 @@ const Register = () => {
         }
 
         try {
-            await register({
+            const userData = await register({
                 username: form.username,
                 firstName: form.firstName,
                 surname: form.surname,
@@ -88,8 +81,6 @@ const Register = () => {
                 country: form.country,
                 privacyAgreement: form.privacyAgreement
             });
-
-            const userData = await getMe();
             setUser(userData);
 
             const redirectPath = getRedirectPath(userData.role);
@@ -128,7 +119,7 @@ const Register = () => {
                     label="Confirm Password"
                     type="password"
                     name="passwordConfirm"
-                    value={form.confirmPassword}
+                    value={form.passwordConfirm}
                     onChange={handleChange}
                     required
                 />
