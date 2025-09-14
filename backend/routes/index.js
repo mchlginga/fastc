@@ -4,6 +4,7 @@ const upload = require("./upload");
 const certificate = require("./certificate");
 const job = require("./job");
 const match = require("./match");
+const completion = require("./completion");
 
 module.exports = {
     auth,
@@ -11,5 +12,6 @@ module.exports = {
     upload,
     certificate,
     job,
-    match
+    match,
+    completion
 };

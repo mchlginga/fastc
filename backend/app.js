@@ -6,6 +6,10 @@ const fs = require("fs");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
+require("./models/user");
+require("./models/course");
+require("./models/completion");
+
 // config 
 const config = require("./config/index");
 
@@ -23,7 +27,8 @@ const {
     upload,
     certificate,
     job,
-    match
+    match,
+    completion
 } = require("./routes/index");
 
 const app = express();
@@ -55,6 +60,7 @@ app.use("/api/upload", upload);
 app.use("/api/certificate", certificate);
 app.use("/api/job", job);
 app.use("/api/match", match);
+app.use("/api/completion", completion);
 
 app.use( (req, res) => {
     res.status(statusCodes.NOT_FOUND).json({ message: "Invalid route." });
