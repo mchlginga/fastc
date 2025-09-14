@@ -55,17 +55,15 @@ exports.register = async (req, res, next) => {
             email,
             password,
             city,
-            country
+            country,
+            privacyAgreement
         });
 
         setCookieToken(res, user.id);
 
-        return res.status(statusCodes.CREATED).json({
-            _id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-        });
+        const publicUser = await User.findById(user._id).select("-password");
+
+        return res.status(statusCodes.CREATED).json({ publicUser });
     } catch (error) {
         next(error);
     }
@@ -75,32 +73,31 @@ exports.login = async (req, res, next) => {
     const { email, password } = req.body;
     
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).select("+password");
 
         if (!user || !(await user.matchPassword(password))) {
             return res.status(statusCodes.UNAUTHORIZED).json({ message: "Invalid Email or Password"} );
         }
 
         setCookieToken(res, user.id);
+
+        const publicUser = await User.findById(user._id).select("-password");
         
-        return res.status(statusCodes.OK).json({
-            _id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role
-        });
+        return res.status(statusCodes.OK).json({ publicUser });
     } catch (error) {
         next(error);
     }
 };
 
 exports.getMe = async (req, res, next) => {
-    const { _id, name, email, role } = req.user;
-
     try {
-        return res.status(statusCodes.OK).json({
-            user: { _id, name, email, role }
-        });
+        const user = await User.findById(req.user.id).select("-password");
+
+        if (!user) {
+            return res.status(statusCodes.NOT_FOUND).json({ message: "User not found." })    ;
+        }
+
+        return res.status(statusCodes.OK).json({ user });
     } catch (error) {
         next(error);
     }
