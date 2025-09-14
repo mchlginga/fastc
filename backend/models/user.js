@@ -40,22 +40,16 @@ const userSchema = new mongoose.Schema ({
 
     city: {
         type: String,
+        required: true,
         trim: true
     },
 
     country: {
         type: String,
+        required: true,
         trim: true,
         default: "Philippines"
     },
-
-    certificates: [
-        {
-            name: String,
-            issuedAt: Date,
-            expiresAt: Date
-        }
-    ],
 
     role: {
         type: String,
@@ -66,6 +60,12 @@ const userSchema = new mongoose.Schema ({
     profilePic: {
         type: String,
         default: ""
+    },
+
+    privacyAgreement: {
+        type: Boolean,
+        required: true,
+        default: false
     },
 
     resetPasswordToken: {
