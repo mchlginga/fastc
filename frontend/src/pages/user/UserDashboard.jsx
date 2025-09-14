@@ -1,24 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { useAuth } from "../../context/AuthContext";
-import { generateCertificate } from "../../services/authService";
+import { generateCertificate, getCompletions } from "../../services/authService";
 import Button from "../../components/Button";
 
 export default function UserDashboard() {
     const { user, handleLogout} = useAuth();
+    const [completions, setCompletions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const handleGenerateCert = async (certificateName) => {
+    useEffect( () => {
+        const fetchCompletions = async () => {
+            setLoading(true);
+
+            try {
+                const data = await getCompletions(user._id);
+                setCompletions(data);
+            } catch (error) {
+                setError(error.response?.data?.message || "Failed to load completions.")
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (user) fetchCompletions();
+    }, [user]);
+
+    const handleGenerateCert = async (courseId, courseName) => {
         setLoading(true);
         setError("");
 
         try {
-            const pdfBlob = await generateCertificate(certificateName); 
+            const pdfBlob = await generateCertificate(courseId); 
             const url = window.URL.createObjectURL(new Blob([pdfBlob])); 
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute("download", `${user.name}-${certificateName || "certificate"}.pdf`);
+            link.setAttribute("download", `${user.name}-${courseName}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -44,20 +61,20 @@ export default function UserDashboard() {
 
             {/* Certificate Section */}
             <div className="mt-6">
-                <h2 className="text-xl font-semibold">Certificates</h2>
+                <h2 className="text-xl font-semibold">Completed Courses</h2>
                 {error && <p className="text-red-500">{error}</p>}
 
-                {user?.certificates?.length > 0 ? (
+                {loading ? (
+                    <p>Loading completions...</p>
+                ) : completions.length > 0 ? (
                     <ul className="mt-2">
-                        {user.certificates.map( (cert, index) => (
-                            <li key={index} className="border p-2 mb-2">
-                                <p>Course: {cert.name}</p>
-                                <p>Issued: {new Date(cert.expiresAt).toLocaleDateString()}</p>
-                                {cert.expiresAt && (
-                                    <p>Expires: {new Date(cert.expiresAt).toLocaleDateString()}</p>
-                                )}
+                        {completions.map( (completion) => (
+                            <li key={completion._id} className="border p-2 mb-2">
+                                <p>Course: {completion.course.name}</p>
+                                <p>Completed: {new Date(completion.completedAt).toLocaleDateString()}</p>
+
                                 <Button
-                                    onClick={() => handleGenerateCert(cert.name)}
+                                    onClick={() => handleGenerateCert(completion.course._id, completion.course.name)}
                                     disabled={loading}
                                     className="mt-2"
                                 >
@@ -67,7 +84,7 @@ export default function UserDashboard() {
                         ))}
                     </ul>
                 ) : (
-                    <p>No certificates available.</p>
+                    <p>No courses completed.</p>
                 )}
             </div>
 
