@@ -3,7 +3,7 @@ import { api } from "./api";
 export const login = async(email, password) => {
     const { data } = await api.post("/auth/login", { email, password });
 
-    return data;
+    return data.publicUser;
 };
 
 export const register = async({ username, firstName, surname, email, password, city, country, privacyAgreement }) => {
@@ -18,7 +18,7 @@ export const register = async({ username, firstName, surname, email, password, c
         privacyAgreement
     });
 
-    return data;
+    return data.publicUser;
 };
 
 export const getMe = async() => {
@@ -43,11 +43,17 @@ export const resetPassword = async ({ token, newPassword }) => {
     return data;
 };
 
-export const generateCertificate = async (certificateName = "") => {
-    const url = certificateName ? `/certificate?certificateName=${encodeURIComponent(certificateName)}` : "/certificate";
+export const generateCertificate = async (courseId) => {
+    const url = courseId ? `/certificate?courseId=${encodeURIComponent(courseId)}` : "/certificate";
     const response = await api.get(url, {
         responseType: "blob"
     })
 
     return response.data;
+};
+
+export const getCompletions = async (userId) => {
+    const { data } = await api.get(`/completion?user=${userId}`);
+
+    return data;
 };
