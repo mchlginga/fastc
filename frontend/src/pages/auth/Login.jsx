@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-import { login, getMe } from "../../services/authService";
+import { login } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 
 import Input from "../../components/Input";
@@ -11,7 +11,11 @@ import Button from "../../components/Button";
 const Login = () => {
     const { setUser } = useAuth();
 
-    const [form, setForm] = useState({ email: "", password: "" });
+    const [form, setForm] = useState({ 
+        email: "", 
+        password: "" 
+    });
+
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -27,7 +31,13 @@ const Login = () => {
         return rolePaths[role] || "/user";
     };
 
-    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value});
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm({ 
+            ...form, 
+            [name]: value
+        });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -35,14 +45,10 @@ const Login = () => {
         setError("");
 
         try {
-            await login(form.email, form.password);
-
-            const userData = await getMe();
+            const userData = await login(form.email, form.password);
             setUser(userData);
-
             const redirectPath = getRedirectpath(userData.role);
             navigate(redirectPath);
-
         } catch (error) {
             setError(error.response?.data?.message || "Login failed.");
         } finally {
@@ -51,9 +57,9 @@ const Login = () => {
     };
 
     return (
-        <div>
+        <div className="">
             <form action="" onSubmit={handleSubmit} className="">
-                <h2>Login</h2>
+                <h2 className="">Login</h2>
 
                 {error && <p>{error}</p>}
 
@@ -63,6 +69,7 @@ const Login = () => {
                     name="email"
                     value={form.email}
                     onChange={handleChange}
+                    required
                 />
                 <Input
                     label="Password"
@@ -70,8 +77,12 @@ const Login = () => {
                     name="password"
                     value={form.password}
                     onChange={handleChange}
+                    required
                 />
-                <Button type="submit" disabled={loading}>
+                <Button 
+                    type="submit" 
+                    disabled={loading}
+                >
                     {loading ? "Logging in..." : "Login"}
                 </Button>
                 <div className="mt-3">
