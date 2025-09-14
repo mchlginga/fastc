@@ -28,7 +28,8 @@ const {
     certificate,
     job,
     match,
-    completion
+    completion,
+    course
 } = require("./routes/index");
 
 const app = express();
@@ -61,6 +62,7 @@ app.use("/api/certificate", certificate);
 app.use("/api/job", job);
 app.use("/api/match", match);
 app.use("/api/completion", completion);
+app.use("/api/course", course);
 
 app.use( (req, res) => {
     res.status(statusCodes.NOT_FOUND).json({ message: "Invalid route." });
