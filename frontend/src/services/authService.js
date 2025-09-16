@@ -1,7 +1,7 @@
 import { api } from "./api";
 
-export const login = async(email, password) => {
-    const { data } = await api.post("/auth/login", { email, password });
+export const login = async(email, password, rememberMe = false) => {
+    const { data } = await api.post("/auth/login", { email, password, rememberMe });
 
     return data.publicUser;
 };
@@ -52,8 +52,9 @@ export const generateCertificate = async (courseId) => {
     return response.data;
 };
 
-export const getCompletions = async (userId) => {
-    const { data } = await api.get(`/completion?user=${userId}`);
+export const getCompletions = async (userId, isAdmin = false) => {
+    const url = isAdmin ? "/completion" : `/completion?user=${userId}`;
+    const { data } = await api.get(url);
 
     return data;
 };
