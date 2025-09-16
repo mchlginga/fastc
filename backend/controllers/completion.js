@@ -5,7 +5,8 @@ exports.getCompletions = async (req, res, next) => {
     const { user } = req.query;
 
     try {
-        const completions = await Completion.find({ user }).populate("course");
+        const query = req.user.role === "admin" ? {} : { user };
+        const completions = await Completion.find(query).populate("user course");
         res.status(statusCodes.OK).json(completions);
     } catch (error) {
         next(error);
@@ -17,7 +18,8 @@ exports.createCompletions = async (req, res, next) => {
 
     try {
         const completion = await Completion.create({ user, course });
-        res.status(statusCodes.CREATED).json(completion);
+        const populatedCompletion = await Completion.findById(completion._id).populate("user course")
+        res.status(statusCodes.CREATED).json(populatedCompletion);
     } catch (error) {
         next(error);
     }
