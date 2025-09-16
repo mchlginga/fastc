@@ -45,12 +45,20 @@ exports.getUserById = async (req, res, next) => {
 // update user by id
 exports.updateUserById = async (req, res, next) => {
     const { id } = req.params;
-    const { email, password, role, ...updateData } = req.body;
+    const { username, firstName, surname, city, country, name } = req.body;
 
     try {
+        const updateData = {
+            username,
+            firstName,
+            surname,
+            city,
+            country,
+            name: name || `${firstName || ""} ${surname || ""}`.trim()
+        };
         const updated = await User.findByIdAndUpdate(
             id,
-            updateData,
+            { $set: updateData},
             { new: true, runValidators: true,}
         ).select("-password");
         if (!updated) {
