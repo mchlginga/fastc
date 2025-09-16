@@ -11,13 +11,15 @@ const COOKIE_NAME = "token";
 const cookieOptions = {
     httpOnly: true,
     secure: config.env === "production",
-    sameSite: "strict",
-    maxAge: 30 * 24 * 60 * 1000
+    sameSite: "strict"
 };
 
-const setCookieToken = (res, userId) => {
+const setCookieToken = (res, userId, rememberMe) => {
     const token = generateToken(userId);
-    res.cookie(COOKIE_NAME, token, cookieOptions);
+    res.cookie(COOKIE_NAME, token, {
+        ...cookieOptions,
+        maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : undefined
+    })
 };
 
 // nodemailer transporter
@@ -38,10 +40,15 @@ exports.register = async (req, res, next) => {
         password,
         city,
         country,
+        role,
         privacyAgreement
     } = req.body;
 
     try {
+        if (!privacyAgreement) {
+            return res.status(statusCodes.BAD_REQUEST).json({ message: "Privacy agreement required." });
+        }
+
         const existing = await User.findOne({ email });
         
         if (existing) {
@@ -52,10 +59,12 @@ exports.register = async (req, res, next) => {
             username,
             firstName,
             surname,
+            name: `${firstName} ${surname}`,
             email,
             password,
             city,
             country,
+            role: role || "user",
             privacyAgreement
         });
 
@@ -70,7 +79,7 @@ exports.register = async (req, res, next) => {
 };
 
 exports.login = async (req, res, next) => {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
     
     try {
         const user = await User.findOne({ email }).select("+password");
@@ -79,7 +88,7 @@ exports.login = async (req, res, next) => {
             return res.status(statusCodes.UNAUTHORIZED).json({ message: "Invalid Email or Password"} );
         }
 
-        setCookieToken(res, user.id);
+        setCookieToken(res, user.id, rememberMe);
 
         const publicUser = await User.findById(user._id).select("-password");
         
