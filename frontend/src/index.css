@@ -1,1 +1,66 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+}
+
+.gradient-bg {
+    background: linear-gradient(135deg, #1e88e5 0%, #0d47a1 100%);
+}
+
+.brand-logo {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.form-container {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+.input-focus:focus {
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.3);
+    border-color: #1e88e5;
+}
+
+.btn-primary {
+    background: linear-gradient(to right, #1e88e5, #0d47a1);
+    transition: all 0.3s ease;
+    
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px rgba(30, 136, 229, 0.6);
+    cursor: pointer;
+}
+
+.btn-secondary {
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.1);
+}
+
+.btn-tertiary {
+    background: linear-gradient(to right, #10b981, #059669);
+    transition: all 0.3s ease;
+}
+
+.btn-tertiary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px rgba(16, 185, 129, 0.6);
+}
+
+.sidebar {
+    transition: all 0.3s ease;
+}
+
+.nav-active {
+    background-color: #E3F2FD;
+    color: #1E88E5;
+    border-left: 4px solid #1E88E5;
+}
