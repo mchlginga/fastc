@@ -26,10 +26,10 @@ const Homepage = () => {
 
                         <div className="hidden md:flex items-center space-x-8">
                             <Link to="/" className="text-blue-600 font-medium">Home</Link>
-                            <Link to="/" className="text-blue-600 font-medium">About</Link>
-                            <Link to="/" className="text-blue-600 font-medium">Courses</Link>
-                            <Link to="/" className="text-blue-600 font-medium">How To</Link>
-                            <Link to="/login" className="text-blue-600 font-medium">Login</Link>
+                            <Link to="/" className="text-gray-600 font-medium">About</Link>
+                            <Link to="/" className="text-gray-600 font-medium">Courses</Link>
+                            <Link to="/" className="text-gray-600 font-medium">How To</Link>
+                            <Link to="/login" className="text-gray-600 font-medium">Login</Link>
                         </div>
 
                         <div className="md:hidden flex items-center">
