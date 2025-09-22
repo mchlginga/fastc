@@ -38,19 +38,6 @@ const userSchema = new mongoose.Schema ({
         required: true
     },
 
-    city: {
-        type: String,
-        required: true,
-        trim: true
-    },
-
-    country: {
-        type: String,
-        required: true,
-        trim: true,
-        default: "Philippines"
-    },
-
     role: {
         type: String,
         enum: ["admin", "company", "user"],
