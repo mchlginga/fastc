@@ -6,18 +6,31 @@ export const login = async(email, password, rememberMe = false) => {
     return data.publicUser;
 };
 
-export const register = async({ username, firstName, surname, email, password, city, country, privacyAgreement }) => {
+export const register = async({ username, firstName, surname, email, password, privacyAgreement }) => {
     const { data } = await api.post("/auth/register", {
         username,
         firstName,
         surname,
         email,
         password,
-        city,
-        country,
         privacyAgreement
     });
 
+    return data.publicUser;
+};
+
+export const registerUser = async ({ username, firstName, surname, email, password, city, country, role, privacyAgreement }) => {
+    const { data } = await api.post("/user", {
+        username, 
+        firstName, 
+        surname, 
+        email, 
+        password, 
+        city, 
+        country, 
+        role, 
+        privacyAgreement 
+    });
     return data.publicUser;
 };
 
