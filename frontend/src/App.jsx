@@ -10,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/auth/ResetPassword";
+import ProfileSetup from "./pages/auth/ProfileSetup";
 
 function App() {
     return (
@@ -21,6 +22,20 @@ function App() {
                 <Route path="/register" element={ <Register /> } />
                 <Route path="/unauthorized" element={ <Unauthorized /> } />
                 <Route path="/reset-password/:token?" element={<ResetPassword />}/>
+
+                {/* profile setup route */}
+                <Route
+                    path="/profile-setup/*"
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={["user"]}
+                            condition={(user) => user && !user.isProfileComplete}
+                            redirectTo="/user"
+                        >
+                            <ProfileSetup />
+                        </ProtectedRoute>
+                    }
+                />
                 
                 {/* User or Trainee Routes */}
                 <Route 
