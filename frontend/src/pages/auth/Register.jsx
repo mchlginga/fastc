@@ -28,10 +28,10 @@ const Register = () => {
         const rolePaths = {
             admin: "/admin",
             company: "/company",
-            user: "/user"
+            user: "/profile-setup/step1"
         };
 
-        return rolePaths[role] || "/user";
+        return rolePaths[role] || "/profile-setup/step1";
     };
 
     const handleChange = (e) => {
