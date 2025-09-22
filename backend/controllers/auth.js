@@ -38,8 +38,6 @@ exports.register = async (req, res, next) => {
         surname,
         email,
         password,
-        city,
-        country,
         role,
         privacyAgreement
     } = req.body;
@@ -62,8 +60,6 @@ exports.register = async (req, res, next) => {
             name: `${firstName} ${surname}`,
             email,
             password,
-            city,
-            country,
             role: role || "user",
             privacyAgreement
         });
@@ -172,7 +168,7 @@ exports.resetPassword = async (req, res, next) => {
         user.resetPasswordExpires = undefined;
         await user.save();
 
-        return res.status(statusCodes.OK).json({ message: "Password rerset succesfully." });
+        return res.status(statusCodes.OK).json({ message: "Password reset succesfully." });
     } catch (error) {
         next(error);
     }

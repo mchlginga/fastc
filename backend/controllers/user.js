@@ -1,6 +1,40 @@
 const User = require("../models/user");
 const { statusCodes } = require("../utils/constant");
 
+// create user 
+exports.createUser = async (req, res, next) => {
+    const { username, firstName, surname, email, password, city, country, role, privacyAgreement } = req.body;
+
+    try {
+        if (!privacyAgreement) {
+            return res.status(statusCodes.BAD_REQUEST).json({ message: "Privacy agreement required." });
+        }
+
+        const existing = await User.findOne({ email });
+        if (existing) {
+            return res.status(statusCodes.BAD_REQUEST).json({ message: "Email already exists." });
+        }
+
+        const user = await User.create({
+            username,
+            firstName,
+            surname,
+            name: `${firstName} ${surname}`,
+            email,
+            password,
+            city,
+            country,
+            role: role || "user",
+            privacyAgreement
+        });
+
+        const publicUser = await User.findById(user._id).select("-password");
+        return res.status(statusCodes.CREATED).json({ publicUser });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // get logged-in user's profile
 exports.getProfile = async (req, res, next) => {
     try {

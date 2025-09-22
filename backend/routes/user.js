@@ -7,7 +7,8 @@ const {
     getUsers,
     getUserById,
     updateUserById,
-    deleteUserById
+    deleteUserById,
+    createUser
 } = require("../controllers/user");
 
 router.get("/profile", protect, getProfile);
@@ -15,5 +16,6 @@ router.get("/", protect, checkRoles("admin"), getUsers);
 router.get("/:id", protect, checkRoles([ "admin", "company" ]), getUserById);
 router.put("/:id", protect, checkRoles("admin"), updateUserById);
 router.delete("/:id", protect, checkRoles("admin"), deleteUserById);
+router.post("/", protect, checkRoles("admin"), createUser);
 
 module.exports = router;
