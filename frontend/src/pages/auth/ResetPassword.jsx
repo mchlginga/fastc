@@ -5,8 +5,6 @@ import { useState } from "react";
 
 import { useAuth } from "../../context/AuthContext";
 import { requestPasswordReset, resetPassword } from "../../services/authService";
-import Input from "../../components/Input";
-import Button from "../../components/Button";
 
 const ResetPassword = () => {
     const { setUser } = useAuth();
