@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, Link } from "react-router-dom";
 import {
     Award,
     Home,
@@ -89,7 +89,7 @@ const AdminDashboard = () => {
                         Certificates
                     </NavLink>
                     <NavLink
-                        to="/admin/job-matching"
+                        to="/admin/job-match"
                         className={({ isActive }) =>
                             isActive
                                 ? "nav-active flex items-center px-4 py-3 text-sm font-medium rounded-lg"
@@ -192,17 +192,13 @@ const AdminDashboard = () => {
                                         <span>Joined: January 2025</span>
                                     </div>
                                 </div>
-                                <NavLink
+                                <Link
                                     to="/admin/profile"
-                                    className={({ isActive }) =>
-                                        isActive
-                                            ? "nav-active mt-4 w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700"
-                                            : "mt-4 w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                                    }
+                                    className="mt-4 w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                     <Edit size={16} className="w-4 h-4 mr-2" />
                                     Edit Profile
-                                </NavLink>
+                                </Link>
                             </div>
                         </div>
                     </div>
