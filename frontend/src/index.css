@@ -1,8 +1,8 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
 }
 
 .gradient-bg {
@@ -27,7 +27,6 @@ body {
 .btn-primary {
     background: linear-gradient(to right, #1e88e5, #0d47a1);
     transition: all 0.3s ease;
-    
 }
 
 .btn-primary:hover {
@@ -60,7 +59,27 @@ body {
 }
 
 .nav-active {
-    background-color: #E3F2FD;
-    color: #1E88E5;
-    border-left: 4px solid #1E88E5;
+    background-color: #e3f2fd;
+    color: #1e88e5;
+    border-left: 4px solid #1e88e5;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px -5px rgba(30, 136, 229, 0.2);
+}
+
+.animate-slide-in {
+    animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
