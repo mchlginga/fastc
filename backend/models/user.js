@@ -1,71 +1,88 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-const userSchema = new mongoose.Schema ({
-    username: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true
-    },
+const userSchema = new mongoose.Schema(
+    {
+        username: {
+            type: String,
+            required: false,
+            unique: true,
+            trim: true,
+            sparse: true,
+        },
 
-    firstName: {
-        type: String,
-        required: true,
-        trim: true
-    },
+        firstName: {
+            type: String,
+            required: true,
+            trim: true,
+        },
 
-    surname: {
-        type: String,
-        required: true,
-        trim: true
-    },
+        surname: {
+            type: String,
+            required: true,
+            trim: true,
+        },
 
-    name: {
-        type: String,
-        trim: true
-    },
+        name: {
+            type: String,
+            trim: true,
+        },
 
-    email: {
-        type: String,
-        required: true,
-        lowercase: true,
-        unique: true
-    },
+        email: {
+            type: String,
+            required: true,
+            lowercase: true,
+            unique: true,
+        },
 
-    password: {
-        type: String,
-        required: true
-    },
+        password: {
+            type: String,
+            required: true,
+        },
 
-    role: {
-        type: String,
-        enum: ["admin", "company", "user"],
-        default: "user"
-    },
+        role: {
+            type: String,
+            enum: ["admin", "company", "user"],
+            default: "user",
+        },
 
-    profilePic: {
-        type: String,
-        default: ""
-    },
+        profilePic: {
+            type: String,
+            default: "",
+        },
 
-    privacyAgreement: {
-        type: Boolean,
-        required: true,
-        default: false
-    },
+        privacyAgreement: {
+            type: Boolean,
+            required: true,
+            default: false,
+        },
 
-    resetPasswordToken: {
-        type: String
-    },
+        resetPasswordToken: {
+            type: String,
+        },
 
-    resetPasswordExpires: {
-        type: Date
+        resetPasswordExpires: {
+            type: Date,
+        },
+
+        verificationCode: String,
+
+        verificationCodeExpires: Date,
+
+        isEmailVerified: {
+            type: Boolean,
+            default: false,
+        },
+
+        isProfileComplete: {
+            type: Boolean,
+            default: false,
+        },
+    },
+    {
+        timestamps: true,
     }
-
-}, {
-    timestamps: true
-});
+);
 
 userSchema.pre("save", async function (next) {
     if (this.isModified("firstName") || this.isModified("surname")) {
@@ -82,9 +99,9 @@ userSchema.pre("save", async function (next) {
     next();
 });
 
-userSchema.methods.matchPassword = (async function (enteredPassword) {
+userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
-});
+};
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;
