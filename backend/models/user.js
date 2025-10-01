@@ -10,73 +10,88 @@ const userSchema = new mongoose.Schema(
             trim: true,
             sparse: true,
         },
-
         firstName: {
             type: String,
             required: true,
             trim: true,
         },
-
         surname: {
             type: String,
             required: true,
             trim: true,
         },
-
         name: {
             type: String,
             trim: true,
         },
-
         email: {
             type: String,
             required: true,
             lowercase: true,
             unique: true,
         },
-
         password: {
             type: String,
             required: true,
         },
-
         role: {
             type: String,
             enum: ["admin", "company", "user"],
             default: "user",
         },
-
         profilePic: {
             type: String,
             default: "",
         },
-
         privacyAgreement: {
             type: Boolean,
             required: true,
             default: false,
         },
-
         resetPasswordToken: {
             type: String,
         },
-
         resetPasswordExpires: {
             type: Date,
         },
-
         verificationCode: String,
-
         verificationCodeExpires: Date,
-
         isEmailVerified: {
             type: Boolean,
             default: false,
         },
-
-        isProfileComplete: {
-            type: Boolean,
-            default: false,
+        birthdate: {
+            type: String,
+        },
+        gender: {
+            type: String,
+        },
+        contactNumber: {
+            type: String,
+        },
+        address: {
+            type: String,
+        },
+        education: [
+            {
+                educationLevel: { type: String },
+                schoolName: { type: String },
+                yearGraduated: { type: String },
+                proof: { type: String },
+            },
+        ],
+        certificates: [
+            {
+                name: { type: String },
+                issuer: { type: String },
+                date: { type: String },
+                proof: { type: String },
+            },
+        ],
+        profileStatus: {
+            type: String,
+            enum: ["pending", "approved", "rejected"],
+            default: "pending",
         },
     },
     {
