@@ -46,7 +46,8 @@ const Login = () => {
             const redirectPath = getRedirectPath(userData.role);
             navigate(redirectPath);
         } catch (error) {
-            setError(error.response?.data?.message || "Login failed.");
+            console.error("Login error:", error);
+            setError(error.message || "Login failed.");
         } finally {
             setLoading(false);
         }

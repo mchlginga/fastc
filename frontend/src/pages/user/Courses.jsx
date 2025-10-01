@@ -1,371 +1,159 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ChevronRight, CheckCircle } from "react-feather";
 import { Link } from "react-router-dom";
-import {
-    ChevronRight,
-    CheckCircle,
-    XCircle,
-    Download,
-    Eye,
-} from "react-feather";
+import { useAuth } from "../../context/AuthContext";
+import { api } from "../../services/api";
 
 const Courses = () => {
-    const [activeTab, setActiveTab] = useState("available");
+    const { user } = useAuth();
+    const [availableCourses, setAvailableCourses] = useState([]);
+    const [enrolledCourses, setEnrolledCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                setLoading(true);
+                // Fetch all courses
+                const { data: allCourses } = await api.get("/courses");
+                // Fetch enrolled courses (completions)
+                const { data: completions } = await api.get(
+                    `/completion?user=${user._id}`
+                );
+                const enrolledCourseIds = completions.courses.map((c) =>
+                    c.course.toString()
+                );
+                // Filter out enrolled courses from available
+                const available = allCourses.filter(
+                    (course) => !enrolledCourseIds.includes(course._id)
+                );
+                setAvailableCourses(available);
+                setEnrolledCourses(completions.courses);
+            } catch (err) {
+                setError("Failed to load courses. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCourses();
+    }, [user._id]);
+
+    const handleEnroll = async (courseId) => {
+        try {
+            const { data } = await api.post("/completion", {
+                user: user._id,
+                course: courseId,
+                title: availableCourses.find((c) => c._id === courseId).title,
+                schedule: availableCourses.find((c) => c._id === courseId)
+                    .schedule,
+                totalSessions: availableCourses.find((c) => c._id === courseId)
+                    .totalSessions,
+            });
+            setEnrolledCourses([...enrolledCourses, data]);
+            setAvailableCourses(
+                availableCourses.filter((c) => c._id !== courseId)
+            );
+        } catch (err) {
+            setError("Failed to enroll in course.");
+        }
+    };
 
     return (
-        <div>
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-800">Courses</h1>
-                <p className="text-gray-600">
-                    Explore training programs and track your progress
-                </p>
-            </div>
+        <div className="space-y-6">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+                Courses
+            </h1>
 
-            {/* Tabs */}
-            <div className="border-b border-gray-200 mb-6">
-                <nav className="flex space-x-4">
-                    <button
-                        className={`px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 ${
-                            activeTab === "available" ? "tab-active" : ""
-                        }`}
-                        onClick={() => setActiveTab("available")}
-                    >
-                        Available
-                    </button>
-                    <button
-                        className={`px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 ${
-                            activeTab === "enrolled" ? "tab-active" : ""
-                        }`}
-                        onClick={() => setActiveTab("enrolled")}
-                    >
-                        Enrolled
-                    </button>
-                    <button
-                        className={`px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 ${
-                            activeTab === "completed" ? "tab-active" : ""
-                        }`}
-                        onClick={() => setActiveTab("completed")}
-                    >
-                        Completed
-                    </button>
-                </nav>
-            </div>
-
-            {/* Tab Content */}
-            <div
-                className={activeTab === "available" ? "" : "hidden"}
-                id="available"
-            >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {/* Course 1 */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
-                        <h3 className="font-semibold text-gray-800">
-                            Automotive Servicing NC II
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-2">
-                            Learn advanced automotive repair and maintenance
-                            techniques.
-                        </p>
-                        <div className="mt-4 space-y-2 text-sm text-gray-600">
-                            <p>
-                                <span className="font-medium">Duration:</span> 6
-                                months
-                            </p>
-                            <p>
-                                <span className="font-medium">Schedule:</span>{" "}
-                                Mon/Wed/Fri, 9:00 AM - 12:00 PM
-                            </p>
-                            <p>
-                                <span className="font-medium">Slots:</span>{" "}
-                                15/20 available
-                            </p>
-                        </div>
-                        <button className="mt-4 w-full py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-                            Enroll
-                        </button>
-                    </div>
-                    {/* Course 2 */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
-                        <h3 className="font-semibold text-gray-800">
-                            Electrical Installation NC II
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-2">
-                            Master electrical wiring and installation for
-                            residential and commercial settings.
-                        </p>
-                        <div className="mt-4 space-y-2 text-sm text-gray-600">
-                            <p>
-                                <span className="font-medium">Duration:</span> 4
-                                months
-                            </p>
-                            <p>
-                                <span className="font-medium">Schedule:</span>{" "}
-                                Tue/Thu, 1:00 PM - 4:00 PM
-                            </p>
-                            <p>
-                                <span className="font-medium">Slots:</span>{" "}
-                                10/15 available
-                            </p>
-                        </div>
-                        <button className="mt-4 w-full py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-                            Enroll
-                        </button>
-                    </div>
-                    {/* Course 3 */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
-                        <h3 className="font-semibold text-gray-800">
-                            Baking and Pastry NC II
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-2">
-                            Develop skills in professional baking and pastry
-                            production.
-                        </p>
-                        <div className="mt-4 space-y-2 text-sm text-gray-600">
-                            <p>
-                                <span className="font-medium">Duration:</span> 3
-                                months
-                            </p>
-                            <p>
-                                <span className="font-medium">Schedule:</span>{" "}
-                                Sat, 8:00 AM - 2:00 PM
-                            </p>
-                            <p>
-                                <span className="font-medium">Slots:</span> 8/12
-                                available
-                            </p>
-                        </div>
-                        <button className="mt-4 w-full py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-                            Enroll
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div
-                className={activeTab === "enrolled" ? "" : "hidden"}
-                id="enrolled"
-            >
-                <div className="space-y-6">
-                    {/* Enrolled Course 1 */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-semibold text-gray-800">
-                                Basic Welding Certification
-                            </h3>
-                            <span className="text-sm text-gray-500">
-                                Status: Active
-                            </span>
-                        </div>
-                        <div className="space-y-4">
-                            <p className="text-sm text-gray-600">
-                                Learn foundational welding techniques for
-                                industrial applications.
-                            </p>
-                            <div className="space-y-2 text-sm text-gray-600">
-                                <p>
-                                    <span className="font-medium">
-                                        Schedule:
-                                    </span>{" "}
-                                    Mon/Wed/Fri, 9:00 AM - 11:00 AM
-                                </p>
-                                <p>
-                                    <span className="font-medium">Venue:</span>{" "}
-                                    FAST-C Training Center, San Fernando
-                                </p>
-                                <p>
-                                    <span className="font-medium">
-                                        Instructor:
-                                    </span>{" "}
-                                    Maria Santos
-                                </p>
+            {/* Enrolled Courses */}
+            <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+                <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-4">
+                    Enrolled Courses
+                </h2>
+                {loading ? (
+                    <p className="text-sm text-gray-600">Loading courses...</p>
+                ) : error ? (
+                    <p className="text-sm text-red-600">{error}</p>
+                ) : enrolledCourses.length ? (
+                    enrolledCourses.map((course) => (
+                        <div
+                            key={course._id}
+                            className="mb-4 border border-gray-200 rounded-lg p-4"
+                        >
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="font-medium text-base">
+                                    {course.title}
+                                </h3>
+                                <span className="text-sm text-gray-500">
+                                    {course.schedule}
+                                </span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                <div className="bg-blue-600 h-2.5 rounded-full progress-bar w-[65%]"></div>
+                                <div
+                                    className="bg-blue-600 h-2.5 rounded-full"
+                                    style={{ width: `${course.progress}%` }}
+                                ></div>
                             </div>
-                            <div className="flex justify-between text-sm text-gray-600">
-                                <span>65% completed</span>
-                                <span>12 of 20 sessions</span>
-                            </div>
-                            <div className="flex items-center text-sm">
-                                <span className="font-medium mr-2">
-                                    Attendance:
-                                </span>
-                                <span className="text-green-600 flex items-center">
-                                    <CheckCircle size={16} className="mr-1" />
-                                    Present
-                                </span>
-                                <span className="mx-2">•</span>
-                                <span className="text-red-600 flex items-center">
-                                    <XCircle size={16} className="mr-1" />2
-                                    Absences
+                            <div className="flex justify-between mt-2 text-sm text-gray-600">
+                                <span>{course.progress}% completed</span>
+                                <span>
+                                    {course.sessionsCompleted} of{" "}
+                                    {course.totalSessions} sessions
                                 </span>
                             </div>
-                            <Link
-                                to="/user/course-details"
-                                className="mt-4 inline-flex items-center text-sm text-blue-600 hover:text-blue-500"
-                            >
-                                View Details
-                                <ChevronRight size={16} className="ml-1" />
-                            </Link>
+                            <div className="mt-2 text-sm text-green-600 flex items-center">
+                                <CheckCircle size={16} className="mr-1" />{" "}
+                                Enrolled
+                            </div>
                         </div>
-                    </div>
-                    {/* Enrolled Course 2 */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-semibold text-gray-800">
-                                Pastry Making Fundamentals
-                            </h3>
-                            <span className="text-sm text-gray-500">
-                                Status: Pending Approval
-                            </span>
-                        </div>
-                        <div className="space-y-4">
-                            <p className="text-sm text-gray-600">
-                                Master the basics of pastry preparation and
-                                baking.
-                            </p>
-                            <div className="space-y-2 text-sm text-gray-600">
-                                <p>
-                                    <span className="font-medium">
-                                        Schedule:
-                                    </span>{" "}
-                                    Tue/Thu, 1:00 PM - 3:00 PM
-                                </p>
-                                <p>
-                                    <span className="font-medium">Venue:</span>{" "}
-                                    Online (Zoom)
-                                </p>
-                                <p>
-                                    <span className="font-medium">
-                                        Instructor:
-                                    </span>{" "}
-                                    John Reyes
-                                </p>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                <div className="bg-green-500 h-2.5 rounded-full progress-bar w-[30%]"></div>
-                            </div>
-                            <div className="flex justify-between text-sm text-gray-600">
-                                <span>30% completed</span>
-                                <span>3 of 10 sessions</span>
-                            </div>
-                            <div className="flex items-center text-sm">
-                                <span className="font-medium mr-2">
-                                    Attendance:
-                                </span>
-                                <span className="text-green-600 flex items-center">
-                                    <CheckCircle size={16} className="mr-1" />
-                                    Present
-                                </span>
-                                <span className="mx-2">•</span>
-                                <span className="text-red-600 flex items-center">
-                                    <XCircle size={16} className="mr-1" />0
-                                    Absences
-                                </span>
-                            </div>
-                            <Link
-                                to="/user/course-details"
-                                className="mt-4 inline-flex items-center text-sm text-blue-600 hover:text-blue-500"
-                            >
-                                View Details
-                                <ChevronRight size={16} className="ml-1" />
-                            </Link>
-                        </div>
-                    </div>
-                </div>
+                    ))
+                ) : (
+                    <p className="text-sm text-gray-600">
+                        No enrolled courses.
+                    </p>
+                )}
             </div>
 
-            <div
-                className={activeTab === "completed" ? "" : "hidden"}
-                id="completed"
-            >
-                <div className="space-y-6">
-                    {/* Completed Course 1 */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-semibold text-gray-800">
-                                Dressmaking NC II
-                            </h3>
-                            <span className="text-sm text-green-600">
-                                Completed
-                            </span>
-                        </div>
-                        <div className="space-y-2 text-sm text-gray-600">
-                            <p>
-                                <span className="font-medium">Completed:</span>{" "}
-                                June 15, 2023
-                            </p>
-                            <p>
-                                <span className="font-medium">
-                                    Certificate:
-                                </span>{" "}
-                                Issued (Valid until June 15, 2025)
-                            </p>
-                            <p>
-                                <span className="font-medium">Instructor:</span>{" "}
-                                Ana Gomez
-                            </p>
-                        </div>
-                        <div className="mt-4 flex space-x-2">
-                            <Link
-                                to="#"
-                                className="text-sm text-blue-600 hover:text-blue-500 flex items-center"
+            {/* Available Courses */}
+            <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+                <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-4">
+                    Available Courses
+                </h2>
+                {loading ? (
+                    <p className="text-sm text-gray-600">Loading courses...</p>
+                ) : error ? (
+                    <p className="text-sm text-red-600">{error}</p>
+                ) : availableCourses.length ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {availableCourses.map((course) => (
+                            <div
+                                key={course._id}
+                                className="border border-gray-200 rounded-lg p-4"
                             >
-                                <Download size={16} className="mr-1" />
-                                Download Certificate
-                            </Link>
-                            <Link
-                                to="/user/course-details"
-                                className="text-sm text-blue-600 hover:text-blue-500 flex items-center"
-                            >
-                                <Eye size={16} className="mr-1" />
-                                View Details
-                            </Link>
-                        </div>
+                                <h3 className="font-medium text-base">
+                                    {course.title}
+                                </h3>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    {course.schedule}
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Sessions: {course.totalSessions}
+                                </p>
+                                <button
+                                    onClick={() => handleEnroll(course._id)}
+                                    className="mt-3 w-full py-2 px-4 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                                    disabled={user.profileStatus !== "approved"}
+                                >
+                                    Enroll
+                                </button>
+                            </div>
+                        ))}
                     </div>
-                    {/* Completed Course 2 */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-semibold text-gray-800">
-                                Computer Systems Servicing NC II
-                            </h3>
-                            <span className="text-sm text-green-600">
-                                Completed
-                            </span>
-                        </div>
-                        <div className="space-y-2 text-sm text-gray-600">
-                            <p>
-                                <span className="font-medium">Completed:</span>{" "}
-                                March 10, 2023
-                            </p>
-                            <p>
-                                <span className="font-medium">
-                                    Certificate:
-                                </span>{" "}
-                                Issued (Valid until March 10, 2025)
-                            </p>
-                            <p>
-                                <span className="font-medium">Instructor:</span>{" "}
-                                Carlos Lim
-                            </p>
-                        </div>
-                        <div className="mt-4 flex space-x-2">
-                            <Link
-                                to="#"
-                                className="text-sm text-blue-600 hover:text-blue-500 flex items-center"
-                            >
-                                <Download size={16} className="mr-1" />
-                                Download Certificate
-                            </Link>
-                            <Link
-                                to="/user/course-details"
-                                className="text-sm text-blue-600 hover:text-blue-500 flex items-center"
-                            >
-                                <Eye size={16} className="mr-1" />
-                                View Details
-                            </Link>
-                        </div>
-                    </div>
-                </div>
+                ) : (
+                    <p className="text-sm text-gray-600">
+                        No available courses.
+                    </p>
+                )}
             </div>
         </div>
     );

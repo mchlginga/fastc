@@ -20,13 +20,14 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 
 /* user or trainees */
 import UserDashboard from "./pages/user/UserDashboard";
-import UserHome from "./pages/user/Home";
+import UserHome from "./pages/user/UserHome";
 import UserCourses from "./pages/user/Courses";
 import UserCertificates from "./pages/user/Certificates";
 import UserProfile from "./pages/user/Profile";
 
 /* admin */
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProfileReview from "./pages/admin/AdminProfileReview";
 import AdminHome from "./pages/admin/Home";
 import AdminUsers from "./pages/admin/Users";
 import AdminCourses from "./pages/admin/Courses";
@@ -110,6 +111,10 @@ function App() {
                     />
                     <Route path="job-match" element={<AdminJob />} />
                     <Route path="profile" element={<AdminProfile />} />
+                    <Route
+                        path="profile-review"
+                        element={<AdminProfileReview />}
+                    />
                 </Route>
 
                 {/* Company Routes */}

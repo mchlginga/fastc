@@ -7,9 +7,15 @@ export const login = async (email, password, rememberMe = false) => {
             password,
             rememberMe,
         });
+        if (!data.publicUser) {
+            throw new Error("Unexpected response format from server.");
+        }
         return data.publicUser;
     } catch (error) {
-        throw new Error(error.response?.data?.message || "Login failed.");
+        throw new Error(
+            error.response?.data?.message ||
+                "Login failed. Please check your credentials."
+        );
     }
 };
 
@@ -32,24 +38,18 @@ export const register = async ({
 };
 
 export const registerUser = async ({
-    username,
     firstName,
     surname,
     email,
     password,
-    city,
-    country,
     role,
     privacyAgreement,
 }) => {
     const { data } = await api.post("/user", {
-        username,
         firstName,
         surname,
         email,
         password,
-        city,
-        country,
         role,
         privacyAgreement,
     });
@@ -58,7 +58,6 @@ export const registerUser = async ({
 
 export const getMe = async () => {
     const { data } = await api.get("/auth/me");
-
     return data.user;
 };
 
@@ -68,7 +67,6 @@ export const logout = async () => {
 
 export const requestPasswordReset = async (email) => {
     const { data } = await api.post("/auth/request-password-reset", { email });
-
     return data;
 };
 
@@ -77,26 +75,30 @@ export const resetPassword = async ({ token, newPassword }) => {
         token,
         newPassword,
     });
-
     return data;
 };
 
 export const generateCertificate = async (courseId) => {
-    const url = courseId
-        ? `/certificate?courseId=${encodeURIComponent(courseId)}`
-        : "/certificate";
-    const response = await api.get(url, {
-        responseType: "blob",
-    });
-
+    const url = `/certificate?courseId=${encodeURIComponent(courseId)}`;
+    const response = await api.get(url, { responseType: "blob" });
     return response.data;
 };
 
 export const getCompletions = async (userId, isAdmin = false) => {
-    const url = isAdmin ? "/completion" : `/completion?user=${userId}`;
-    const { data } = await api.get(url);
-
-    return data;
+    try {
+        const url = isAdmin ? "/completion" : `/completion?user=${userId}`;
+        const { data } = await api.get(url);
+        console.log("getCompletions response:", data); // Debug log
+        return data;
+    } catch (error) {
+        console.error(
+            "getCompletions error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to fetch completions."
+        );
+    }
 };
 
 export const verifyEmail = async (email, code) => {
@@ -115,6 +117,55 @@ export const resendVerificationCode = async (email) => {
             "Resend verification code error:",
             error.response?.data || error.message
         );
-        throw error; // Rethrow to let handleSubmit catch it
+        throw error;
+    }
+};
+
+export const checkUsername = async (username) => {
+    try {
+        const { data } = await api.post("/auth/check-username", { username });
+        return data;
+    } catch (error) {
+        throw new Error(
+            error.response?.data?.message || "Failed to check username."
+        );
+    }
+};
+
+export const updateProfile = async ({
+    username,
+    birthdate,
+    gender,
+    contactNumber,
+    address,
+    education,
+    certificates,
+    proofs,
+    profileStatus,
+}) => {
+    try {
+        const formData = new FormData();
+        if (username) formData.append("username", username);
+        if (birthdate) formData.append("birthdate", birthdate);
+        if (gender) formData.append("gender", gender);
+        if (contactNumber) formData.append("contactNumber", contactNumber);
+        if (address) formData.append("address", address);
+        if (education) formData.append("education", JSON.stringify(education));
+        if (certificates)
+            formData.append("certificates", JSON.stringify(certificates));
+        if (proofs && proofs.length) {
+            proofs.forEach((proof) => formData.append("proofs", proof));
+        }
+        if (profileStatus !== undefined)
+            formData.append("profileStatus", profileStatus);
+
+        const { data } = await api.patch("/user/profile", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        return data;
+    } catch (error) {
+        throw new Error(
+            error.response?.data?.message || "Failed to update profile."
+        );
     }
 };

@@ -110,6 +110,17 @@ const AdminDashboard = () => {
                         <User size={20} className="mr-3" />
                         Profile
                     </NavLink>
+                    <NavLink
+                        to="/admin/profile-review"
+                        className={({ isActive }) =>
+                            isActive
+                                ? "nav-active flex items-center px-4 py-3 text-sm font-medium rounded-lg"
+                                : "flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 rounded-lg"
+                        }
+                    >
+                        <User size={20} className="mr-3" />
+                        FSADAS
+                    </NavLink>
                     <button
                         onClick={onLogout}
                         className="flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 rounded-lg w-full text-left"

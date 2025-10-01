@@ -5,26 +5,15 @@ export const ProfileContext = createContext();
 export const ProfileProvider = ({ children }) => {
     const [profileData, setProfileData] = useState({
         personal: {
-            fullName: "",
+            username: "",
             birthDate: "",
             gender: "",
-            address: "",
-            contactNumber: ""
+            contactNumber: "",
         },
-
-        education: {
-            educationLevel: "",
-            schoolName: "",
-            yearGraduated: "",
-            educationProof: ""
-        },
-
-        certificate: {
-            certificateFile: "",
-            certificateTitle: "",
-            certificateId: "",
-            certificateExpiry: ""
-        }
+        address: "",
+        education: [],
+        certificates: [],
+        profileStatus: "pending",
     });
 
     return (
