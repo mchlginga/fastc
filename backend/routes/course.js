@@ -1,10 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-const { protect, checkRoles} = require("../middlewares/index");
-const { createCourse, getCourse } = require("../controllers/course");
+const { protect } = require("../middlewares/index");
+const { getCourses } = require("../controllers/course");
 
-router.post("/", protect, checkRoles("admin"), createCourse);
-router.get("/", protect, checkRoles("admin"), getCourse);
+router.get("/", protect, getCourses);
 
 module.exports = router;

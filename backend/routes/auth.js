@@ -10,10 +10,12 @@ const {
     resetPassword,
     sendVerificationCode,
     verifyCode,
+    checkUsername,
 } = require("../controllers/auth");
 
 const { protect } = require("../middlewares/index");
 
+router.post("/check-username", checkUsername);
 router.post("/register", register);
 router.post("/login", login);
 router.get("/me", protect, getMe);

@@ -2,8 +2,12 @@ const express = require("express");
 const router = express.Router();
 
 const { protect } = require("../middlewares/index");
-const { generateCert } = require("../controllers/certificate");
+const {
+    generateCertificate,
+    getCertificates,
+} = require("../controllers/certificate");
 
-router.get("/", protect, generateCert);
+router.get("/", protect, generateCertificate);
+router.get("/certificates", protect, getCertificates);
 
 module.exports = router;
