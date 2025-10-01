@@ -10,7 +10,7 @@ const protect = async (req, res, next) => {
 
         if (!token) {
             return res.status(statusCodes.UNAUTHORIZED).json({
-                message: "Not authorized, no token."
+                message: "Not authorized, no token.",
             });
         }
 
@@ -19,10 +19,9 @@ const protect = async (req, res, next) => {
         req.user = await User.findById(decoded.id).select("-password");
 
         next();
-
     } catch (error) {
         res.status(statusCodes.UNAUTHORIZED).json({
-            message: "Not authorized, token failed."
+            message: "Not authorized, token failed.",
         });
     }
 };
