@@ -10,7 +10,7 @@ require("./models/user");
 require("./models/course");
 require("./models/completion");
 
-// config 
+// config
 const config = require("./config/index");
 
 // custom middleware
@@ -29,7 +29,7 @@ const {
     job,
     match,
     completion,
-    course
+    course,
 } = require("./routes/index");
 
 const app = express();
@@ -37,18 +37,21 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // allow frontend to send tsaka recieve cookies
 app.use(
     cors({
         origin: config.frontendUrl,
-        credentials: true
+        credentials: true,
     })
 );
 
 // morgan access logs
 ensureFileExist(PATHS.logFile);
-const accessLogStream = fs.createWriteStream(path.join(PATHS.logFile), { flags: 'a' });
+const accessLogStream = fs.createWriteStream(path.join(PATHS.logFile), {
+    flags: "a",
+});
 app.use(morgan("combined", { stream: accessLogStream }));
 
 if (process.env.NODE_ENV === "development") {
@@ -62,9 +65,9 @@ app.use("/api/certificate", certificate);
 app.use("/api/job", job);
 app.use("/api/match", match);
 app.use("/api/completion", completion);
-app.use("/api/course", course);
+app.use("/api/courses", course);
 
-app.use( (req, res) => {
+app.use((req, res) => {
     res.status(statusCodes.NOT_FOUND).json({ message: "Invalid route." });
 });
 
