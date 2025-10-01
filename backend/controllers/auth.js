@@ -239,3 +239,19 @@ exports.verifyCode = async (req, res, next) => {
         next(error);
     }
 };
+
+// Check username uniqueness
+exports.checkUsername = async (req, res, next) => {
+    const { username } = req.body;
+    try {
+        if (!username) {
+            return res
+                .status(statusCodes.BAD_REQUEST)
+                .json({ message: "Username is required." });
+        }
+        const existing = await User.findOne({ username });
+        return res.status(statusCodes.OK).json({ available: !existing });
+    } catch (error) {
+        next(error);
+    }
+};
