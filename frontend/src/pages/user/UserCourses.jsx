@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // Added Link for warning
 import { Clock, PlusCircle, ChevronRight } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -86,6 +86,22 @@ function UserCourses() {
 
     return (
         <div>
+            {/* Warning Message */}
+            {user?.profileStatus === "pending" && (
+                <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mb-6">
+                    <p className="text-sm">
+                        Your profile is under review. You cannot enroll in
+                        courses until approved.
+                        <Link
+                            /* to="/profile-setup/step1" */
+                            className="text-blue-600 hover:text-blue-800 font-medium ml-2"
+                        >
+                            Edit Profile
+                        </Link>
+                    </p>
+                </div>
+            )}
+
             {/* Welcome */}
             <section className="mb-8">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
@@ -285,9 +301,15 @@ function UserCourses() {
                                                     course.title
                                                 )
                                             }
-                                            disabled={isEnrolledOrPending}
+                                            disabled={
+                                                isEnrolledOrPending ||
+                                                user?.profileStatus ===
+                                                    "pending"
+                                            }
                                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                                                isEnrolledOrPending
+                                                isEnrolledOrPending ||
+                                                user?.profileStatus ===
+                                                    "pending"
                                                     ? "bg-gray-400 text-white cursor-not-allowed"
                                                     : "bg-blue-600 hover:bg-blue-700 text-white"
                                             }`}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom"; // Added for warning link
 import { Book, FileText, Clock } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import { getCompletions } from "../../services/authService";
@@ -47,15 +48,37 @@ function UserHome() {
     }, [user]);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return (
+            <div className="text-gray-600 text-center text-sm">Loading...</div>
+        );
     }
 
     if (error) {
-        return <div>Error: {error}</div>;
+        return (
+            <div className="text-red-600 text-center text-sm">
+                Error: {error}
+            </div>
+        );
     }
 
     return (
         <div>
+            {/* Warning Message */}
+            {user?.profileStatus === "pending" && (
+                <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mb-6">
+                    <p className="text-sm">
+                        Your profile is under review. You cannot enroll in
+                        courses until approved.
+                        <Link
+                            /* to="/profile-setup/step1" */
+                            className="text-blue-600 hover:text-blue-800 font-medium ml-2"
+                        >
+                            Edit Profile
+                        </Link>
+                    </p>
+                </div>
+            )}
+
             {/* Welcome */}
             <section className="mb-8">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
@@ -135,7 +158,16 @@ function UserHome() {
                             <div key={course.courseId} className="p-6">
                                 <div className="flex justify-between items-center mb-2">
                                     <h4 className="font-medium text-gray-800">
-                                        {course.title}
+                                        {user?.profileStatus === "pending" ? (
+                                            <span>{course.title}</span> // Disable link if pending
+                                        ) : (
+                                            <Link
+                                                to={`/user/courses/${course.courseId}`}
+                                                className="font-medium text-gray-800 hover:text-blue-600"
+                                            >
+                                                {course.title}
+                                            </Link>
+                                        )}
                                     </h4>
                                     <span className="text-sm font-medium">
                                         {course.progress}%
