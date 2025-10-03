@@ -1,98 +1,143 @@
 const Completion = require("../models/completion");
-const User = require("../models/user");
+const Course = require("../models/course");
+const Attendance = require("../models/attendance");
 const { statusCodes } = require("../utils/constant");
 
 exports.getCompletions = async (req, res, next) => {
-    const { user } = req.query;
-
     try {
-        if (!user && req.user.role !== "admin" && req.user.role !== "company") {
-            return res
-                .status(statusCodes.BAD_REQUEST)
-                .json({ message: "User ID required." });
-        }
-
-        const query =
-            req.user.role === "admin" || req.user.role === "company"
-                ? {}
-                : { user: user || req.user.id };
-        if (user) {
-            const userExists = await User.findById(user);
-            if (!userExists) {
-                return res
-                    .status(statusCodes.NOT_FOUND)
-                    .json({ message: "User not found." });
-            }
-        }
-
-        const completions = await Completion.find(query)
-            .populate({
-                path: "user",
-                select: "name email",
-            })
-            .populate({
-                path: "course",
-                select: "title",
-            });
-
-        res.status(statusCodes.OK).json({ courses: completions });
+        const { user, isAdmin } = req.query;
+        const query = isAdmin ? {} : { user };
+        const completions = await Completion.find(query).lean();
+        const courses = completions.map((completion) => ({
+            courseId: completion.course.toString(),
+            title: completion.title,
+            status: completion.status,
+            progress: completion.progress,
+            timeRemaining: calculateTimeRemaining(completion.endDate),
+            completedLessons: completion.completedLessons.map((id) =>
+                id.toString()
+            ),
+        }));
+        res.status(statusCodes.OK).json({ courses });
     } catch (error) {
         next(error);
     }
 };
 
 exports.createCompletions = async (req, res, next) => {
-    const { user, course, title, schedule, totalSessions } = req.body;
-
     try {
-        if (!user || !course || !title || !schedule || !totalSessions) {
-            return res
-                .status(statusCodes.BAD_REQUEST)
-                .json({
-                    message:
-                        "Missing required fields: user, course, title, schedule, totalSessions.",
-                });
+        const { courseId, userId, endDate } = req.body;
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                message: "Course not found",
+            });
         }
-
-        const userExists = await User.findById(user);
-        if (!userExists) {
-            return res
-                .status(statusCodes.NOT_FOUND)
-                .json({ message: "User not found." });
-        }
-
-        // Replace with actual Course model check later
-        const courseExists = true; // Mock check, replace with Course.findById(course)
-        if (!courseExists) {
-            return res
-                .status(statusCodes.NOT_FOUND)
-                .json({ message: "Course not found." });
-        }
-
-        const existingCompletion = await Completion.findOne({ user, course });
-        if (existingCompletion) {
-            return res
-                .status(statusCodes.BAD_REQUEST)
-                .json({ message: "User already enrolled in this course." });
-        }
-
         const completion = await Completion.create({
-            user,
-            course,
-            title,
-            schedule,
-            totalSessions,
-            progress: 0,
-            sessionsCompleted: 0,
-            absences: 0,
+            user: userId,
+            course: courseId,
+            title: course.title,
+            endDate,
         });
-
-        const populatedCompletion = await Completion.findById(completion._id)
-            .populate("user", "name email")
-            .populate("course", "title");
-
-        res.status(statusCodes.CREATED).json(populatedCompletion);
+        res.status(statusCodes.CREATED).json({
+            courseId: completion.course.toString(),
+            title: completion.title,
+            status: completion.status,
+            progress: completion.progress,
+            timeRemaining: calculateTimeRemaining(completion.endDate),
+            completedLessons: completion.completedLessons.map((id) =>
+                id.toString()
+            ),
+        });
     } catch (error) {
         next(error);
     }
+};
+
+exports.completeLesson = async (req, res, next) => {
+    try {
+        const { courseId, lessonId, userId } = req.body;
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                message: "Course not found",
+            });
+        }
+        const lesson = course.lessons.id(lessonId);
+        if (!lesson) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                message: "Lesson not found",
+            });
+        }
+        const completion = await Completion.findOne({
+            user: userId,
+            course: courseId,
+        });
+        if (!completion) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                message: "Completion not found",
+            });
+        }
+        if (!completion.completedLessons.includes(lessonId)) {
+            completion.completedLessons.push(lessonId);
+            const totalLessons = course.lessons.length;
+            const completedCount = completion.completedLessons.length;
+            completion.progress = Math.round(
+                (completedCount / totalLessons) * 100
+            );
+            await completion.save();
+        }
+        res.status(statusCodes.OK).json({
+            courseId: completion.course.toString(),
+            title: completion.title,
+            status: completion.status,
+            progress: completion.progress,
+            timeRemaining: calculateTimeRemaining(completion.endDate),
+            completedLessons: completion.completedLessons.map((id) =>
+                id.toString()
+            ),
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.markAttendance = async (req, res, next) => {
+    try {
+        const { courseId, lessonId, userId } = req.body;
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                message: "Course not found",
+            });
+        }
+        const lesson = course.lessons.id(lessonId);
+        if (!lesson) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                message: "Lesson not found",
+            });
+        }
+        const attendance = await Attendance.create({
+            user: userId,
+            course: courseId,
+            lesson: lessonId,
+            timestamp: new Date(),
+        });
+        res.status(statusCodes.CREATED).json({
+            attendanceId: attendance._id.toString(),
+            userId: attendance.user.toString(),
+            courseId: attendance.course.toString(),
+            lessonId: attendance.lesson.toString(),
+            timestamp: attendance.timestamp,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const calculateTimeRemaining = (endDate) => {
+    const now = new Date();
+    const end = new Date(endDate);
+    const diffDays = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? `${diffDays} days left` : "Expired";
 };

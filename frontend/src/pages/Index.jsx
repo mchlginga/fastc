@@ -15,7 +15,7 @@ const Index = () => {
     return (
         <>
             <Header />
-            <div className="bg-gray-50">
+            <div className="">
                 {/* Hero Section */}
                 <section className="gradient-bg text-white py-20">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -74,7 +74,7 @@ const Index = () => {
                 </section>
 
                 {/* Features Section */}
-                <section className="py-16 bg-gray-100">
+                <section className="py-16 ">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
                             Core Features

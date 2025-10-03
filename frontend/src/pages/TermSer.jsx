@@ -3,7 +3,7 @@ import { Award } from "react-feather";
 
 const TermSer = () => {
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="min-h-screen  flex items-center justify-center p-6">
             <div className="w-full max-w-3xl bg-white rounded-xl shadow-sm p-8">
                 <div className="flex items-center justify-center mb-6">
                     <Award size={40} className="text-blue-600 mr-2" />

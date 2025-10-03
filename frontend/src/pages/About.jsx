@@ -7,7 +7,7 @@ const About = () => {
     return (
         <>
             <Header />
-            <div className="bg-gray-50">
+            <div className="">
                 {/* Hero Section */}
                 <section className="gradient-bg text-white py-20">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -69,13 +69,13 @@ const About = () => {
                 </section>
 
                 {/* Mission & Vision Section */}
-                <section className="py-16 bg-white">
+                <section className="py-16 bg-zinc-100">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <h2 className="text-3xl font-bold text-gray-800 mb-12 text-center">
                             Mission & Vision
                         </h2>
                         <div className="grid md:grid-cols-2 gap-8">
-                            <div className="bg-gray-50 p-8 rounded-xl shadow-sm transform hover:scale-105 transition duration-50">
+                            <div className="bg-gray-200 p-8 rounded-xl shadow-sm transform hover:scale-105 transition duration-50">
                                 <h3 className="text-xl font-semibold text-gray-800 mb-4">
                                     Mission
                                 </h3>
@@ -88,7 +88,7 @@ const About = () => {
                                     active participation of the citizenry.
                                 </p>
                             </div>
-                            <div className="bg-gray-50 p-8 rounded-xl shadow-sm transform hover:scale-105 transition duration-50">
+                            <div className="bg-gray-200 p-8 rounded-xl shadow-sm transform hover:scale-105 transition duration-50">
                                 <h3 className="text-xl font-semibold text-gray-800 mb-4">
                                     Vision
                                 </h3>
@@ -108,7 +108,7 @@ const About = () => {
                 </section>
 
                 {/* How It Works Section */}
-                <section className="py-16 bg-gray-100">
+                <section className="py-16 bg-gray-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <h2 className="text-3xl font-bold text-gray-800 mb-12 text-center">
                             How It Works
@@ -150,14 +150,14 @@ const About = () => {
                 </section>
 
                 {/* Contact Us Section */}
-                <section className="py-16 bg-white">
+                <section className="py-16 bg-zinc-100">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <h2 className="text-3xl font-bold text-gray-800 mb-12 text-center">
                             Contact Us
                         </h2>
                         <div className="md:flex gap-12">
                             <div className="md:w-1/2 mb-8 md:mb-0">
-                                <div className="bg-gray-50 p-8 rounded-xl shadow-sm">
+                                <div className="bg-gray-200 p-8 rounded-xl shadow-sm">
                                     <div className="flex items-center mb-6">
                                         <MapPin
                                             size={24}

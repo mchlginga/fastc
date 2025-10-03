@@ -54,7 +54,7 @@ const Login = () => {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
+        <div className="flex flex-col lg:flex-row min-h-screen">
             {/* Left Section */}
             <div className="gradient-bg text-white w-full lg:w-1/2 flex flex-col items-center justify-center p-8 sm:p-12 text-center">
                 <div className="flex items-center mb-6">

@@ -21,9 +21,11 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 /* user or trainees */
 import UserDashboard from "./pages/user/UserDashboard";
 import UserHome from "./pages/user/UserHome";
-import UserCourses from "./pages/user/Courses";
+import UserCourses from "./pages/user/UserCourses";
 import UserCertificates from "./pages/user/Certificates";
 import UserProfile from "./pages/user/Profile";
+import CourseDetail from "./pages/user/CourseDetail";
+import Lesson from "./pages/user/Lesson";
 
 /* admin */
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -91,6 +93,14 @@ function App() {
                     <Route path="courses" element={<UserCourses />} />
                     <Route path="certificates" element={<UserCertificates />} />
                     <Route path="profile" element={<UserProfile />} />
+                    <Route
+                        path="courses/:courseId"
+                        element={<CourseDetail />}
+                    />
+                    <Route
+                        path="courses/:courseId/lesson/:lessonId"
+                        element={<Lesson />}
+                    />
                 </Route>
 
                 {/* Admin Routes */}

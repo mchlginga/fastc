@@ -7,15 +7,26 @@ const courseSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
-        schedule: {
+        image: {
             type: String,
-            required: true,
+            trim: true,
         },
-        totalSessions: {
-            type: Number,
-            required: true,
-            min: 1,
+        description: {
+            type: String,
+            trim: true,
         },
+        duration: {
+            type: String,
+            trim: true,
+        },
+        lessons: [
+            {
+                title: { type: String, trim: true },
+                duration: { type: String, trim: true },
+                order: { type: Number },
+                content: { type: String, trim: true }, // For future video/text
+            },
+        ],
     },
     {
         timestamps: true,

@@ -33,7 +33,6 @@ export const register = async ({
         password,
         privacyAgreement,
     });
-
     return data.publicUser;
 };
 
@@ -88,7 +87,7 @@ export const getCompletions = async (userId, isAdmin = false) => {
     try {
         const url = isAdmin ? "/completion" : `/completion?user=${userId}`;
         const { data } = await api.get(url);
-        console.log("getCompletions response:", data); // Debug log
+        console.log("getCompletions response:", data);
         return data;
     } catch (error) {
         console.error(
@@ -97,6 +96,105 @@ export const getCompletions = async (userId, isAdmin = false) => {
         );
         throw new Error(
             error.response?.data?.message || "Failed to fetch completions."
+        );
+    }
+};
+
+export const createCompletions = async (courseId, userId, endDate) => {
+    try {
+        console.log("createCompletions request:", {
+            courseId,
+            userId: userId,
+            endDate,
+        });
+        const response = await api.post("/completion", {
+            courseId,
+            userId,
+            endDate,
+        });
+        console.log("createCompletions response:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error(
+            "createCompletions error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to create completion."
+        );
+    }
+};
+
+export const getCourseById = async (courseId) => {
+    try {
+        const { data } = await api.get(`/courses/${courseId}`);
+        console.log("getCourseById response:", data);
+        return data;
+    } catch (error) {
+        console.error(
+            "getCourseById error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to fetch course details."
+        );
+    }
+};
+
+export const getCourses = async () => {
+    try {
+        const { data } = await api.get("/courses");
+        console.log("getCourses response:", data);
+        return data;
+    } catch (error) {
+        console.error(
+            "getCourses error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to fetch courses."
+        );
+    }
+};
+
+export const completeLesson = async (courseId, lessonId, userId) => {
+    try {
+        console.log("completeLesson request:", { courseId, lessonId, userId });
+        const response = await api.post("/completion/complete", {
+            courseId,
+            lessonId,
+            userId,
+        });
+        console.log("completeLesson response:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error(
+            "completeLesson error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to complete lesson."
+        );
+    }
+};
+
+export const markAttendance = async (courseId, lessonId, userId) => {
+    try {
+        console.log("markAttendance request:", { courseId, lessonId, userId });
+        const response = await api.post("/completion/attendance", {
+            courseId,
+            lessonId,
+            userId,
+        });
+        console.log("markAttendance response:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error(
+            "markAttendance error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to mark attendance."
         );
     }
 };

@@ -71,7 +71,16 @@ exports.generateCertificate = async (req, res, next) => {
 exports.getCertificates = async (req, res, next) => {
     try {
         const { user } = req.query;
+        console.log("getCertificates: req.cookies:", req.cookies);
+        console.log("getCertificates: req.user:", req.user);
+        console.log("getCertificates: query user:", user);
         if (!user || user !== req.user.id) {
+            console.log(
+                "getCertificates: validation failed, user:",
+                user,
+                "req.user.id:",
+                req.user.id
+            );
             return res
                 .status(statusCodes.BAD_REQUEST)
                 .json({ message: "Invalid user ID." });
@@ -80,6 +89,7 @@ exports.getCertificates = async (req, res, next) => {
         const certificates = await Certificate.find({ user })
             .populate("user", "name email")
             .populate("course", "title");
+        console.log("getCertificates: certificates found:", certificates);
         res.status(statusCodes.OK).json({ certificates });
     } catch (error) {
         console.error("getCertificates error:", error);

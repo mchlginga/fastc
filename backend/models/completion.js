@@ -16,31 +16,27 @@ const completionSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        schedule: {
-            type: String,
-            required: true,
-        },
         progress: {
             type: Number,
             default: 0,
             min: 0,
             max: 100,
         },
-        sessionsCompleted: {
-            type: Number,
-            default: 0,
-            min: 0,
-        },
-        totalSessions: {
-            type: Number,
+        endDate: {
+            type: Date,
             required: true,
-            min: 1,
         },
-        absences: {
-            type: Number,
-            default: 0,
-            min: 0,
+        status: {
+            type: String,
+            enum: ["pending", "approved", "rejected"],
+            default: "pending",
         },
+        completedLessons: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Course.lessons",
+            },
+        ],
     },
     {
         timestamps: true,
