@@ -11,7 +11,8 @@ const COOKIE_NAME = "token";
 const cookieOptions = {
     httpOnly: true,
     secure: config.env === "production",
-    sameSite: "strict",
+    sameSite: config.env === "production" ? "none" : "lax",
+    domain: config.env === "production" ? ".render.com" : undefined,
 };
 
 const setCookieToken = (res, userId, rememberMe) => {

@@ -44,6 +44,9 @@ app.use(
     cors({
         origin: config.frontendUrl,
         credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        exposedHeaders: ["set-cookie"],
     })
 );
 
