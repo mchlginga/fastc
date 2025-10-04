@@ -42,7 +42,7 @@ app.use("/uploads", express.static(path.join(__dirname, "data", "upload")));
 // allow frontend and backend origins
 app.use(
     cors({
-        origin: [config.frontendUrl, "http://localhost:3000"],
+        origin: config.frontendUrl,
         credentials: true,
     })
 );
