@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom"; // Added Link for warning
-import { Clock, PlusCircle, ChevronRight } from "react-feather";
+import { useNavigate, Link } from "react-router-dom";
+import { Clock, PlusCircle, ChevronRight, CheckCircle } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import {
     getCompletions,
@@ -11,8 +11,8 @@ import {
 function UserCourses() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [courses, setCourses] = useState([]); // Enrolled/pending courses
-    const [availableCourses, setAvailableCourses] = useState([]); // All courses from backend
+    const [courses, setCourses] = useState([]);
+    const [availableCourses, setAvailableCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingError, setLoadingError] = useState(null);
     const [enrollmentStatus, setEnrollmentStatus] = useState({});
@@ -21,21 +21,16 @@ function UserCourses() {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                // Fetch enrolled/pending courses
                 const completionsData = await getCompletions(user._id);
-                console.log("Fetched completions:", completionsData);
                 setCourses(completionsData.courses);
 
-                // Fetch all available courses
                 const coursesData = await getCourses();
-                console.log("Fetched available courses:", coursesData);
                 setAvailableCourses(coursesData);
             } catch (err) {
                 console.error(
                     "Fetch data error:",
                     err.response?.data || err.message
                 );
-                // Don't set loadingError to avoid displaying errors
             } finally {
                 setLoading(false);
             }
@@ -50,25 +45,18 @@ function UserCourses() {
         try {
             const endDate = new Date();
             endDate.setDate(endDate.getDate() + 30);
-            console.log("Enrolling:", { courseId, userId: user._id, endDate });
             await createCompletions(courseId, user._id, endDate.toISOString());
             setEnrollmentStatus((prev) => ({
                 ...prev,
                 [courseId]: "pending",
             }));
-            // Refetch courses to update "Your Current Courses"
             const completionsData = await getCompletions(user._id);
-            console.log(
-                "Refetched completions after enrollment:",
-                completionsData
-            );
             setCourses(completionsData.courses);
         } catch (err) {
             console.error(
                 "Enrollment error:",
                 err.response?.data || err.message
             );
-            // Don't set loadingError to avoid displaying errors
         }
     };
 
@@ -84,18 +72,21 @@ function UserCourses() {
         );
     }
 
+    const currentCourses = courses.filter(
+        (course) => course.status === "approved" && course.progress < 100
+    );
+    const completedCourses = courses.filter(
+        (course) => course.status === "approved" && course.progress === 100
+    );
+
     return (
         <div>
-            {/* Warning Message */}
             {user?.profileStatus === "pending" && (
                 <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mb-6">
                     <p className="text-sm">
                         Your profile is under review. You cannot enroll in
                         courses until approved.
-                        <Link
-                            /* to="/profile-setup/step1" */
-                            className="text-blue-600 hover:text-blue-800 font-medium ml-2"
-                        >
+                        <Link className="text-blue-600 hover:text-blue-800 font-medium ml-2">
                             Edit Profile
                         </Link>
                     </p>
@@ -127,8 +118,8 @@ function UserCourses() {
                     </a>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {courses
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {currentCourses
                         .filter(
                             (course) =>
                                 course.status === "approved" ||
@@ -137,7 +128,7 @@ function UserCourses() {
                         .map((course) => (
                             <div
                                 key={course.courseId}
-                                className="bg-white rounded-lg shadow p-6 stat-card transition-all duration-300"
+                                className="bg-white rounded-lg shadow flex flex-col h-full"
                             >
                                 <div className="relative">
                                     <img
@@ -162,7 +153,7 @@ function UserCourses() {
                                             : "Active"}
                                     </div>
                                 </div>
-                                <div className="mt-4">
+                                <div className="flex flex-col flex-grow p-6">
                                     <div className="flex justify-between items-center mb-2">
                                         <h4 className="font-medium text-gray-800">
                                             {course.title}
@@ -173,13 +164,13 @@ function UserCourses() {
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
                                         <div
-                                            className="bg-indigo-600 h-2.5 rounded-full progress-bar"
+                                            className="bg-indigo-600 h-2.5 rounded-full"
                                             style={{
                                                 width: `${course.progress}%`,
                                             }}
                                         ></div>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center mt-auto">
                                         <div className="flex items-center space-x-1">
                                             <Clock
                                                 size={16}
@@ -212,38 +203,79 @@ function UserCourses() {
                                 </div>
                             </div>
                         ))}
-                    {courses.filter(
-                        (course) =>
-                            course.status === "approved" ||
-                            course.status === "pending"
-                    ).length === 0 && (
-                        <div className="bg-white rounded-lg shadow p-6 stat-card transition-all duration-300 text-center">
-                            <p className="text-gray-600 text-sm">
-                                No courses enrolled yet.
-                            </p>
-                        </div>
-                    )}
-                    <div className="bg-white rounded-lg shadow p-6 stat-card transition-all duration-300 flex items-center justify-center">
-                        <div className="text-center">
-                            <PlusCircle
-                                size={24}
-                                className="mx-auto text-gray-400 mb-2"
-                            />
-                            <p className="text-gray-600 text-sm mb-4">
-                                Add a new course to your learning journey
-                            </p>
-                            <button
-                                onClick={() =>
-                                    navigate("/user/courses#available-courses")
-                                }
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                            >
-                                Browse Courses
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </section>
+
+            {/* Completed Courses */}
+            {completedCourses.length > 0 && (
+                <section className="mb-8">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                            Completed Courses
+                        </h3>
+                        <Link
+                            to="/user/certificates"
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+                        >
+                            View Certificates
+                            <ChevronRight size={16} className="ml-1" />
+                        </Link>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {completedCourses.map((course) => (
+                            <div
+                                key={course.courseId}
+                                className="bg-white rounded-lg shadow flex flex-col h-full"
+                            >
+                                <div className="relative">
+                                    <img
+                                        src={
+                                            availableCourses.find(
+                                                (ac) =>
+                                                    ac._id === course.courseId
+                                            )?.image || "/default.png"
+                                        }
+                                        alt={course.title}
+                                        className="w-full h-48 object-cover rounded-t-lg"
+                                    />
+                                    <div className="absolute top-2 right-2 text-white text-xs px-2 py-1 rounded-full bg-green-600">
+                                        Completed
+                                    </div>
+                                </div>
+                                <div className="flex flex-col flex-grow p-6">
+                                    <h4 className="font-medium text-gray-800 mb-2">
+                                        {course.title}
+                                    </h4>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-sm font-medium text-green-600">
+                                            100% Complete
+                                        </span>
+                                        <div className="flex items-center">
+                                            <Clock
+                                                size={16}
+                                                className="text-gray-400 mr-1"
+                                            />
+                                            <span className="text-gray-600 text-sm">
+                                                {course.timeRemaining}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <Link
+                                        to="/user/certificates"
+                                        className="mt-auto w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium text-center flex items-center justify-center"
+                                    >
+                                        <CheckCircle
+                                            size={16}
+                                            className="mr-1"
+                                        />
+                                        View Certificate
+                                    </Link>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Available Courses */}
             <section className="mb-8" id="available-courses">
@@ -253,7 +285,7 @@ function UserCourses() {
                     </h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {availableCourses.map((course) => {
                         const isEnrolledOrPending = courses.some(
                             (c) =>
@@ -264,14 +296,14 @@ function UserCourses() {
                         return (
                             <div
                                 key={course._id}
-                                className="bg-white rounded-lg shadow stat-card transition-all duration-300"
+                                className="bg-white rounded-lg shadow flex flex-col h-full"
                             >
                                 <img
                                     src={course.image || "/default.png"}
                                     alt={course.title}
                                     className="w-full h-40 object-cover rounded-t-lg"
                                 />
-                                <div className="p-6">
+                                <div className="flex flex-col flex-grow p-6">
                                     <div className="flex items-center mb-2">
                                         <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mr-2">
                                             New
@@ -280,11 +312,11 @@ function UserCourses() {
                                     <h4 className="font-medium text-gray-800 mb-2">
                                         {course.title}
                                     </h4>
-                                    <p className="text-gray-600 text-sm mb-4">
+                                    <p className="text-gray-600 text-sm mb-4 flex-grow">
                                         {course.description ||
                                             "No description available"}
                                     </p>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center mt-auto">
                                         <div className="flex items-center space-x-1">
                                             <Clock
                                                 size={16}

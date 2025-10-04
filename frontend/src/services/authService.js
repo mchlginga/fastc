@@ -77,8 +77,48 @@ export const resetPassword = async ({ token, newPassword }) => {
     return data;
 };
 
+export const getCertificates = async (userId) => {
+    try {
+        const { data } = await api.get(`/certificates?user=${userId}`);
+        console.log("getCertificates response:", data);
+        return data.certificates;
+    } catch (error) {
+        console.error(
+            "getCertificates error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to fetch certificates."
+        );
+    }
+};
+
+export const downloadCertificate = async (certificateId) => {
+    try {
+        console.log(
+            `Fetching certificate: /certificates/download/${certificateId}`
+        );
+        const response = await api.get(
+            `/certificates/download/${certificateId}`,
+            {
+                responseType: "blob",
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.error(
+            `downloadCertificate error: ${
+                error.response?.data?.message || error.message
+            }`
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to download certificate."
+        );
+    }
+};
+
 export const generateCertificate = async (courseId) => {
-    const url = `/certificate?courseId=${encodeURIComponent(courseId)}`;
+    const url = `/certificates?courseId=${encodeURIComponent(courseId)}`;
     const response = await api.get(url, { responseType: "blob" });
     return response.data;
 };
@@ -264,6 +304,31 @@ export const updateProfile = async ({
     } catch (error) {
         throw new Error(
             error.response?.data?.message || "Failed to update profile."
+        );
+    }
+};
+
+export const uploadProfilePic = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append("profilePic", file);
+
+        const { data } = await api.post(
+            "/upload/upload-profile-pic",
+            formData,
+            {
+                headers: { "Content-Type": "multipart/form-data" },
+            }
+        );
+        console.log("uploadProfilePic response:", data);
+        return data;
+    } catch (error) {
+        console.error(
+            "uploadProfilePic error:",
+            error.response?.data?.message || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to upload profile picture."
         );
     }
 };

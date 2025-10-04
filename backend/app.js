@@ -37,12 +37,12 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "data", "upload")));
 
-// allow frontend to send tsaka recieve cookies
+// allow frontend and backend origins
 app.use(
     cors({
-        origin: config.frontendUrl,
+        origin: [config.frontendUrl, "http://localhost:3000"],
         credentials: true,
     })
 );
@@ -61,7 +61,7 @@ if (process.env.NODE_ENV === "development") {
 app.use("/api/auth", auth);
 app.use("/api/user", user);
 app.use("/api/upload", upload);
-app.use("/api/certificate", certificate);
+app.use("/api/certificates", certificate);
 app.use("/api/job", job);
 app.use("/api/match", match);
 app.use("/api/completion", completion);

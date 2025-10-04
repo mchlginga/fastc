@@ -12,10 +12,32 @@ const certificateSchema = new mongoose.Schema(
             ref: "Course",
             required: true,
         },
-        name: { type: String, required: true },
-        date: { type: Date, required: true },
+        title: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        completionDate: {
+            type: Date,
+            required: true,
+        },
+        expirationDate: {
+            type: Date,
+            required: true,
+        },
+        certificateUrl: {
+            type: String,
+            required: true,
+        },
+        status: {
+            type: String,
+            enum: ["active", "expired"],
+            default: "active",
+        },
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+    }
 );
 
 const Certificate = mongoose.model("Certificate", certificateSchema);

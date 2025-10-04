@@ -22,8 +22,8 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserHome from "./pages/user/UserHome";
 import UserCourses from "./pages/user/UserCourses";
-import UserCertificates from "./pages/user/Certificates";
-import UserProfile from "./pages/user/Profile";
+import UserCertificates from "./pages/user/UserCertificates";
+import UserProfile from "./pages/user/UserProfile";
 import CourseDetail from "./pages/user/CourseDetail";
 import Lesson from "./pages/user/Lesson";
 
