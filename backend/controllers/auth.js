@@ -12,6 +12,7 @@ const cookieOptions = {
     httpOnly: true,
     secure: true,
     sameSite: "none",
+    path: "/",
 };
 
 const setCookieToken = (res, userId, rememberMe) => {
