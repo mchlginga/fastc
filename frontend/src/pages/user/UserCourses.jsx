@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Clock, PlusCircle, ChevronRight, CheckCircle } from "react-feather";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { Clock, ChevronRight, CheckCircle, Book } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import {
     getCompletions,
@@ -16,6 +16,9 @@ function UserCourses() {
     const [loading, setLoading] = useState(true);
     const [loadingError, setLoadingError] = useState(null);
     const [enrollmentStatus, setEnrollmentStatus] = useState({});
+
+    // ref for Available Courses section
+    const availableCoursesRef = useRef(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -60,6 +63,15 @@ function UserCourses() {
         }
     };
 
+    const handleBrowseCourses = () => {
+        if (availableCoursesRef.current) {
+            availableCoursesRef.current.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }
+    };
+
     if (loading) {
         return <div className="text-gray-600 text-center">Loading...</div>;
     }
@@ -81,24 +93,25 @@ function UserCourses() {
 
     return (
         <div>
+            {/* Warning Message */}
             {user?.profileStatus === "pending" && (
-                <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mb-6">
+                <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
                     <p className="text-sm">
                         Your profile is under review. You cannot enroll in
                         courses until approved.
-                        <Link className="text-blue-600 hover:text-blue-800 font-medium ml-2">
+                        <span className="text-blue-600 hover:text-blue-800 font-medium ml-2 cursor-pointer">
                             Edit Profile
-                        </Link>
+                        </span>
                     </p>
                 </div>
             )}
 
             {/* Welcome */}
-            <section className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                    Welcome back, {user?.firstName || "User"}!
+            <section className="mb-10">
+                <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                    Courses
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-gray-600 text-lg">
                     Continue your learning journey or explore new courses
                 </p>
             </section>
@@ -109,23 +122,24 @@ function UserCourses() {
                     <h3 className="text-lg font-semibold text-gray-800">
                         Your Current Courses
                     </h3>
-                    <a
-                        href=""
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
-                    >
-                        View all
-                        <ChevronRight size={16} className="ml-1" />
-                    </a>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {currentCourses
-                        .filter(
-                            (course) =>
-                                course.status === "approved" ||
-                                course.status === "pending"
-                        )
-                        .map((course) => (
+                {currentCourses.length === 0 ? (
+                    <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center justify-center text-center">
+                        <Book size={32} className="text-gray-400 mb-3" />
+                        <p className="text-gray-600 text-sm mb-4">
+                            You don’t have any active courses yet.
+                        </p>
+                        <button
+                            onClick={handleBrowseCourses}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                        >
+                            Browse Courses
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 hover:shadow-lg transition">
+                        {currentCourses.map((course) => (
                             <div
                                 key={course.courseId}
                                 className="bg-white rounded-lg shadow flex flex-col h-full"
@@ -203,25 +217,45 @@ function UserCourses() {
                                 </div>
                             </div>
                         ))}
-                </div>
+                    </div>
+                )}
             </section>
 
             {/* Completed Courses */}
-            {completedCourses.length > 0 && (
-                <section className="mb-8">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">
-                            Completed Courses
-                        </h3>
-                        <Link
-                            to="/user/certificates"
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+            <section className="mb-8">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                        Completed Courses
+                    </h3>
+                    {completedCourses.length > 0 && (
+                        <span
+                            onClick={() => navigate("/user/certificates")}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center cursor-pointer"
                         >
                             View Certificates
                             <ChevronRight size={16} className="ml-1" />
-                        </Link>
+                        </span>
+                    )}
+                </div>
+
+                {completedCourses.length === 0 ? (
+                    <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center justify-center text-center">
+                        <CheckCircle size={32} className="text-gray-400 mb-3" />
+                        <p className="text-gray-600 text-sm mb-2">
+                            You haven’t completed any courses yet.
+                        </p>
+                        <p className="text-gray-500 text-xs mb-4">
+                            Finish a course to earn a certificate.
+                        </p>
+                        <button
+                            onClick={handleBrowseCourses}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                        >
+                            Browse Courses
+                        </button>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 hover:shadow-lg transition">
                         {completedCourses.map((course) => (
                             <div
                                 key={course.courseId}
@@ -260,8 +294,10 @@ function UserCourses() {
                                             </span>
                                         </div>
                                     </div>
-                                    <Link
-                                        to="/user/certificates"
+                                    <button
+                                        onClick={() =>
+                                            navigate("/user/certificates")
+                                        }
                                         className="mt-auto w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium text-center flex items-center justify-center"
                                     >
                                         <CheckCircle
@@ -269,16 +305,16 @@ function UserCourses() {
                                             className="mr-1"
                                         />
                                         View Certificate
-                                    </Link>
+                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
-                </section>
-            )}
+                )}
+            </section>
 
             {/* Available Courses */}
-            <section className="mb-8" id="available-courses">
+            <section className="mb-8" ref={availableCoursesRef}>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold text-gray-800">
                         Available Courses
@@ -296,7 +332,7 @@ function UserCourses() {
                         return (
                             <div
                                 key={course._id}
-                                className="bg-white rounded-lg shadow flex flex-col h-full"
+                                className="bg-white rounded-lg shadow flex flex-col h-full hover:shadow-lg transition"
                             >
                                 <img
                                     src={course.image || "/default.png"}

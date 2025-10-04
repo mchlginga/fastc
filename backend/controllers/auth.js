@@ -10,9 +10,8 @@ const config = require("../config/index");
 const COOKIE_NAME = "token";
 const cookieOptions = {
     httpOnly: true,
-    secure: config.env === "production",
-    sameSite: config.env === "production" ? "none" : "lax",
-    domain: config.env === "production" ? ".render.com" : undefined,
+    secure: true,
+    sameSite: "none",
 };
 
 const setCookieToken = (res, userId, rememberMe) => {

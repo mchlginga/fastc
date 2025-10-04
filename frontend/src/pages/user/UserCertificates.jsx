@@ -67,14 +67,11 @@ function UserCertificates() {
         <div>
             {/* Warning Message */}
             {user?.profileStatus === "pending" && (
-                <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mb-6">
+                <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
                     <p className="text-sm">
                         Your profile is under review. You cannot enroll in
                         courses until approved.
-                        <Link
-                            to="/profile-setup/step1"
-                            className="text-blue-600 hover:text-blue-800 font-medium ml-2"
-                        >
+                        <Link className="text-blue-600 hover:text-blue-800 font-medium ml-2">
                             Edit Profile
                         </Link>
                     </p>
@@ -82,11 +79,11 @@ function UserCertificates() {
             )}
 
             {/* Welcome */}
-            <section className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            <section className="mb-10">
+                <h2 className="text-3xl font-bold text-gray-800 mb-2">
                     Your Certificates
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-gray-600 text-lg">
                     View and download all your earned certificates
                 </p>
             </section>
@@ -171,7 +168,7 @@ function UserCertificates() {
                             </div>
                         </div>
                     ))}
-                    {certificates.length && (
+                    {certificates.length === 0 && (
                         <div className="bg-white rounded-lg shadow p-6 stat-card transition-all duration-300 flex items-center justify-center">
                             <div className="text-center">
                                 <Award

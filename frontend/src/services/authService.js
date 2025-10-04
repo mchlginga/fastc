@@ -7,10 +7,13 @@ export const login = async (email, password, rememberMe = false) => {
             password,
             rememberMe,
         });
-        if (!data.publicUser) {
+        if (!data.publicUser || !data.token) {
             throw new Error("Unexpected response format from server.");
         }
-        return data.publicUser;
+        document.cookie = `token=${data.token}; path=/; max-age=${
+            rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60
+        }; SameSite=None; Secure`;
+        return { publicUser: data.publicUser, token: data.token };
     } catch (error) {
         throw new Error(
             error.response?.data?.message ||
@@ -26,38 +29,37 @@ export const register = async ({
     password,
     privacyAgreement,
 }) => {
-    const { data } = await api.post("/auth/register", {
-        firstName,
-        surname,
-        email,
-        password,
-        privacyAgreement,
-    });
-    return data.publicUser;
-};
-
-export const registerUser = async ({
-    firstName,
-    surname,
-    email,
-    password,
-    role,
-    privacyAgreement,
-}) => {
-    const { data } = await api.post("/user", {
-        firstName,
-        surname,
-        email,
-        password,
-        role,
-        privacyAgreement,
-    });
-    return data.publicUser;
+    try {
+        const { data } = await api.post("/auth/register", {
+            firstName,
+            surname,
+            email,
+            password,
+            privacyAgreement,
+        });
+        if (!data.publicUser || !data.token) {
+            throw new Error("Unexpected response format from server.");
+        }
+        document.cookie = `token=${data.token}; path=/; max-age=${
+            7 * 24 * 60 * 60
+        }; SameSite=None; Secure`;
+        return { publicUser: data.publicUser, token: data.token };
+    } catch (error) {
+        throw new Error(
+            error.response?.data?.message || "Registration failed."
+        );
+    }
 };
 
 export const getMe = async () => {
-    const { data } = await api.get("/auth/me");
-    return data.user;
+    try {
+        const { data } = await api.get("/auth/me");
+        return data.user;
+    } catch (error) {
+        throw new Error(
+            error.response?.data?.message || "Failed to fetch user data."
+        );
+    }
 };
 
 export const logout = async () => {
