@@ -94,7 +94,7 @@ function UserCertificates() {
                     {certificates.map((cert) => (
                         <div
                             key={cert.certificateId}
-                            className="bg-white rounded-lg shadow p-6 stat-card transition-all duration-300"
+                            className="bg-white rounded-lg shadow-md p-6 stat-card transition-all duration-300"
                         >
                             <div className="relative">
                                 <img
@@ -169,7 +169,7 @@ function UserCertificates() {
                         </div>
                     ))}
                     {certificates.length === 0 && (
-                        <div className="bg-white rounded-lg shadow p-6 stat-card transition-all duration-300 flex items-center justify-center">
+                        <div className="bg-white rounded-lg shadow-md p-6 stat-card transition-all duration-300 flex items-center justify-center">
                             <div className="text-center">
                                 <Award
                                     size={24}

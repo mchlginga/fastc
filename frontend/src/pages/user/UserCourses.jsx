@@ -138,11 +138,11 @@ function UserCourses() {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 hover:shadow-lg transition">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6s">
                         {currentCourses.map((course) => (
                             <div
                                 key={course.courseId}
-                                className="bg-white rounded-lg shadow flex flex-col h-full"
+                                className="bg-white rounded-lg shadow-md flex flex-col h-full hover:shadow-lg transition"
                             >
                                 <div className="relative">
                                     <img
@@ -239,7 +239,7 @@ function UserCourses() {
                 </div>
 
                 {completedCourses.length === 0 ? (
-                    <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center justify-center text-center">
+                    <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center justify-center text-center ">
                         <CheckCircle size={32} className="text-gray-400 mb-3" />
                         <p className="text-gray-600 text-sm mb-2">
                             You haven’t completed any courses yet.
@@ -255,11 +255,11 @@ function UserCourses() {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 hover:shadow-lg transition">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {completedCourses.map((course) => (
                             <div
                                 key={course.courseId}
-                                className="bg-white rounded-lg shadow flex flex-col h-full"
+                                className="bg-white rounded-lg shadow-md flex flex-col h-full hover:shadow-lg transition"
                             >
                                 <div className="relative">
                                     <img
@@ -332,7 +332,7 @@ function UserCourses() {
                         return (
                             <div
                                 key={course._id}
-                                className="bg-white rounded-lg shadow flex flex-col h-full hover:shadow-lg transition"
+                                className="bg-white rounded-lg shadow-md flex flex-col h-full hover:shadow-lg transition"
                             >
                                 <img
                                     src={course.image || "/default.png"}

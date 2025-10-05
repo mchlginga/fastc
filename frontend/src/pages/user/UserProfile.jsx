@@ -136,7 +136,7 @@ function UserProfile() {
                                 {user?.role || "User"}
                             </p>
                         </div>
-                        <div className="md:w-2/3 border-t md:border-t-0 md:border-l md:pl-10 pt-6 md:pt-0">
+                        <div className="md:w-2/3 border-t md:border-t-0 md:border-l border-gray-300 md:pl-10 pt-6 md:pt-0">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <Info
                                     label="Email"
@@ -206,7 +206,7 @@ function UserProfile() {
                     ].map((stat, idx) => (
                         <div
                             key={idx}
-                            className="bg-white rounded-lg shadow p-6 stat-card transition-all duration-300"
+                            className="bg-white rounded-lg shadow-md p-6 stat-card transition-all duration-300"
                         >
                             <div className="flex items-center">
                                 <div
@@ -229,8 +229,8 @@ function UserProfile() {
             </section>
 
             <section>
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="p-6 border-b border-gray-200">
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div className="p-6 border-b border-gray-300">
                         <h3 className="text-lg font-semibold text-gray-800">
                             Course Progress
                         </h3>
@@ -288,7 +288,7 @@ function UserProfile() {
                     {recentCertificates.slice(0, 3).map((cert, idx) => (
                         <div
                             key={idx}
-                            className="bg-white rounded-lg shadow stat-card transition-all duration-300 overflow-hidden"
+                            className="bg-white rounded-lg shadow-md stat-card transition-all duration-300 overflow-hidden"
                         >
                             <img
                                 src={cert.image}
