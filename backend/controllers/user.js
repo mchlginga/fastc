@@ -142,12 +142,18 @@ exports.updateProfile = async (req, res, next) => {
         address,
         education,
         certificates,
+        position,
+        industryType,
         profileStatus,
+        representative,
     } = req.body;
 
     const files = req.files || [];
     let educationFilesIndex = 0;
     let certificateFilesIndex = 0;
+    let idProofFile = null;
+    let businessPermitFile = null;
+    let representativeIdProofFile = null;
 
     try {
         const user = await User.findById(req.user.id);
@@ -222,20 +228,67 @@ exports.updateProfile = async (req, res, next) => {
             }
         }
 
+        // Handle idProof for admin
+        if (
+            user.role === "admin" &&
+            files.length > educationFilesIndex + certificateFilesIndex
+        ) {
+            idProofFile = `/uploads/profiles/${
+                files[educationFilesIndex + certificateFilesIndex]?.filename
+            }`;
+        }
+
+        // Handle businessPermit and representative.idProof for company
+        if (user.role === "company") {
+            if (files.length > educationFilesIndex + certificateFilesIndex) {
+                businessPermitFile = `/uploads/profiles/${
+                    files[educationFilesIndex + certificateFilesIndex]?.filename
+                }`;
+            }
+            if (
+                files.length >
+                educationFilesIndex + certificateFilesIndex + 1
+            ) {
+                representativeIdProofFile = `/uploads/profiles/${
+                    files[educationFilesIndex + certificateFilesIndex + 1]
+                        ?.filename
+                }`;
+            }
+        }
+
         const updateData = {
             username,
             firstName,
             surname,
-            name: `${firstName || user.firstName} ${
-                surname || user.surname
-            }`.trim(),
+            name:
+                user.role === "company"
+                    ? user.companyName
+                    : `${firstName || user.firstName} ${
+                          surname || user.surname
+                      }`.trim(),
             birthdate,
             gender,
             contactNumber,
             address,
             education: parsedEducation,
             certificates: parsedCertificates,
+            position,
+            idProof: idProofFile || user.idProof,
+            industryType,
+            businessPermit: businessPermitFile || user.businessPermit,
+            representative: representative
+                ? typeof representative === "string"
+                    ? JSON.parse(representative)
+                    : representative
+                : user.representative,
         };
+
+        if (representative && representativeIdProofFile) {
+            updateData.representative = {
+                ...updateData.representative,
+                idProof: representativeIdProofFile,
+            };
+        }
 
         if (profileStatus !== undefined) {
             updateData.profileStatus = profileStatus;

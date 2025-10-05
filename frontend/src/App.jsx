@@ -11,11 +11,14 @@ import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivPol";
 import TermSer from "./pages/TermSer";
+import PendingApproval from "./pages/PendingApproval";
 
 /* auth */
 import ProtectedRoute from "./components/ProtectedRoute";
 import ResetPassword from "./pages/auth/ResetPassword";
 import ProfileSetup from "./pages/auth/ProfileSetup";
+import AdminProfileSetup from "./pages/auth/AdminProfileSetup";
+import CompanyProfileSetup from "./pages/auth/CompanyProfileSetup";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 
 /* user or trainees */
@@ -64,10 +67,12 @@ function App() {
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermSer />} />
+                <Route path="pending-approval" element={<PendingApproval />} />
 
-                {/* profile setup route */}
+                {/* profile profile setup route */}
+                {/* Profile setup routes */}
                 <Route
-                    path="/profile-setup/*"
+                    path="/profile-setup"
                     element={
                         <ProtectedRoute
                             allowedRoles={["user"]}
@@ -77,6 +82,37 @@ function App() {
                             redirectTo="/user"
                         >
                             <ProfileSetup />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* admin profile setup route */}
+                <Route
+                    path="/admin-profile-setup"
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={["admin"]}
+                            condition={(user) =>
+                                user && !user.isProfileComplete
+                            }
+                            redirectTo="/admin"
+                        >
+                            <AdminProfileSetup />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/company-profile-setup"
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={["company"]}
+                            condition={(user) =>
+                                user && !user.isProfileComplete
+                            }
+                            redirectTo="/company"
+                        >
+                            <CompanyProfileSetup />
                         </ProtectedRoute>
                     }
                 />

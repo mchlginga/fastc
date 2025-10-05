@@ -63,147 +63,150 @@ const ResetPassword = () => {
     };
 
     return (
-        <div className="min-h-screen  flex items-center justify-center p-6">
-            <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8">
-                <div className="flex items-center justify-center mb-6">
-                    <Award size={40} className="text-blue-600 mr-2" />
-                    <h1 className="text-2xl font-bold text-gray-800">FAST-C</h1>
+        <div className="min-h-screen flex items-center justify-center  px-6 py-12">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8">
+                {/* Header */}
+                <div className="flex flex-col items-center mb-8">
+                    <div className="flex items-center space-x-2 mb-2">
+                        <Award size={40} className="text-blue-600" />
+                        <h1 className="text-2xl font-bold text-gray-800">
+                            FAST-C
+                        </h1>
+                    </div>
+                    <p className="text-gray-500 text-sm">
+                        Digital Profiling System
+                    </p>
                 </div>
 
-                {!token && !emailSent ? (
+                {/* Step 1: Request Email */}
+                {!token && !emailSent && (
                     <>
-                        <h3 className="text-2xl font-bold text-gray-800 text-center mb-4">
-                            Request Password Reset
-                        </h3>
-                        <p className="text-gray-600 text-center mb-6">
-                            Enter your email to receive a password reset link
+                        <h2 className="text-xl font-semibold text-gray-800 text-center mb-3">
+                            Forgot Your Password?
+                        </h2>
+                        <p className="text-gray-600 text-center mb-6 text-sm">
+                            Enter your email below to receive a password reset
+                            link.
                         </p>
+
                         {error && (
-                            <p className="text-red-500 text-sm text-center mb-6">
+                            <p className="text-red-500 text-sm text-center mb-4">
                                 {error}
                             </p>
                         )}
+
                         <form
                             onSubmit={handleRequestReset}
                             className="space-y-5"
                         >
-                            <div>
-                                <label
-                                    htmlFor="email"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    Email
-                                </label>
-                                <div className="relative">
-                                    <Mail
-                                        size={20}
-                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                                    />
-                                    <input
-                                        id="email"
-                                        type="email"
-                                        name="email"
-                                        value={form.email}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="Enter your email"
-                                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 transition duration-200"
-                                    />
-                                </div>
+                            <div className="relative">
+                                <Mail
+                                    size={20}
+                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                />
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={form.email}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="Enter your email"
+                                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-gray-700 transition duration-200"
+                                />
                             </div>
+
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 disabled:opacity-50 cursor-pointer"
+                                className="w-full py-3 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-200 disabled:opacity-50 cursor-pointer"
                             >
                                 {loading ? "Sending..." : "Send Reset Link"}
                             </button>
                         </form>
                     </>
-                ) : !token && emailSent ? (
-                    <>
-                        <h3 className="text-2xl font-bold text-gray-800 text-center mb-4">
+                )}
+
+                {/* Step 2: Email Sent */}
+                {!token && emailSent && (
+                    <div className="text-center">
+                        <div className="flex justify-center mb-4">
+                            <Mail className="text-blue-600 w-12 h-12" />
+                        </div>
+                        <h2 className="text-xl font-semibold text-gray-800 mb-3">
                             Check Your Email
-                        </h3>
-                        <p className="text-gray-600 text-center mb-6">
-                            A password reset link has been sent to {form.email}.
+                        </h2>
+                        <p className="text-gray-600 text-sm mb-6">
+                            A reset link has been sent to{" "}
+                            <span className="font-medium text-gray-800">
+                                {form.email}
+                            </span>
+                            . Follow the link to reset your password.
                         </p>
                         <button
                             onClick={() => setEmailSent(false)}
-                            className="w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                            className="w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-200"
                         >
-                            Back to Request
+                            Back
                         </button>
-                    </>
-                ) : (
+                    </div>
+                )}
+
+                {/* Step 3: Reset Password Form */}
+                {token && (
                     <>
-                        <h3 className="text-2xl font-bold text-gray-800 text-center mb-4">
+                        <h2 className="text-xl font-semibold text-gray-800 text-center mb-3">
                             Reset Password
-                        </h3>
-                        <p className="text-gray-600 text-center mb-6">
-                            Enter your new password
+                        </h2>
+                        <p className="text-gray-600 text-center mb-6 text-sm">
+                            Enter and confirm your new password below.
                         </p>
+
                         {error && (
-                            <p className="text-red-500 text-sm text-center mb-6">
+                            <p className="text-red-500 text-sm text-center mb-4">
                                 {error}
                             </p>
                         )}
+
                         <form
                             onSubmit={handleResetPassword}
                             className="space-y-5"
                         >
-                            <div>
-                                <label
-                                    htmlFor="newPassword"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    New Password
-                                </label>
-                                <div className="relative">
-                                    <Lock
-                                        size={20}
-                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                                    />
-                                    <input
-                                        id="newPassword"
-                                        type="password"
-                                        name="newPassword"
-                                        value={form.newPassword}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="New password"
-                                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 transition duration-200"
-                                    />
-                                </div>
+                            <div className="relative">
+                                <Lock
+                                    size={20}
+                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                />
+                                <input
+                                    type="password"
+                                    name="newPassword"
+                                    value={form.newPassword}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="New password"
+                                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-gray-700 transition duration-200"
+                                />
                             </div>
-                            <div>
-                                <label
-                                    htmlFor="confirmNewPassword"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    Confirm New Password
-                                </label>
-                                <div className="relative">
-                                    <Lock
-                                        size={20}
-                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                                    />
-                                    <input
-                                        id="confirmNewPassword"
-                                        type="password"
-                                        name="confirmNewPassword"
-                                        value={form.confirmNewPassword}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="Confirm new password"
-                                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 transition duration-200"
-                                    />
-                                </div>
+
+                            <div className="relative">
+                                <Lock
+                                    size={20}
+                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                />
+                                <input
+                                    type="password"
+                                    name="confirmNewPassword"
+                                    value={form.confirmNewPassword}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="Confirm new password"
+                                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-gray-700 transition duration-200"
+                                />
                             </div>
+
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 disabled:opacity-50 cursor-pointer"
+                                className="w-full py-3 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-200 disabled:opacity-50 cursor-pointer"
                             >
                                 {loading ? "Resetting..." : "Reset Password"}
                             </button>
@@ -211,6 +214,7 @@ const ResetPassword = () => {
                     </>
                 )}
 
+                {/* Footer */}
                 <p className="mt-6 text-center text-sm text-gray-600">
                     Back to{" "}
                     <Link

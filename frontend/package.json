@@ -13,6 +13,8 @@
         "aos": "^2.3.4",
         "axios": "^1.11.0",
         "feather-icons": "^4.29.2",
+        "framer-motion": "^12.23.22",
+        "motion": "^12.23.22",
         "react": "^19.1.1",
         "react-dom": "^19.1.1",
         "react-feather": "^2.0.10",

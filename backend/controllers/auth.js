@@ -53,8 +53,15 @@ const sendEmail = async ({ to, subject, text, html }) => {
 };
 
 exports.register = async (req, res, next) => {
-    const { firstName, surname, email, password, role, privacyAgreement } =
-        req.body;
+    const {
+        firstName,
+        surname,
+        companyName,
+        email,
+        password,
+        role,
+        privacyAgreement,
+    } = req.body;
 
     try {
         if (!privacyAgreement) {
@@ -64,22 +71,28 @@ exports.register = async (req, res, next) => {
         }
 
         const existing = await User.findOne({ email });
-
         if (existing) {
             return res
                 .status(statusCodes.BAD_REQUEST)
-                .json({ message: "Email already exist." });
+                .json({ message: "Email already exists." });
         }
 
-        const user = await User.create({
-            firstName,
-            surname,
-            name: `${firstName} ${surname}`,
+        const userData = {
             email,
             password,
             role: role || "user",
             privacyAgreement,
-        });
+        };
+
+        if (role === "company") {
+            userData.companyName = companyName;
+        } else {
+            userData.firstName = firstName;
+            userData.surname = surname;
+            userData.name = `${firstName} ${surname}`.trim();
+        }
+
+        const user = await User.create(userData);
 
         setCookieToken(res, user.id);
 

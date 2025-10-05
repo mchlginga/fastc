@@ -13,6 +13,8 @@ export const ProfileProvider = ({ children }) => {
         address: "",
         education: [],
         certificates: [],
+        position: "", // Added for admin
+        idProof: "", // Added for admin
         profileStatus: "pending",
     });
 

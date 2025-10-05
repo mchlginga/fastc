@@ -30,6 +30,7 @@ const Login = () => {
             ...form,
             [name]: type === "checkbox" ? checked : value,
         });
+        setError("");
     };
 
     const handleSubmit = async (e) => {
@@ -74,7 +75,7 @@ const Login = () => {
 
             {/* Right Section */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8">
-                <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8">
+                <div className="w-full max-w-md bg-white rounded-xl shadow-md p-8">
                     <h3 className="text-2xl font-bold text-gray-800 text-center mb-4">
                         Welcome Back
                     </h3>
@@ -170,17 +171,15 @@ const Login = () => {
                         </button>
                     </form>
 
-                    <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-500">
-                            New to FAST-C?{" "}
-                            <Link
-                                to="/register"
-                                className="text-blue-600 hover:text-blue-800 font-medium transition duration-200"
-                            >
-                                Create an account
-                            </Link>
-                        </p>
-                    </div>
+                    <p className="mt-6 text-center text-sm text-gray-600">
+                        New to FAST-C?{" "}
+                        <Link
+                            to="/register"
+                            className="text-blue-600 hover:text-blue-800 font-medium transition duration-200"
+                        >
+                            Create an account
+                        </Link>
+                    </p>
                 </div>
             </div>
         </div>

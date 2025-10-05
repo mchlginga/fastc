@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Award, User, Mail, Lock } from "react-feather";
+import { Award, User, Mail, Lock, Briefcase, Shield } from "react-feather";
 import { register, resendVerificationCode } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 
 const Register = () => {
     const { setUser } = useAuth();
     const [form, setForm] = useState({
+        accountType: "user",
         firstName: "",
         surname: "",
+        companyName: "",
         email: "",
         password: "",
         passwordConfirm: "",
@@ -21,16 +23,17 @@ const Register = () => {
 
     const getRedirectPath = (role) => {
         const rolePaths = {
-            admin: "/admin",
-            company: "/company",
-            user: "/profile-setup/step1",
+            admin: "/verify-email",
+            company: "/verify-email",
+            user: "/verify-email",
         };
-        return rolePaths[role] || "/profile-setup/step1";
+        return rolePaths[role] || "/verify-email";
     };
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setForm({ ...form, [name]: type === "checkbox" ? checked : value });
+        setError("");
     };
 
     const handleSubmit = async (e) => {
@@ -38,6 +41,7 @@ const Register = () => {
         setLoading(true);
         setError("");
         setSuccess(false);
+
         if (form.password !== form.passwordConfirm) {
             setError("Passwords do not match.");
             setLoading(false);
@@ -48,32 +52,49 @@ const Register = () => {
             setLoading(false);
             return;
         }
+        if (
+            form.accountType !== "company" &&
+            (!form.firstName || !form.surname)
+        ) {
+            setError("First name and surname are required.");
+            setLoading(false);
+            return;
+        }
+        if (form.accountType === "company" && !form.companyName) {
+            setError("Company name is required.");
+            setLoading(false);
+            return;
+        }
+        if (!form.email) {
+            setError("Email is required.");
+            setLoading(false);
+            return;
+        }
+
         try {
-            await register({
-                firstName: form.firstName,
-                surname: form.surname,
+            const registerData = {
                 email: form.email,
                 password: form.password,
+                role: form.accountType,
                 privacyAgreement: form.privacyAgreement,
-            });
-            try {
-                await resendVerificationCode(form.email);
-                setSuccess(true);
-                setTimeout(
-                    () =>
-                        navigate(
-                            `/verify-email?email=${encodeURIComponent(
-                                form.email
-                            )}`
-                        ),
-                    2000
-                );
-            } catch (resendError) {
-                setError(
-                    `Registration successful, but failed to send verification code: ${resendError.message}`
-                );
-                setLoading(false);
+            };
+            if (form.accountType === "company") {
+                registerData.companyName = form.companyName;
+            } else {
+                registerData.firstName = form.firstName;
+                registerData.surname = form.surname;
             }
+
+            await register(registerData);
+            await resendVerificationCode(form.email);
+            setSuccess(true);
+            setTimeout(
+                () =>
+                    navigate(
+                        `/verify-email?email=${encodeURIComponent(form.email)}`
+                    ),
+                2000
+            );
         } catch (registerError) {
             setError(
                 registerError.response?.data?.message || "Registration failed."
@@ -123,59 +144,148 @@ const Register = () => {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Name Fields */}
-
+                        {/* Account Type Selection - Modernized */}
                         <div>
-                            <label
-                                htmlFor="firstName"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                First Name
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                Select Role
                             </label>
-                            <div className="relative">
-                                <User
-                                    size={20}
-                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                                />
-                                <input
-                                    id="firstName"
-                                    type="text"
-                                    name="firstName"
-                                    value={form.firstName}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="First name"
-                                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 transition duration-200"
-                                />
+                            <div className="grid grid-cols-3 gap-3">
+                                {[
+                                    {
+                                        value: "user",
+                                        label: "Trainee",
+                                        icon: <User size={20} />,
+                                    },
+                                    {
+                                        value: "admin",
+                                        label: "Admin",
+                                        icon: <Shield size={20} />,
+                                    },
+                                    {
+                                        value: "company",
+                                        label: "Company",
+                                        icon: <Briefcase size={20} />,
+                                    },
+                                ].map((option) => (
+                                    <div
+                                        key={option.value}
+                                        onClick={() =>
+                                            setForm({
+                                                ...form,
+                                                accountType: option.value,
+                                            })
+                                        }
+                                        className={`cursor-pointer flex flex-col items-center justify-center border rounded-lg py-3 transition-all duration-200 ${
+                                            form.accountType === option.value
+                                                ? "border-blue-500 bg-blue-50 shadow-sm"
+                                                : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        <div
+                                            className={`mb-1 ${
+                                                form.accountType ===
+                                                option.value
+                                                    ? "text-blue-600"
+                                                    : "text-gray-500"
+                                            }`}
+                                        >
+                                            {option.icon}
+                                        </div>
+                                        <span
+                                            className={`text-sm font-medium ${
+                                                form.accountType ===
+                                                option.value
+                                                    ? "text-blue-700"
+                                                    : "text-gray-700"
+                                            }`}
+                                        >
+                                            {option.label}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                        <div>
-                            <label
-                                htmlFor="surname"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Surname
-                            </label>
-                            <div className="relative">
-                                <User
-                                    size={20}
-                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                                />
-                                <input
-                                    id="surname"
-                                    type="text"
-                                    name="surname"
-                                    value={form.surname}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="Surname"
-                                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 transition duration-200"
-                                />
+
+                        {/* Conditional Fields */}
+                        {form.accountType !== "company" ? (
+                            <>
+                                <div>
+                                    <label
+                                        htmlFor="firstName"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
+                                        First Name
+                                    </label>
+                                    <div className="relative">
+                                        <User
+                                            size={20}
+                                            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                        />
+                                        <input
+                                            id="firstName"
+                                            type="text"
+                                            name="firstName"
+                                            value={form.firstName}
+                                            onChange={handleChange}
+                                            required
+                                            placeholder="First name"
+                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 transition duration-200"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label
+                                        htmlFor="surname"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
+                                        Surname
+                                    </label>
+                                    <div className="relative">
+                                        <User
+                                            size={20}
+                                            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                        />
+                                        <input
+                                            id="surname"
+                                            type="text"
+                                            name="surname"
+                                            value={form.surname}
+                                            onChange={handleChange}
+                                            required
+                                            placeholder="Surname"
+                                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 transition duration-200"
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div>
+                                <label
+                                    htmlFor="companyName"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    Company Name
+                                </label>
+                                <div className="relative">
+                                    <Briefcase
+                                        size={20}
+                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                    />
+                                    <input
+                                        id="companyName"
+                                        type="text"
+                                        name="companyName"
+                                        value={form.companyName}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="Company name"
+                                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 transition duration-200"
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Email Fields */}
-
+                        {/* Email Field */}
                         <div>
                             <label
                                 htmlFor="email"
@@ -202,7 +312,6 @@ const Register = () => {
                         </div>
 
                         {/* Password Fields */}
-
                         <div>
                             <label
                                 htmlFor="password"
@@ -284,6 +393,7 @@ const Register = () => {
                                 </Link>
                             </label>
                         </div>
+
                         {/* Submit Button */}
                         <button
                             type="submit"

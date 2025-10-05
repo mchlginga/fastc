@@ -22,31 +22,16 @@ export const login = async (email, password, rememberMe = false) => {
 export const register = async ({
     firstName,
     surname,
-    email,
-    password,
-    privacyAgreement,
-}) => {
-    const { data } = await api.post("/auth/register", {
-        firstName,
-        surname,
-        email,
-        password,
-        privacyAgreement,
-    });
-    return data.publicUser;
-};
-
-export const registerUser = async ({
-    firstName,
-    surname,
+    companyName,
     email,
     password,
     role,
     privacyAgreement,
 }) => {
-    const { data } = await api.post("/user", {
+    const { data } = await api.post("/auth/register", {
         firstName,
         surname,
+        companyName,
         email,
         password,
         role,
@@ -279,6 +264,11 @@ export const updateProfile = async ({
     education,
     certificates,
     proofs,
+    position,
+    idProof,
+    industryType,
+    businessPermit,
+    representative,
     profileStatus,
 }) => {
     try {
@@ -294,6 +284,12 @@ export const updateProfile = async ({
         if (proofs && proofs.length) {
             proofs.forEach((proof) => formData.append("proofs", proof));
         }
+        if (position) formData.append("position", position);
+        if (idProof) formData.append("idProof", idProof);
+        if (industryType) formData.append("industryType", industryType);
+        if (businessPermit) formData.append("businessPermit", businessPermit);
+        if (representative)
+            formData.append("representative", JSON.stringify(representative));
         if (profileStatus !== undefined)
             formData.append("profileStatus", profileStatus);
 

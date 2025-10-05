@@ -12,12 +12,23 @@ const userSchema = new mongoose.Schema(
         },
         firstName: {
             type: String,
-            required: true,
+            required: function () {
+                return this.role !== "company";
+            },
             trim: true,
         },
         surname: {
             type: String,
-            required: true,
+            required: function () {
+                return this.role !== "company";
+            },
+            trim: true,
+        },
+        companyName: {
+            type: String,
+            required: function () {
+                return this.role === "company";
+            },
             trim: true,
         },
         name: {
@@ -88,10 +99,70 @@ const userSchema = new mongoose.Schema(
                 proof: { type: String },
             },
         ],
+        position: {
+            type: String,
+        },
+        idProof: {
+            type: String,
+        },
+        industryType: {
+            type: String, // Added for company
+        },
+        businessPermit: {
+            type: String, // Added for company
+        },
+        representative: {
+            name: { type: String }, // Added for company
+            position: { type: String },
+            contactNumber: { type: String },
+            idProof: { type: String },
+        },
         profileStatus: {
             type: String,
             enum: ["pending", "approved", "rejected"],
             default: "pending",
+        },
+        isProfileComplete: {
+            type: Boolean,
+            default: false,
+            get: function () {
+                if (this.role === "admin") {
+                    return !!(
+                        this.username &&
+                        this.position &&
+                        this.contactNumber
+                    );
+                } else if (this.role === "user") {
+                    return !!(
+                        this.username &&
+                        this.birthdate &&
+                        this.gender &&
+                        this.contactNumber &&
+                        this.address &&
+                        this.education.some((edu) =>
+                            [
+                                "highSchool",
+                                "associate",
+                                "bachelor",
+                                "master",
+                                "doctorate",
+                            ].includes(edu.educationLevel)
+                        )
+                    );
+                } else if (this.role === "company") {
+                    return !!(
+                        this.companyName &&
+                        this.industryType &&
+                        this.address &&
+                        this.contactNumber &&
+                        this.representative &&
+                        this.representative.name &&
+                        this.representative.position &&
+                        this.representative.contactNumber
+                    );
+                }
+                return false;
+            },
         },
     },
     {
@@ -100,8 +171,16 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function (next) {
-    if (this.isModified("firstName") || this.isModified("surname")) {
-        this.name = `${this.firstName} ${this.surname}`.trim();
+    if (
+        this.isModified("firstName") ||
+        this.isModified("surname") ||
+        this.isModified("companyName")
+    ) {
+        if (this.role === "company") {
+            this.name = this.companyName || "";
+        } else {
+            this.name = `${this.firstName || ""} ${this.surname || ""}`.trim();
+        }
     }
 
     if (!this.isModified("password")) {
