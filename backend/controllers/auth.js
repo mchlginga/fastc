@@ -1,10 +1,17 @@
-const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+const SibApiV3Sdk = require("@sendinblue/client");
 
 const User = require("../models/user");
 const { statusCodes } = require("../utils/constant");
 const generateToken = require("../utils/generateToken");
 const config = require("../config/index");
+
+// Initialize Brevo
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+apiInstance.setApiKey(
+    SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey,
+    config.brevoApiKey
+);
 
 // cookie config
 const COOKIE_NAME = "token";
@@ -23,14 +30,27 @@ const setCookieToken = (res, userId, rememberMe) => {
     });
 };
 
-// nodemailer transporter
-const transporter = nodemailer.createTransport({
-    service: config.email.service,
-    auth: {
-        user: config.email.user,
-        pass: config.email.pass,
-    },
-});
+// Email sending helper using Brevo
+const sendEmail = async ({ to, subject, text, html }) => {
+    try {
+        const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+        sendSmtpEmail.subject = subject;
+        sendSmtpEmail.htmlContent = html || `<p>${text}</p>`;
+        sendSmtpEmail.sender = { name: "FAST-C", email: config.emailFrom };
+        sendSmtpEmail.to = [{ email: to }];
+        sendSmtpEmail.textContent = text;
+
+        const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
+        console.log("Email sent successfully:", result);
+        return result;
+    } catch (error) {
+        console.error(
+            "Email sending error details:",
+            error.response?.body || error.message
+        );
+        throw new Error("Failed to send email. Please try again later.");
+    }
+};
 
 exports.register = async (req, res, next) => {
     const { firstName, surname, email, password, role, privacyAgreement } =
@@ -141,18 +161,28 @@ exports.requestPasswordReset = async (req, res, next) => {
         await user.save();
 
         const resetUrl = `${config.frontendUrl}/reset-password/${resetToken}`;
-        const message = `You requested a password reset. Click this link to reset your password: ${resetUrl}`;
 
-        await transporter.sendMail({
+        await sendEmail({
             to: user.email,
-            subject: "Password Reset Request",
-            text: message,
+            subject: "FAST-C Password Reset Request",
+            text: `You requested a password reset. Click this link to reset your password: ${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, please ignore this email.`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2563eb;">Password Reset Request</h2>
+                    <p>You requested a password reset for your FAST-C account.</p>
+                    <p>Click the button below to reset your password:</p>
+                    <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px; margin: 16px 0;">Reset Password</a>
+                    <p style="color: #666; font-size: 14px;">This link expires in 1 hour.</p>
+                    <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+                </div>
+            `,
         });
 
         return res
             .status(statusCodes.OK)
             .json({ message: "Password reset email sent." });
     } catch (error) {
+        console.error("Password reset error:", error);
         next(error);
     }
 };
@@ -179,7 +209,7 @@ exports.resetPassword = async (req, res, next) => {
 
         return res
             .status(statusCodes.OK)
-            .json({ message: "Password reset succesfully." });
+            .json({ message: "Password reset successfully." });
     } catch (error) {
         next(error);
     }
@@ -194,23 +224,36 @@ exports.sendVerificationCode = async (req, res, next) => {
                 .status(statusCodes.NOT_FOUND)
                 .json({ message: "User not found." });
         }
+
         const verificationCode = Math.floor(
             100000 + Math.random() * 900000
         ).toString();
         user.verificationCode = verificationCode;
         user.verificationCodeExpires = Date.now() + 10 * 60 * 1000;
         await user.save();
-        const message = `Your FAST-C verification code is: ${verificationCode}. It expires in 10 minutes.`;
-        await transporter.sendMail({
+
+        await sendEmail({
             to: user.email,
             subject: "FAST-C Email Verification",
-            text: message,
+            text: `Your FAST-C verification code is: ${verificationCode}\n\nThis code expires in 10 minutes.`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2563eb;">Email Verification</h2>
+                    <p>Welcome to FAST-C! Please verify your email address.</p>
+                    <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                        <p style="margin: 0; color: #666; font-size: 14px;">Your verification code is:</p>
+                        <h1 style="margin: 10px 0; color: #2563eb; font-size: 36px; letter-spacing: 8px;">${verificationCode}</h1>
+                    </div>
+                    <p style="color: #666; font-size: 14px;">This code expires in 10 minutes.</p>
+                </div>
+            `,
         });
+
         return res
             .status(statusCodes.OK)
             .json({ message: "Verification code sent to your email." });
     } catch (error) {
-        console.error("Send verification code error:", error.message);
+        console.error("Send verification code error:", error);
         next(error);
     }
 };
@@ -232,7 +275,7 @@ exports.verifyCode = async (req, res, next) => {
         user.verificationCode = undefined;
         user.verificationCodeExpires = undefined;
         await user.save();
-        setCookieToken(res, user.id); // Ensure token is set
+        setCookieToken(res, user.id);
         const publicUser = await User.findById(user._id).select("-password");
         return res.status(statusCodes.OK).json({ publicUser });
     } catch (error) {
@@ -241,7 +284,6 @@ exports.verifyCode = async (req, res, next) => {
     }
 };
 
-// Check username uniqueness
 exports.checkUsername = async (req, res, next) => {
     const { username } = req.body;
     try {
