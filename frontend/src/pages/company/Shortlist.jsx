@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Eye, Trash2, Bookmark } from "react-feather";
+import { Eye, Trash2, Bookmark, Download } from "react-feather";
 
 const Shortlist = () => {
     const [shortlist, setShortlist] = useState([]);
@@ -47,13 +47,30 @@ const Shortlist = () => {
         }
     };
 
+    const handleDownloadPDF = () => {
+        alert("Download as PDF feature coming soon!");
+    };
+
     return (
         <div className="space-y-6">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Shortlist</h1>
-                <p className="text-gray-600">
-                    View and manage your shortlisted trainees
-                </p>
+            <div className="mb-6 flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800">
+                        Shortlist
+                    </h1>
+                    <p className="text-gray-600">
+                        View and manage your shortlisted trainees
+                    </p>
+                </div>
+
+                {/* Download PDF Button (UI Only) */}
+                <button
+                    onClick={handleDownloadPDF}
+                    className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                >
+                    <Download size={16} />
+                    <span className="text-sm font-medium">Download as PDF</span>
+                </button>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">

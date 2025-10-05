@@ -47,7 +47,7 @@ const userSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ["admin", "company", "user"],
+            enum: ["superAdmin", "admin", "company", "user"],
             default: "user",
         },
         profilePic: {
@@ -106,13 +106,13 @@ const userSchema = new mongoose.Schema(
             type: String,
         },
         industryType: {
-            type: String, // Added for company
+            type: String,
         },
         businessPermit: {
-            type: String, // Added for company
+            type: String,
         },
         representative: {
-            name: { type: String }, // Added for company
+            name: { type: String },
             position: { type: String },
             contactNumber: { type: String },
             idProof: { type: String },
@@ -163,6 +163,10 @@ const userSchema = new mongoose.Schema(
                 }
                 return false;
             },
+        },
+        lastActive: {
+            type: Date,
+            default: null, // Tracks last user activity
         },
     },
     {

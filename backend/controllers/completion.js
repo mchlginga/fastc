@@ -30,16 +30,14 @@ const generateCertificatePDF = (
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
 
-        // helper para center text safely sa loob ng border
         function centerText(text, y, options = {}) {
             doc.text(text, 50, y, {
-                width: doc.page.width - 100, // respect 50 margin left/right
+                width: doc.page.width - 100,
                 align: "center",
                 ...options,
             });
         }
 
-        // === BORDER ===
         doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40)
             .lineWidth(4)
             .strokeColor("#3B82F6")
@@ -50,7 +48,6 @@ const generateCertificatePDF = (
             .strokeColor("#93C5FD")
             .stroke();
 
-        // === WATERMARK ===
         doc.fontSize(120)
             .fillColor("#F3F4F6")
             .opacity(0.25)
@@ -58,14 +55,12 @@ const generateCertificatePDF = (
             .text("FAST-C", 100, 250, { align: "center", width: 600 });
         doc.rotate(30, { origin: [400, 300] }).opacity(1);
 
-        // === HEADER ===
         doc.font("Times-Bold").fontSize(24).fillColor("#1E3A8A");
         centerText("FERNANDINO ASSESSMENT AND SKILLS TRAINING CENTER", 80);
 
         doc.font("Times-Roman").fontSize(18).fillColor("#374151");
         centerText("Certificate of Completion", 120);
 
-        // === BODY ===
         doc.font("Times-Roman").fontSize(14).fillColor("#111827");
         centerText("This certificate is proudly presented to", 180);
 
@@ -78,17 +73,14 @@ const generateCertificatePDF = (
         doc.font("Times-Bold").fontSize(22).fillColor("#1E3A8A");
         centerText(course.title, 290);
 
-        // === DATES ===
         doc.font("Times-Roman").fontSize(12).fillColor("#374151");
         centerText(`Completion Date: ${completionDate.toDateString()}`, 360);
         centerText(`Expiration Date: ${expirationDate.toDateString()}`, 380);
 
-        // === SIGNATURES (centered layout) ===
         const sigY = 460;
-        const marginX = 70; // start inside border
-        const sectionWidth = (doc.page.width - marginX * 2) / 2; // hati page sa 2
+        const marginX = 70;
+        const sectionWidth = (doc.page.width - marginX * 2) / 2;
 
-        // left signature
         doc.moveTo(marginX, sigY)
             .lineTo(marginX + sectionWidth - 40, sigY)
             .strokeColor("#6B7280")
@@ -101,10 +93,9 @@ const generateCertificatePDF = (
                 align: "center",
             });
 
-        // right signature
         const rightStart = marginX + sectionWidth + 40;
         doc.moveTo(rightStart, sigY)
-            .lineTo(marginX + sectionWidth * 2, sigY) // hanggang loob ng border
+            .lineTo(marginX + sectionWidth * 2, sigY)
             .stroke();
 
         doc.text("Training Director", rightStart, sigY + 5, {
@@ -112,7 +103,6 @@ const generateCertificatePDF = (
             align: "center",
         });
 
-        // === FOOTER ===
         doc.fontSize(8).fillColor("#6B7280");
         centerText(
             "Issued by FAST-C Digital Profiling and Certification System",
@@ -216,7 +206,6 @@ exports.completeLesson = async (req, res, next) => {
             );
             await completion.save();
 
-            // Auto-generate certificate if progress = 100
             if (completion.progress === 100) {
                 const user = await User.findById(userId);
                 if (!user) {
@@ -224,7 +213,7 @@ exports.completeLesson = async (req, res, next) => {
                         message: "User not found",
                     });
                 }
-                const completionDate = new Date("2024-10-04"); // Set to last year
+                const completionDate = new Date();
                 const expirationDate = new Date(completionDate);
                 expirationDate.setFullYear(completionDate.getFullYear() + 1);
 
@@ -291,6 +280,18 @@ exports.markAttendance = async (req, res, next) => {
             lessonId: attendance.lesson.toString(),
             timestamp: attendance.timestamp,
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getTotalTrainees = async (req, res, next) => {
+    try {
+        const count = await Completion.countDocuments({
+            progress: { $lt: 100 },
+            status: "approved",
+        });
+        res.status(statusCodes.OK).json({ count });
     } catch (error) {
         next(error);
     }

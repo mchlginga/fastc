@@ -19,6 +19,10 @@ const courseSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        endDate: {
+            type: Date,
+            default: null, // Null means course is always active
+        },
         lessons: [
             {
                 title: { type: String, trim: true },

@@ -212,7 +212,7 @@ function ProfileSetup() {
         navigate("/user", { replace: true });
     };
 
-    if (!user || user.role !== "user") {
+    if (!user || (user.role !== "user" && user.role !== "superAdmin")) {
         return <div>Invalid user or role. Redirecting...</div>;
     }
 

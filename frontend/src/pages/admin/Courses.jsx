@@ -1,28 +1,95 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
     Eye,
     Edit,
     Trash2,
     Archive,
-    Calendar,
     CheckCircle,
-    FileText,
-    Download,
     RefreshCw,
+    FileText,
+    Upload,
+    Clock,
+    BookOpen,
+    Layers,
+    Search,
 } from "react-feather";
+
+const mockCourses = [
+    {
+        id: 1,
+        title: "Automotive Servicing NC II",
+        description:
+            "Comprehensive training in automotive repair and maintenance.",
+        duration: "6 months",
+        lessons: 12,
+        instructor: "Maria Santos",
+        endDate: null,
+        image: "automotive.jpg",
+        status: "Active",
+    },
+    {
+        id: 2,
+        title: "Electrical Installation NC II",
+        description:
+            "Learn electrical wiring and installation safety standards.",
+        duration: "4 months",
+        lessons: 10,
+        instructor: "John Reyes",
+        endDate: "2024-08-01",
+        image: "electrical.jpg",
+        status: "Completed",
+    },
+    {
+        id: 3,
+        title: "Basic Welding Certification",
+        description: "Hands-on training for beginner-level welding skills.",
+        duration: "3 months",
+        lessons: 8,
+        instructor: "Carlos Lim",
+        endDate: "2023-12-10",
+        image: "welding.jpg",
+        status: "Archived",
+    },
+];
 
 const AdminCourses = () => {
     const [activeTab, setActiveTab] = useState("all");
+    const [search, setSearch] = useState("");
     const [formData, setFormData] = useState({
         title: "",
         description: "",
         duration: "",
-        schedule: "",
-        slots: "",
-        instructor: "",
-        requirements: "",
+        image: "",
+        endDate: "",
     });
+
+    const filteredCourses = useMemo(() => {
+        return mockCourses.filter((course) => {
+            const matchesSearch = course.title
+                .toLowerCase()
+                .includes(search.toLowerCase());
+            if (activeTab === "all") return matchesSearch;
+            if (activeTab === "active")
+                return course.status === "Active" && matchesSearch;
+            if (activeTab === "completed")
+                return course.status === "Completed" && matchesSearch;
+            if (activeTab === "archived")
+                return course.status === "Archived" && matchesSearch;
+            return matchesSearch;
+        });
+    }, [search, activeTab]);
+
+    const totalCourses = mockCourses.length;
+    const activeCourses = mockCourses.filter(
+        (c) => c.status === "Active"
+    ).length;
+    const completedCourses = mockCourses.filter(
+        (c) => c.status === "Completed"
+    ).length;
+    const archivedCourses = mockCourses.filter(
+        (c) => c.status === "Archived"
+    ).length;
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -31,199 +98,220 @@ const AdminCourses = () => {
 
     const handleCreateCourse = (e) => {
         e.preventDefault();
-        console.log("Creating course:", formData);
-        // Add API call to create course (e.g., POST /courses)
+        alert(`Course created: ${formData.title}`);
         setFormData({
             title: "",
             description: "",
             duration: "",
-            schedule: "",
-            slots: "",
-            instructor: "",
-            requirements: "",
+            image: "",
+            endDate: "",
         });
     };
 
     return (
-        <div>
-            <div className="mb-8">
+        <div className="space-y-8">
+            {/* Header */}
+            <div>
                 <h1 className="text-2xl font-bold text-gray-800">
-                    Courses Management
+                    Course Management
                 </h1>
                 <p className="text-gray-600">
-                    Manage training programs, enrollments, and reports
+                    Manage all training courses, schedules, and lessons.
                 </p>
             </div>
 
-            {/* Tabs */}
-            <div className="border-b border-gray-200 mb-6">
-                <nav className="flex space-x-4">
-                    <button
-                        className={`px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 ${
-                            activeTab === "all" ? "tab-active" : ""
-                        }`}
-                        onClick={() => setActiveTab("all")}
-                    >
-                        All Courses
-                    </button>
-                    <button
-                        className={`px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 ${
-                            activeTab === "create" ? "tab-active" : ""
-                        }`}
-                        onClick={() => setActiveTab("create")}
-                    >
-                        Create Course
-                    </button>
-                    <button
-                        className={`px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 ${
-                            activeTab === "enrolled" ? "tab-active" : ""
-                        }`}
-                        onClick={() => setActiveTab("enrolled")}
-                    >
-                        Enrolled Trainees
-                    </button>
-                    <button
-                        className={`px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 ${
-                            activeTab === "completed" ? "tab-active" : ""
-                        }`}
-                        onClick={() => setActiveTab("completed")}
-                    >
-                        Completed Courses
-                    </button>
-                    <button
-                        className={`px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 ${
-                            activeTab === "archived" ? "tab-active" : ""
-                        }`}
-                        onClick={() => setActiveTab("archived")}
-                    >
-                        Archived Courses
-                    </button>
-                </nav>
+            {/* Overview Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-blue-50 p-4 rounded-xl flex items-center shadow-sm">
+                    <BookOpen className="text-blue-600 mr-3" size={24} />
+                    <div>
+                        <h4 className="text-gray-700 font-semibold">
+                            Total Courses
+                        </h4>
+                        <p className="text-xl font-bold">{totalCourses}</p>
+                    </div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-xl flex items-center shadow-sm">
+                    <CheckCircle className="text-green-600 mr-3" size={24} />
+                    <div>
+                        <h4 className="text-gray-700 font-semibold">Active</h4>
+                        <p className="text-xl font-bold">{activeCourses}</p>
+                    </div>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-xl flex items-center shadow-sm">
+                    <Clock className="text-yellow-600 mr-3" size={24} />
+                    <div>
+                        <h4 className="text-gray-700 font-semibold">
+                            Completed
+                        </h4>
+                        <p className="text-xl font-bold">{completedCourses}</p>
+                    </div>
+                </div>
+                <div className="bg-gray-100 p-4 rounded-xl flex items-center shadow-sm">
+                    <Archive className="text-gray-600 mr-3" size={24} />
+                    <div>
+                        <h4 className="text-gray-700 font-semibold">
+                            Archived
+                        </h4>
+                        <p className="text-xl font-bold">{archivedCourses}</p>
+                    </div>
+                </div>
             </div>
 
-            {/* Tab Content */}
-            <div className={activeTab === "all" ? "" : "hidden"} id="all">
+            {/* Tabs & Search */}
+            <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                <div className="flex space-x-4">
+                    {["all", "active", "completed", "archived", "create"].map(
+                        (tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-4 py-2 text-sm font-medium rounded-t-md ${
+                                    activeTab === tab
+                                        ? "text-blue-600 border-b-2 border-blue-600"
+                                        : "text-gray-600 hover:text-blue-500"
+                                }`}
+                            >
+                                {tab === "create"
+                                    ? "Create Course"
+                                    : tab.charAt(0).toUpperCase() +
+                                      tab.slice(1)}
+                            </button>
+                        )
+                    )}
+                </div>
+
+                {activeTab !== "create" && (
+                    <div className="relative">
+                        <Search
+                            className="absolute left-3 top-2.5 text-gray-400"
+                            size={18}
+                        />
+                        <input
+                            type="text"
+                            placeholder="Search courses..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                    </div>
+                )}
+            </div>
+
+            {/* All / Active / Completed / Archived */}
+            {activeTab !== "create" && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                        All Courses
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                        {activeTab === "all"
+                            ? "All Courses"
+                            : activeTab.charAt(0).toUpperCase() +
+                              activeTab.slice(1)}{" "}
+                        Courses
                     </h2>
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-gray-600">
+                        <table className="w-full text-sm text-gray-700">
                             <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="py-3 px-4 text-left font-medium">
+                                <tr className="border-b border-gray-200 bg-gray-50">
+                                    <th className="py-3 px-4 text-left">
                                         Title
                                     </th>
-                                    <th className="py-3 px-4 text-left font-medium">
+                                    <th className="py-3 px-4 text-left">
                                         Duration
                                     </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Schedule
+                                    <th className="py-3 px-4 text-left">
+                                        Lessons
                                     </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Slots
-                                    </th>
-                                    <th className="py-3 px-4 text-left font-medium">
+                                    <th className="py-3 px-4 text-left">
                                         Instructor
                                     </th>
-                                    <th className="py-3 px-4 text-left font-medium">
+                                    <th className="py-3 px-4 text-left">
                                         Status
                                     </th>
-                                    <th className="py-3 px-4 text-left font-medium">
+                                    <th className="py-3 px-4 text-left">
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="py-3 px-4">
-                                        Automotive Servicing NC II
-                                    </td>
-                                    <td className="py-3 px-4">6 months</td>
-                                    <td className="py-3 px-4">
-                                        Mon/Wed/Fri, 9:00 AM
-                                    </td>
-                                    <td className="py-3 px-4">15/20</td>
-                                    <td className="py-3 px-4">Maria Santos</td>
-                                    <td className="py-3 px-4 text-green-600">
-                                        Active
-                                    </td>
-                                    <td className="py-3 px-4 flex space-x-2">
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
+                                {filteredCourses.length > 0 ? (
+                                    filteredCourses.map((course) => (
+                                        <tr
+                                            key={course.id}
+                                            className="hover:bg-gray-100 border-b border-gray-100"
                                         >
-                                            <Eye size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
+                                            <td className="py-3 px-4 font-medium text-gray-800">
+                                                {course.title}
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                {course.duration}
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                {course.lessons}
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                {course.instructor}
+                                            </td>
+                                            <td
+                                                className={`py-3 px-4 font-semibold ${
+                                                    course.status === "Active"
+                                                        ? "text-green-600"
+                                                        : course.status ===
+                                                          "Completed"
+                                                        ? "text-yellow-600"
+                                                        : "text-gray-600"
+                                                }`}
+                                            >
+                                                {course.status}
+                                            </td>
+                                            <td className="py-3 px-4 flex space-x-2">
+                                                <Link
+                                                    to="#"
+                                                    className="text-blue-600 hover:text-blue-500"
+                                                >
+                                                    <Eye size={16} />
+                                                </Link>
+                                                <Link
+                                                    to="#"
+                                                    className="text-green-600 hover:text-green-500"
+                                                >
+                                                    <Edit size={16} />
+                                                </Link>
+                                                {course.status ===
+                                                "Archived" ? (
+                                                    <button className="text-green-600 hover:text-green-500">
+                                                        <RefreshCw size={16} />
+                                                    </button>
+                                                ) : (
+                                                    <button className="text-gray-600 hover:text-gray-500">
+                                                        <Archive size={16} />
+                                                    </button>
+                                                )}
+                                                <button className="text-red-600 hover:text-red-500">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td
+                                            colSpan={6}
+                                            className="text-center py-6 text-gray-500 italic"
                                         >
-                                            <Edit size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-red-600 hover:text-red-500"
-                                        >
-                                            <Trash2 size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-yellow-600 hover:text-yellow-500"
-                                        >
-                                            <Archive size={16} />
-                                        </Link>
-                                    </td>
-                                </tr>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="py-3 px-4">
-                                        Electrical Installation NC II
-                                    </td>
-                                    <td className="py-3 px-4">4 months</td>
-                                    <td className="py-3 px-4">
-                                        Tue/Thu, 1:00 PM
-                                    </td>
-                                    <td className="py-3 px-4">10/15</td>
-                                    <td className="py-3 px-4">John Reyes</td>
-                                    <td className="py-3 px-4 text-green-600">
-                                        Active
-                                    </td>
-                                    <td className="py-3 px-4 flex space-x-2">
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
-                                        >
-                                            <Eye size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
-                                        >
-                                            <Edit size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-red-600 hover:text-red-500"
-                                        >
-                                            <Trash2 size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-yellow-600 hover:text-yellow-500"
-                                        >
-                                            <Archive size={16} />
-                                        </Link>
-                                    </td>
-                                </tr>
+                                            No courses found.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
+            )}
 
-            <div className={activeTab === "create" ? "" : "hidden"} id="create">
-                <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            {/* Create Course */}
+            {activeTab === "create" && (
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">
                         Create New Course
                     </h2>
                     <form onSubmit={handleCreateCourse} className="space-y-4">
@@ -236,8 +324,8 @@ const AdminCourses = () => {
                                 name="title"
                                 value={formData.title}
                                 onChange={handleInputChange}
-                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g., Automotive Servicing NC II"
+                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                required
                             />
                         </div>
                         <div>
@@ -248,345 +336,80 @@ const AdminCourses = () => {
                                 name="description"
                                 value={formData.description}
                                 onChange={handleInputChange}
-                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Enter course description"
+                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 rows="4"
                             />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Duration
-                            </label>
-                            <input
-                                type="text"
-                                name="duration"
-                                value={formData.duration}
-                                onChange={handleInputChange}
-                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g., 6 months"
-                            />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Duration
+                                </label>
+                                <input
+                                    type="text"
+                                    name="duration"
+                                    value={formData.duration}
+                                    onChange={handleInputChange}
+                                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., 6 months"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    End Date (optional)
+                                </label>
+                                <input
+                                    type="date"
+                                    name="endDate"
+                                    value={formData.endDate}
+                                    onChange={handleInputChange}
+                                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Schedule
+                                Upload Image
                             </label>
-                            <input
-                                type="text"
-                                name="schedule"
-                                value={formData.schedule}
-                                onChange={handleInputChange}
-                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g., Mon/Wed/Fri, 9:00 AM - 12:00 PM"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Slots
-                            </label>
-                            <input
-                                type="number"
-                                name="slots"
-                                value={formData.slots}
-                                onChange={handleInputChange}
-                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g., 20"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Instructor
-                            </label>
-                            <input
-                                type="text"
-                                name="instructor"
-                                value={formData.instructor}
-                                onChange={handleInputChange}
-                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g., Maria Santos"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Requirements
-                            </label>
-                            <textarea
-                                name="requirements"
-                                value={formData.requirements}
-                                onChange={handleInputChange}
-                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g., High School Diploma, Basic Mechanical Knowledge"
-                                rows="4"
-                            />
+                            <div className="mt-1 flex items-center">
+                                <label className="cursor-pointer bg-gray-100 px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-gray-200">
+                                    <Upload
+                                        size={16}
+                                        className="text-gray-600"
+                                    />
+                                    <span className="text-sm text-gray-700">
+                                        Upload File
+                                    </span>
+                                    <input
+                                        type="file"
+                                        name="image"
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                image:
+                                                    e.target.files[0]?.name ||
+                                                    "",
+                                            }))
+                                        }
+                                        className="hidden"
+                                    />
+                                </label>
+                                {formData.image && (
+                                    <span className="ml-3 text-sm text-gray-600">
+                                        {formData.image}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         <button
                             type="submit"
-                            className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                            className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                         >
                             Create Course
                         </button>
                     </form>
                 </div>
-            </div>
-
-            <div
-                className={activeTab === "enrolled" ? "" : "hidden"}
-                id="enrolled"
-            >
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                        Enrolled Trainees
-                    </h2>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">
-                            Select Course
-                        </label>
-                        <select className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option>Automotive Servicing NC II</option>
-                            <option>Electrical Installation NC II</option>
-                        </select>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-gray-600">
-                            <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Trainee Name
-                                    </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Attendance %
-                                    </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Progress
-                                    </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Status
-                                    </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="py-3 px-4">
-                                        Juan Dela Cruz
-                                    </td>
-                                    <td className="py-3 px-4">90%</td>
-                                    <td className="py-3 px-4">65%</td>
-                                    <td className="py-3 px-4 text-green-600">
-                                        Active
-                                    </td>
-                                    <td className="py-3 px-4 flex space-x-2">
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
-                                        >
-                                            <Eye size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
-                                        >
-                                            <Calendar size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-green-600 hover:text-green-500"
-                                        >
-                                            <CheckCircle size={16} />
-                                        </Link>
-                                    </td>
-                                </tr>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="py-3 px-4">Ana Gomez</td>
-                                    <td className="py-3 px-4">80%</td>
-                                    <td className="py-3 px-4">30%</td>
-                                    <td className="py-3 px-4 text-yellow-600">
-                                        Pending Approval
-                                    </td>
-                                    <td className="py-3 px-4 flex space-x-2">
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
-                                        >
-                                            <Eye size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
-                                        >
-                                            <Calendar size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-green-600 hover:text-green-500"
-                                        >
-                                            <CheckCircle size={16} />
-                                        </Link>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div
-                className={activeTab === "completed" ? "" : "hidden"}
-                id="completed"
-            >
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                        Completed Courses
-                    </h2>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-gray-600">
-                            <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Title
-                                    </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        End Date
-                                    </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Certificates Issued
-                                    </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="py-3 px-4">
-                                        Dressmaking NC II
-                                    </td>
-                                    <td className="py-3 px-4">2023-06-15</td>
-                                    <td className="py-3 px-4">12/12</td>
-                                    <td className="py-3 px-4 flex space-x-2">
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
-                                        >
-                                            <FileText size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
-                                        >
-                                            <Download size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-green-600 hover:text-green-500"
-                                        >
-                                            <RefreshCw size={16} />
-                                        </Link>
-                                    </td>
-                                </tr>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="py-3 px-4">
-                                        Computer Systems Servicing NC II
-                                    </td>
-                                    <td className="py-3 px-4">2023-03-10</td>
-                                    <td className="py-3 px-4">8/10</td>
-                                    <td className="py-3 px-4 flex space-x-2">
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
-                                        >
-                                            <FileText size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-blue-600 hover:text-blue-500"
-                                        >
-                                            <Download size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-green-600 hover:text-green-500"
-                                        >
-                                            <RefreshCw size={16} />
-                                        </Link>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div
-                className={activeTab === "archived" ? "" : "hidden"}
-                id="archived"
-            >
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                        Archived/Inactive Courses
-                    </h2>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-gray-600">
-                            <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Title
-                                    </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Archived Date
-                                    </th>
-                                    <th className="py-3 px-4 text-left font-medium">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="py-3 px-4">
-                                        Basic Welding Certification
-                                    </td>
-                                    <td className="py-3 px-4">2023-01-20</td>
-                                    <td className="py-3 px-4 flex space-x-2">
-                                        <Link
-                                            to="#"
-                                            className="text-green-600 hover:text-green-500"
-                                        >
-                                            <RefreshCw size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-red-600 hover:text-red-500"
-                                        >
-                                            <Trash2 size={16} />
-                                        </Link>
-                                    </td>
-                                </tr>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="py-3 px-4">
-                                        Pastry Making Fundamentals
-                                    </td>
-                                    <td className="py-3 px-4">2022-12-15</td>
-                                    <td className="py-3 px-4 flex space-x-2">
-                                        <Link
-                                            to="#"
-                                            className="text-green-600 hover:text-green-500"
-                                        >
-                                            <RefreshCw size={16} />
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className="text-red-600 hover:text-red-500"
-                                        >
-                                            <Trash2 size={16} />
-                                        </Link>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            )}
         </div>
     );
 };

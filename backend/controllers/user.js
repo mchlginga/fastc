@@ -1,7 +1,6 @@
 const User = require("../models/user");
 const { statusCodes } = require("../utils/constant");
 
-// Create user
 exports.createUser = async (req, res, next) => {
     const { firstName, surname, email, password, role, privacyAgreement } =
         req.body;
@@ -37,7 +36,6 @@ exports.createUser = async (req, res, next) => {
     }
 };
 
-// Get logged-in user's profile
 exports.getProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id).select("-password");
@@ -53,7 +51,6 @@ exports.getProfile = async (req, res, next) => {
     }
 };
 
-// Get all users
 exports.getUsers = async (req, res, next) => {
     try {
         const users = await User.find().select("-password");
@@ -63,7 +60,6 @@ exports.getUsers = async (req, res, next) => {
     }
 };
 
-// Get user by id
 exports.getUserById = async (req, res, next) => {
     const { id } = req.params;
 
@@ -81,7 +77,6 @@ exports.getUserById = async (req, res, next) => {
     }
 };
 
-// Update user by id
 exports.updateUserById = async (req, res, next) => {
     const { id } = req.params;
     const { username, firstName, surname } = req.body;
@@ -110,7 +105,6 @@ exports.updateUserById = async (req, res, next) => {
     }
 };
 
-// Delete user by id
 exports.deleteUserById = async (req, res, next) => {
     const { id } = req.params;
 
@@ -130,7 +124,6 @@ exports.deleteUserById = async (req, res, next) => {
     }
 };
 
-// Update logged-in user's profile
 exports.updateProfile = async (req, res, next) => {
     const {
         username,
@@ -228,7 +221,6 @@ exports.updateProfile = async (req, res, next) => {
             }
         }
 
-        // Handle idProof for admin
         if (
             user.role === "admin" &&
             files.length > educationFilesIndex + certificateFilesIndex
@@ -238,7 +230,6 @@ exports.updateProfile = async (req, res, next) => {
             }`;
         }
 
-        // Handle businessPermit and representative.idProof for company
         if (user.role === "company") {
             if (files.length > educationFilesIndex + certificateFilesIndex) {
                 businessPermitFile = `/uploads/profiles/${
@@ -306,7 +297,6 @@ exports.updateProfile = async (req, res, next) => {
     }
 };
 
-// Admin review profile
 exports.reviewProfile = async (req, res, next) => {
     const { id } = req.params;
     const { profileStatus } = req.body;
@@ -335,13 +325,41 @@ exports.reviewProfile = async (req, res, next) => {
     }
 };
 
-// Get pending profiles
 exports.getPendingProfiles = async (req, res, next) => {
     try {
         const users = await User.find({ profileStatus: "pending" }).select(
             "-password"
         );
         res.status(statusCodes.OK).json(users);
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getOnlineUsers = async (req, res, next) => {
+    try {
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const users = await User.find({
+            lastActive: { $gte: fiveMinutesAgo },
+            role: "user",
+        }).select("name email lastActive");
+        res.status(statusCodes.OK).json(users);
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.updateLastActive = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res
+                .status(statusCodes.NOT_FOUND)
+                .json({ message: "User not found." });
+        }
+        user.lastActive = new Date();
+        await user.save();
+        res.status(statusCodes.OK).json({ message: "Last active updated." });
     } catch (error) {
         next(error);
     }

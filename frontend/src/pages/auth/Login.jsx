@@ -17,6 +17,7 @@ const Login = () => {
 
     const getRedirectPath = (role) => {
         const rolePaths = {
+            superAdmin: "/admin",
             admin: "/admin",
             company: "/company",
             user: "/user",

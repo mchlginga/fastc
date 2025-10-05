@@ -328,3 +328,97 @@ export const uploadProfilePic = async (file) => {
         );
     }
 };
+
+export const getTotalTrainees = async () => {
+    try {
+        const { data } = await api.get("/completion/total-trainees");
+        return data.count;
+    } catch (error) {
+        console.error(
+            "getTotalTrainees error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to fetch total trainees."
+        );
+    }
+};
+
+export const getActiveCoursesCount = async () => {
+    try {
+        const { data } = await api.get("/courses/active/count");
+        return data.count;
+    } catch (error) {
+        console.error(
+            "getActiveCoursesCount error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message ||
+                "Failed to fetch active courses count."
+        );
+    }
+};
+
+export const getActiveCourses = async () => {
+    try {
+        const { data } = await api.get("/courses/active");
+        return data;
+    } catch (error) {
+        console.error(
+            "getActiveCourses error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to fetch active courses."
+        );
+    }
+};
+
+export const getPendingEnrollments = async () => {
+    try {
+        const { data } = await api.get("/user/profile-review");
+        return data.length;
+    } catch (error) {
+        console.error(
+            "getPendingEnrollments error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message ||
+                "Failed to fetch pending enrollments."
+        );
+    }
+};
+
+export const getOnlineUsers = async () => {
+    try {
+        const { data } = await api.get("/user/online");
+        return data;
+    } catch (error) {
+        console.error(
+            "getOnlineUsers error:",
+            error.response?.status,
+            error.response?.data,
+            error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to fetch online users."
+        );
+    }
+};
+
+export const updateLastActive = async () => {
+    try {
+        const { data } = await api.patch("/user/last-active");
+        return data;
+    } catch (error) {
+        console.error(
+            "updateLastActive error:",
+            error.response?.data || error.message
+        );
+        throw new Error(
+            error.response?.data?.message || "Failed to update last active."
+        );
+    }
+};

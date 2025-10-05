@@ -75,7 +75,7 @@ function App() {
                     path="/profile-setup"
                     element={
                         <ProtectedRoute
-                            allowedRoles={["user"]}
+                            allowedRoles={["user", "superAdmin"]}
                             condition={(user) =>
                                 user && !user.isProfileComplete
                             }
@@ -91,9 +91,11 @@ function App() {
                     path="/admin-profile-setup"
                     element={
                         <ProtectedRoute
-                            allowedRoles={["admin"]}
+                            allowedRoles={["admin", "superAdmin"]}
                             condition={(user) =>
-                                user && !user.isProfileComplete
+                                user &&
+                                (user.role === "superAdmin" ||
+                                    !user.isProfileComplete)
                             }
                             redirectTo="/admin"
                         >
@@ -106,7 +108,7 @@ function App() {
                     path="/company-profile-setup"
                     element={
                         <ProtectedRoute
-                            allowedRoles={["company"]}
+                            allowedRoles={["company", "superAdmin"]}
                             condition={(user) =>
                                 user && !user.isProfileComplete
                             }
@@ -121,7 +123,7 @@ function App() {
                 <Route
                     path="/user/*"
                     element={
-                        <ProtectedRoute allowedRoles={["user"]}>
+                        <ProtectedRoute allowedRoles={["user", "superAdmin"]}>
                             <UserDashboard />
                         </ProtectedRoute>
                     }
@@ -145,7 +147,7 @@ function App() {
                 <Route
                     path="/admin/*"
                     element={
-                        <ProtectedRoute allowedRoles={["admin"]}>
+                        <ProtectedRoute allowedRoles={["admin", "superAdmin"]}>
                             <AdminDashboard />
                         </ProtectedRoute>
                     }
@@ -169,7 +171,9 @@ function App() {
                 <Route
                     path="/company/*"
                     element={
-                        <ProtectedRoute allowedRoles={["company", "admin"]}>
+                        <ProtectedRoute
+                            allowedRoles={["company", "superAdmin"]}
+                        >
                             <CompanyDashboard />
                         </ProtectedRoute>
                     }

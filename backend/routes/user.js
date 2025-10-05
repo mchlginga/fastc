@@ -11,21 +11,50 @@ const {
     updateProfile,
     reviewProfile,
     getPendingProfiles,
+    getOnlineUsers,
+    updateLastActive,
 } = require("../controllers/user");
 
 router.patch("/profile", protect, upload.array("proofs", 10), updateProfile);
-router.post("/", protect, checkRoles(["admin"]), createUser);
+router.post("/", protect, checkRoles(["superAdmin", "admin"]), createUser);
 router.get("/profile", protect, getProfile);
-router.get("/", protect, checkRoles(["admin"]), getUsers);
-router.get("/:id", protect, checkRoles(["admin", "company"]), getUserById);
-router.patch("/:id", protect, checkRoles(["admin"]), updateUserById);
-router.patch("/:id/review", protect, checkRoles(["admin"]), reviewProfile);
-router.delete("/:id", protect, checkRoles(["admin"]), deleteUserById);
+router.get("/", protect, checkRoles(["superAdmin", "admin"]), getUsers);
+router.get(
+    "/:id",
+    protect,
+    checkRoles(["superAdmin", "admin", "company"]),
+    getUserById
+);
+router.patch(
+    "/:id",
+    protect,
+    checkRoles(["superAdmin", "admin"]),
+    updateUserById
+);
+router.patch(
+    "/:id/review",
+    protect,
+    checkRoles(["superAdmin", "admin"]),
+    reviewProfile
+);
+router.delete(
+    "/:id",
+    protect,
+    checkRoles(["superAdmin", "admin"]),
+    deleteUserById
+);
 router.get(
     "/profile-review",
     protect,
-    checkRoles(["admin"]),
+    checkRoles(["superAdmin", "admin"]),
     getPendingProfiles
-); // New endpoint for pending
+);
+router.get(
+    "/online",
+    protect,
+    checkRoles(["superAdmin", "admin"]),
+    getOnlineUsers
+);
+router.patch("/last-active", protect, updateLastActive);
 
 module.exports = router;

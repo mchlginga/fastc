@@ -92,7 +92,7 @@ function CompanyProfileSetup() {
 
     const handleSkip = () => navigate("/", { replace: true });
 
-    if (!user || user.role !== "company") {
+    if (!user || (user.role !== "company" && user.role !== "superAdmin")) {
         return <div>Invalid user or role. Redirecting...</div>;
     }
 
