@@ -104,6 +104,21 @@ function UserProfile() {
 
     return (
         <div className="max-w-6xl mx-auto px-4 space-y-10">
+            {/* warning */}
+            {user?.profileStatus === "pending" && (
+                <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
+                    <p className="text-sm">
+                        Your profile is under review. You cannot enroll in
+                        courses until approved.
+                        <Link
+                            to="/user/settings"
+                            className="text-blue-600 hover:text-blue-800 font-medium ml-2"
+                        >
+                            Edit Profile
+                        </Link>
+                    </p>
+                </div>
+            )}
             <section>
                 <div className="bg-white rounded-2xl shadow-md p-8 hover:shadow-lg transition-all duration-300">
                     <div className="md:flex items-center gap-10">
@@ -176,7 +191,7 @@ function UserProfile() {
                 <h3 className="text-lg font-semibold text-gray-800 mb-6">
                     Learning Statistics
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 rounded-2xl">
                     {[
                         {
                             label: "Active Courses",
@@ -206,7 +221,7 @@ function UserProfile() {
                     ].map((stat, idx) => (
                         <div
                             key={idx}
-                            className="bg-white rounded-lg shadow-md p-6 stat-card transition-all duration-300"
+                            className="bg-white rounded-lg shadow-md p-6 stat-card duration-300 hover:-translate-y-1 hover:shadow-lg transition transform"
                         >
                             <div className="flex items-center">
                                 <div
@@ -284,7 +299,7 @@ function UserProfile() {
                         View All
                     </Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {recentCertificates.slice(0, 3).map((cert, idx) => (
                         <div
                             key={idx}

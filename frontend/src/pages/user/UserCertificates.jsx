@@ -78,7 +78,10 @@ function UserCertificates() {
                     <p className="text-sm">
                         Your profile is under review. You cannot enroll in
                         courses until approved.
-                        <Link className="text-blue-600 hover:text-blue-800 font-medium ml-2">
+                        <Link
+                            to="/user/settings"
+                            className="text-blue-600 hover:text-blue-800 font-medium ml-2"
+                        >
                             Edit Profile
                         </Link>
                     </p>
@@ -100,11 +103,11 @@ function UserCertificates() {
 
             {/* Certificates */}
             <section>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {certificates.map((cert) => (
                         <div
                             key={cert.certificateId}
-                            className="bg-white rounded-lg shadow-md p-6 stat-card transition-all duration-300"
+                            className="bg-white rounded-lg shadow-md p-6 stat-card duration-300 hover:-translate-y-1 hover:shadow-lg transition transform"
                         >
                             <div className="relative">
                                 <img

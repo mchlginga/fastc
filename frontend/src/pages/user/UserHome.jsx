@@ -100,7 +100,7 @@ function UserHome() {
                         Your profile is under review. You cannot enroll in
                         courses until approved.
                         <Link
-                            to="/user/profile"
+                            to="/user/settings"
                             className="text-blue-600 hover:text-blue-800 font-medium ml-2"
                         >
                             Edit Profile

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Clock, ChevronRight, CheckCircle, Book } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -99,9 +99,12 @@ function UserCourses() {
                     <p className="text-sm">
                         Your profile is under review. You cannot enroll in
                         courses until approved.
-                        <span className="text-blue-600 hover:text-blue-800 font-medium ml-2 cursor-pointer">
+                        <Link
+                            to="/user/settings"
+                            className="text-blue-600 hover:text-blue-800 font-medium ml-2"
+                        >
                             Edit Profile
-                        </span>
+                        </Link>
                     </p>
                 </div>
             )}
@@ -262,7 +265,8 @@ function UserCourses() {
                         {completedCourses.map((course) => (
                             <div
                                 key={course.courseId}
-                                className="bg-white rounded-lg shadow-md flex flex-col h-full hover:shadow-lg transition"
+                                className="bg-white rounded-lg shadow-md flex flex-col h-full 
+                                 hover:-translate-y-1 hover:shadow-lg transition transform"
                             >
                                 <div className="relative">
                                     <img
@@ -335,7 +339,7 @@ function UserCourses() {
                         return (
                             <div
                                 key={course._id}
-                                className="bg-white rounded-lg shadow-md flex flex-col h-full hover:shadow-lg transition"
+                                className="bg-white rounded-lg shadow-md flex flex-col h-full hover:-translate-y-1 hover:shadow-lg transition transform"
                             >
                                 <img
                                     src={course.image || "/default.png"}

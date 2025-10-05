@@ -166,9 +166,6 @@ function UserSettings() {
                     <p className="text-sm">
                         Your profile is under review. You cannot enroll in
                         courses until approved.
-                        <span className="text-blue-600 hover:text-blue-800 font-medium ml-2 cursor-pointer">
-                            Edit Profile
-                        </span>
                     </p>
                 </div>
             )}
