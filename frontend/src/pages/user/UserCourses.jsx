@@ -92,7 +92,7 @@ function UserCourses() {
     );
 
     return (
-        <div>
+        <div className="max-w-6xl mx-auto px-4">
             {/* Warning Message */}
             {user?.profileStatus === "pending" && (
                 <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
@@ -108,9 +108,12 @@ function UserCourses() {
 
             {/* Welcome */}
             <section className="mb-10">
-                <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                    Courses
-                </h2>
+                <div className="flex items-center mb-2">
+                    <h2 className="text-3xl font-bold text-gray-800">
+                        Courses
+                    </h2>
+                    <Book size={26} className="text-blue-600 ml-3" />
+                </div>
                 <p className="text-gray-600 text-lg">
                     Continue your learning journey or explore new courses
                 </p>

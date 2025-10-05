@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Calendar, Download, Clock, Award } from "react-feather";
+import {
+    Calendar,
+    Download,
+    Clock,
+    Award,
+    Book,
+    FileText,
+} from "react-feather";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -64,7 +71,7 @@ function UserCertificates() {
     }
 
     return (
-        <div>
+        <div className="max-w-6xl mx-auto px-4">
             {/* Warning Message */}
             {user?.profileStatus === "pending" && (
                 <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
@@ -80,9 +87,12 @@ function UserCertificates() {
 
             {/* Welcome */}
             <section className="mb-10">
-                <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                    Your Certificates
-                </h2>
+                <div className="flex items-center mb-2">
+                    <h2 className="text-3xl font-bold text-gray-800">
+                        Certificates
+                    </h2>
+                    <FileText size={26} className="text-blue-600 ml-3" />
+                </div>
                 <p className="text-gray-600 text-lg">
                     View and download all your earned certificates
                 </p>

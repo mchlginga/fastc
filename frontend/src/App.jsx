@@ -24,6 +24,7 @@ import UserHome from "./pages/user/UserHome";
 import UserCourses from "./pages/user/UserCourses";
 import UserCertificates from "./pages/user/UserCertificates";
 import UserProfile from "./pages/user/UserProfile";
+import UserSettings from "./pages/user/UserSettings";
 import CourseDetail from "./pages/user/CourseDetail";
 import Lesson from "./pages/user/Lesson";
 
@@ -93,6 +94,7 @@ function App() {
                     <Route path="courses" element={<UserCourses />} />
                     <Route path="certificates" element={<UserCertificates />} />
                     <Route path="profile" element={<UserProfile />} />
+                    <Route path="settings" element={<UserSettings />} />
                     <Route
                         path="courses/:courseId"
                         element={<CourseDetail />}

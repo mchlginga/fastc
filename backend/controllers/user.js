@@ -134,6 +134,8 @@ exports.deleteUserById = async (req, res, next) => {
 exports.updateProfile = async (req, res, next) => {
     const {
         username,
+        firstName,
+        surname,
         birthdate,
         gender,
         contactNumber,
@@ -222,6 +224,11 @@ exports.updateProfile = async (req, res, next) => {
 
         const updateData = {
             username,
+            firstName,
+            surname,
+            name: `${firstName || user.firstName} ${
+                surname || user.surname
+            }`.trim(),
             birthdate,
             gender,
             contactNumber,
