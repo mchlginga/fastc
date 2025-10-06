@@ -149,18 +149,14 @@ const Register = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-3">
                                 Select Role
                             </label>
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-2 gap-3">
                                 {[
                                     {
                                         value: "user",
                                         label: "Trainee",
                                         icon: <User size={20} />,
                                     },
-                                    {
-                                        value: "admin",
-                                        label: "Admin",
-                                        icon: <Shield size={20} />,
-                                    },
+
                                     {
                                         value: "company",
                                         label: "Company",

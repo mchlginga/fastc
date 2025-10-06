@@ -4,7 +4,7 @@ const path = require("path");
 const { PATHS } = require("../utils/constant");
 const ensureDirExist = require("../utils/ensureDirExist");
 
-const user = { _id: "68da91eea8b1dbf0dfcc96b8", name: "Sample Sample" };
+const user = { _id: "68da91eea8b1dbf0dfcc96b8", name: "Juan Dela Cruz" };
 const course = { _id: "68e06045fbb1331af3defc02", title: "Masonry" };
 const completionDate = new Date("2024-10-04");
 const expirationDate = new Date("2026-10-04");
