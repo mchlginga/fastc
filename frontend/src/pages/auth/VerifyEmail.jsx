@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Award, Mail } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -14,12 +14,13 @@ const VerifyEmail = () => {
     const [loading, setLoading] = useState(false);
     const [resendLoading, setResendLoading] = useState(false);
     const [resendMessage, setResendMessage] = useState("");
-    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const email = searchParams.get("email") || "";
+    const { state } = useLocation();
+    const email = state?.email || "";
+    const resendSuccess = state?.resendSuccess || false;
 
     useEffect(() => {
-        if (!email) navigate("/register", { replace: true });
+        if (!email) navigate("/login", { replace: true });
     }, [email, navigate]);
 
     const handleChange = (e) => {
@@ -161,10 +162,10 @@ const VerifyEmail = () => {
                 <p className="mt-6 text-center text-sm text-gray-600">
                     Back to{" "}
                     <Link
-                        to="/register"
+                        to="/login"
                         className="text-blue-600 hover:text-blue-800 font-medium transition duration-200"
                     >
-                        Register
+                        Login
                     </Link>
                 </p>
             </div>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Award, Mail, Lock } from "react-feather";
-import { login } from "../../services/authService";
+import { login, resendVerificationCode } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
@@ -49,7 +49,20 @@ const Login = () => {
             navigate(redirectPath);
         } catch (error) {
             console.error("Login error:", error);
-            setError(error.message || "Login failed.");
+            if (error.message === "Please verify your email first.") {
+                try {
+                    await resendVerificationCode(form.email);
+                    navigate("/verify-email", {
+                        state: { email: form.email, resendSuccess: true },
+                    });
+                } catch (resendError) {
+                    setError(
+                        "Failed to resend verification code. Please try again."
+                    );
+                }
+            } else {
+                setError(error.message || "Login failed.");
+            }
         } finally {
             setLoading(false);
         }
@@ -168,7 +181,7 @@ const Login = () => {
                             disabled={loading}
                             className="w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 disabled:opacity-50 cursor-pointer"
                         >
-                            {loading ? "Logging in..." : "Sign in"}
+                            {loading ? "Logging in..." : "Login"}
                         </button>
                     </form>
 

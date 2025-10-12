@@ -88,17 +88,11 @@ const Register = () => {
             await register(registerData);
             await resendVerificationCode(form.email);
             setSuccess(true);
-            setTimeout(
-                () =>
-                    navigate(
-                        `/verify-email?email=${encodeURIComponent(form.email)}`
-                    ),
-                2000
-            );
-        } catch (registerError) {
-            setError(
-                registerError.response?.data?.message || "Registration failed."
-            );
+            navigate("/verify-email", {
+                state: { email: form.email, resendSuccess: true },
+            });
+        } catch (error) {
+            setError(error.response?.data?.message || "Registration failed.");
             setLoading(false);
         }
     };
@@ -406,7 +400,7 @@ const Register = () => {
                             to="/login"
                             className="text-blue-600 hover:text-blue-800 font-medium transition duration-200"
                         >
-                            Sign in
+                            Login
                         </Link>
                     </p>
                 </div>

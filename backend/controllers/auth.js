@@ -292,7 +292,6 @@ exports.verifyCode = async (req, res, next) => {
         const publicUser = await User.findById(user._id).select("-password");
         return res.status(statusCodes.OK).json({ publicUser });
     } catch (error) {
-        console.error("Verify code error:", error.message);
         next(error);
     }
 };

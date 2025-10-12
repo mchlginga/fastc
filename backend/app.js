@@ -26,8 +26,6 @@ const {
     user,
     upload,
     certificate,
-    job,
-    match,
     completion,
     course,
 } = require("./routes/index");
@@ -65,8 +63,6 @@ app.use("/api/auth", auth);
 app.use("/api/user", user);
 app.use("/api/upload", upload);
 app.use("/api/certificates", certificate);
-app.use("/api/job", job);
-app.use("/api/match", match);
 app.use("/api/completion", completion);
 app.use("/api/courses", course);
 

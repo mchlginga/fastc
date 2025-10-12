@@ -17,7 +17,6 @@ import PendingApproval from "./pages/PendingApproval";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ResetPassword from "./pages/auth/ResetPassword";
 import ProfileSetup from "./pages/auth/ProfileSetup";
-import AdminProfileSetup from "./pages/auth/AdminProfileSetup";
 import CompanyProfileSetup from "./pages/auth/CompanyProfileSetup";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 
@@ -69,15 +68,16 @@ function App() {
                 <Route path="/terms-of-service" element={<TermSer />} />
                 <Route path="pending-approval" element={<PendingApproval />} />
 
-                {/* profile profile setup route */}
-                {/* Profile setup routes */}
+                {/* profile setup route */}
                 <Route
                     path="/profile-setup"
                     element={
                         <ProtectedRoute
                             allowedRoles={["user", "superAdmin"]}
                             condition={(user) =>
-                                user && !user.isProfileComplete
+                                user &&
+                                (user.role === "superAdmin" ||
+                                    !user.isProfileComplete)
                             }
                             redirectTo="/user"
                         >
@@ -86,31 +86,16 @@ function App() {
                     }
                 />
 
-                {/* admin profile setup route */}
-                <Route
-                    path="/admin-profile-setup"
-                    element={
-                        <ProtectedRoute
-                            allowedRoles={["admin", "superAdmin"]}
-                            condition={(user) =>
-                                user &&
-                                (user.role === "superAdmin" ||
-                                    !user.isProfileComplete)
-                            }
-                            redirectTo="/admin"
-                        >
-                            <AdminProfileSetup />
-                        </ProtectedRoute>
-                    }
-                />
-
+                {/* company profile setup route */}
                 <Route
                     path="/company-profile-setup"
                     element={
                         <ProtectedRoute
                             allowedRoles={["company", "superAdmin"]}
                             condition={(user) =>
-                                user && !user.isProfileComplete
+                                user &&
+                                (user.role === "superAdmin" ||
+                                    !user.isProfileComplete)
                             }
                             redirectTo="/company"
                         >
