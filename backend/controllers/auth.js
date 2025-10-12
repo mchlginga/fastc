@@ -310,3 +310,48 @@ exports.checkUsername = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.updateProfile = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const {
+            firstName,
+            surname,
+            birthdate,
+            gender,
+            contactNumber,
+            address,
+            educations,
+            certificates,
+            availability,
+        } = req.body;
+
+        const updatedData = {
+            firstName,
+            surname,
+            name: `${firstName} ${surname}`.trim(),
+            birthdate,
+            gender,
+            contactNumber,
+            address,
+            educations,
+            certificates,
+            availability,
+        };
+
+        const user = await User.findByIdAndUpdate(userId, updatedData, {
+            new: true,
+            runValidators: true,
+        }).select("-password");
+
+        if (!user) {
+            return res
+                .status(statusCodes.NOT_FOUND)
+                .json({ message: "User not found." });
+        }
+
+        return res.status(statusCodes.OK).json({ user });
+    } catch (error) {
+        next(error);
+    }
+};

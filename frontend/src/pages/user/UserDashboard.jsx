@@ -1,278 +1,288 @@
-import { useState } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Award, Menu, X, User, Mail, Phone } from "react-feather";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+    Book,
+    FileText,
+    Clock,
+    TrendingUp,
+    Activity,
+    Star,
+} from "react-feather";
 import { useAuth } from "../../context/AuthContext";
+import { getCompletions } from "../../services/authService";
 
-const UserDashboard = () => {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-    const { handleLogout } = useAuth();
-    const navigate = useNavigate();
+function UserDashboard() {
+    const { user } = useAuth();
+    const [dashboardData, setDashboardData] = useState({
+        activeCourses: 0,
+        certificates: 0,
+        pendingEnrollments: 0,
+        courses: [],
+    });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
-    };
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                setLoading(true);
+                const data = await getCompletions(user._id);
+                const activeCourses = data.courses.filter(
+                    (c) => c.status === "approved"
+                ).length;
+                const certificates = data.courses.filter(
+                    (c) => c.progress === 100
+                ).length;
+                const pendingEnrollments = data.courses.filter(
+                    (c) => c.status === "pending"
+                ).length;
 
-    const closeMenu = () => {
-        setIsMenuOpen(false);
-    };
+                setDashboardData({
+                    activeCourses,
+                    certificates,
+                    pendingEnrollments,
+                    courses: data.courses,
+                });
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const toggleDropdown = () => {
-        setIsDropdownOpen(!isDropdownOpen);
-    };
+        if (user) fetchDashboardData();
+    }, [user]);
 
-    const closeDropdown = () => {
-        setIsDropdownOpen(false);
-    };
+    if (loading) {
+        return (
+            <div className="text-gray-600 text-center text-sm py-10 animate-pulse">
+                Loading your dashboard...
+            </div>
+        );
+    }
 
-    const openLogoutModal = () => {
-        setIsLogoutModalOpen(true);
-        closeDropdown();
-        closeMenu();
-    };
+    if (error) {
+        return (
+            <div className="text-red-600 text-center text-sm py-10">
+                Error: {error}
+            </div>
+        );
+    }
 
-    const closeLogoutModal = () => {
-        setIsLogoutModalOpen(false);
-    };
-
-    const confirmLogout = async () => {
-        await handleLogout();
-        closeLogoutModal();
-        navigate("/login");
-    };
+    // Calculate average progress for donut visualization
+    const totalProgress =
+        dashboardData.courses.reduce((sum, c) => sum + c.progress, 0) || 0;
+    const avgProgress =
+        dashboardData.courses.length > 0
+            ? Math.round(totalProgress / dashboardData.courses.length)
+            : 0;
 
     return (
-        <div>
-            {/* HEADER */}
-            <header className="bg-white sticky top-0 mx-auto px-4 sm:px-6 lg:px-8 shadow-sm z-50">
-                <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-                    <Link
-                        to="/user"
-                        className="flex items-center cursor-pointer"
-                    >
-                        <Award size={32} className="text-blue-600 mr-2" />
-                        <h1 className="text-xl font-bold text-gray-800">
-                            FAST-C
-                        </h1>
-                    </Link>
-                    <div className="hidden md:flex items-center space-x-6">
-                        <NavLink
-                            to="/user"
-                            end
-                            className={({ isActive }) =>
-                                isActive
-                                    ? "text-blue-600 font-semibold border-b-2 border-blue-600"
-                                    : "text-gray-600 font-semibold hover:text-blue-600 transition duration-200"
-                            }
-                        >
-                            Dashboard
-                        </NavLink>
-                        <NavLink
-                            to="/user/courses"
-                            end
-                            className={({ isActive }) =>
-                                isActive
-                                    ? "text-blue-600 font-semibold border-b-2 border-blue-600"
-                                    : "text-gray-600 font-semibold hover:text-blue-600 transition duration-200"
-                            }
-                        >
-                            Courses
-                        </NavLink>
-                        <NavLink
-                            to="/user/certificates"
-                            end
-                            className={({ isActive }) =>
-                                isActive
-                                    ? "text-blue-600 font-semibold border-b-2 border-blue-600"
-                                    : "text-gray-600 font-semibold hover:text-blue-600 transition duration-200"
-                            }
-                        >
-                            Certificates
-                        </NavLink>
-                        <div className="relative">
-                            <div
-                                className="h-8 w-8 ml-2 rounded-full bg-indigo-200 flex items-center justify-center cursor-pointer border-1 border-blue-600 hover:bg-indigo-300 transition duration-200"
-                                onClick={toggleDropdown}
-                            >
-                                <User size={24} />
-                            </div>
-                            {isDropdownOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-md z-50">
-                                    <NavLink
-                                        to="/user/profile"
-                                        onClick={closeDropdown}
-                                        className="block px-4 py-2 text-gray-600 font-semibold hover:bg-blue-50 hover:text-blue-600 transition duration-200"
-                                    >
-                                        My Profile
-                                    </NavLink>
-                                    <NavLink
-                                        to="/user/settings"
-                                        onClick={closeDropdown}
-                                        className="block px-4 py-2 text-gray-600 font-semibold hover:bg-blue-50 hover:text-blue-600 transition duration-200"
-                                    >
-                                        Settings
-                                    </NavLink>
-                                    <button
-                                        onClick={openLogoutModal}
-                                        className="block w-full text-left px-4 py-2 text-gray-600 font-semibold hover:bg-blue-50 hover:text-blue-600 transition duration-200 cursor-pointer"
-                                    >
-                                        Logout
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="md:hidden flex items-center">
-                        <button
-                            onClick={toggleMenu}
-                            className="text-gray-600 hover:text-blue-600 transition duration-200 cursor-pointer"
-                            aria-label={isMenuOpen ? "Close Menu" : "Open Menu"}
-                        >
-                            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                        </button>
-                    </div>
+        <div className="max-w-6xl mx-auto px-4 pb-16">
+            {/* Hero Section */}
+            <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl text-white p-10 mb-12 shadow-lg overflow-hidden">
+                <div className="absolute inset-0 opacity-10 bg-[url('/wave-pattern.svg')] bg-cover"></div>
+                <div className="relative z-10">
+                    <h1 className="text-4xl font-bold mb-2">
+                        Welcome back, {user?.firstName || "Learner"} 👋
+                    </h1>
+                    <p className="text-blue-100 text-lg">
+                        Continue your learning journey and track your progress
+                        below.
+                    </p>
                 </div>
+            </div>
 
-                {/* Mobile Menu */}
-                {isMenuOpen && (
-                    <div className="md:hidden bg-white shadow-xl absolute top-16 left-0 w-full z-50">
-                        <div className="flex flex-col items-center space-y-3 py-6">
-                            <NavLink
-                                to="/user"
-                                end
-                                onClick={closeMenu}
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "text-blue-600 font-semibold text-lg w-full text-center py-2 bg-blue-50"
-                                        : "text-gray-600 font-semibold text-lg w-full text-center py-2 hover:bg-blue-50 hover:text-blue-600 transition duration-200"
-                                }
-                            >
-                                Dashboard
-                            </NavLink>
-                            <NavLink
-                                to="/user/courses"
-                                end
-                                onClick={closeMenu}
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "text-blue-600 font-semibold text-lg w-full text-center py-2 bg-blue-50"
-                                        : "text-gray-600 font-semibold text-lg w-full text-center py-2 hover:bg-blue-50 hover:text-blue-600 transition duration-200"
-                                }
-                            >
-                                Courses
-                            </NavLink>
-                            <NavLink
-                                to="/user/certificates"
-                                end
-                                onClick={closeMenu}
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "text-blue-600 font-semibold text-lg w-full text-center py-2 bg-blue-50"
-                                        : "text-gray-600 font-semibold text-lg w-full text-center py-2 hover:bg-blue-50 hover:text-blue-600 transition duration-200"
-                                }
-                            >
-                                Certificates
-                            </NavLink>
-                            <NavLink
-                                to="/user/profile"
-                                onClick={closeMenu}
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "text-blue-600 font-semibold text-lg w-full text-center py-2 bg-blue-50"
-                                        : "text-gray-600 font-semibold text-lg w-full text-center py-2 hover:bg-blue-50 hover:text-blue-600 transition duration-200"
-                                }
-                            >
-                                My Profile
-                            </NavLink>
-                            <NavLink
-                                to="/user/settings"
-                                onClick={closeMenu}
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "text-blue-600 font-semibold text-lg w-full text-center py-2 bg-blue-50"
-                                        : "text-gray-600 font-semibold text-lg w-full text-center py-2 hover:bg-blue-50 hover:text-blue-600 transition duration-200"
-                                }
-                            >
-                                Settings
-                            </NavLink>
-                            <button
-                                onClick={openLogoutModal}
-                                className="text-gray-600 font-semibold text-lg w-full text-center py-2 hover:bg-blue-50 hover:text-blue-600 transition duration-200 cursor-pointer"
-                            >
-                                Logout
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </header>
-
-            {/* Logout Confirmation Modal */}
-            {isLogoutModalOpen && (
-                <div className="fixed inset-0 backdrop-blur-lg bg-black bg-opacity-10 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                            Confirm Logout
-                        </h2>
-                        <p className="text-gray-600 mb-6">
-                            Are you sure you want to sign out?
-                        </p>
-                        <div className="flex justify-end space-x-4">
-                            <button
-                                onClick={closeLogoutModal}
-                                className="px-4 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-md transition duration-200 cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmLogout}
-                                className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 cursor-pointer transition duration-200"
-                            >
-                                Sign Out
-                            </button>
-                        </div>
-                    </div>
+            {/* Profile Warning */}
+            {user?.profileStatus === "pending" && (
+                <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
+                    <p className="text-sm">
+                        Your profile is under review. You cannot enroll in
+                        courses until approved.
+                        <Link
+                            to="/user/settings"
+                            className="text-blue-600 hover:text-blue-800 font-medium ml-2"
+                        >
+                            Edit Profile
+                        </Link>
+                    </p>
                 </div>
             )}
 
-            {/* main content */}
-            <main className="container mx-auto px-4 py-8 min-h-screen">
-                <Outlet />
-            </main>
+            {/* Dashboard Stats */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                {[
+                    {
+                        title: "Active Courses",
+                        icon: <Book size={26} className="text-blue-600" />,
+                        value: dashboardData.activeCourses,
+                        bg: "bg-blue-100",
+                    },
+                    {
+                        title: "Certificates",
+                        icon: <FileText size={26} className="text-green-600" />,
+                        value: dashboardData.certificates,
+                        bg: "bg-green-100",
+                    },
+                    {
+                        title: "Pending Enrollments",
+                        icon: <Clock size={26} className="text-purple-600" />,
+                        value: dashboardData.pendingEnrollments,
+                        bg: "bg-purple-100",
+                    },
+                    {
+                        title: "Avg Progress",
+                        icon: (
+                            <TrendingUp size={26} className="text-orange-600" />
+                        ),
+                        value: `${avgProgress}%`,
+                        bg: "bg-orange-100",
+                    },
+                ].map((card, idx) => (
+                    <div
+                        key={idx}
+                        className="bg-white rounded-2xl shadow-md p-6 flex items-center justify-between hover:-translate-y-1 hover:shadow-lg transition transform"
+                    >
+                        <div className={`${card.bg} p-3 rounded-xl mr-4`}>
+                            {card.icon}
+                        </div>
+                        <div className="text-right">
+                            <h3 className="text-3xl font-bold text-gray-800">
+                                {card.value}
+                            </h3>
+                            <p className="text-gray-500 text-sm">
+                                {card.title}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </section>
 
-            {/* footer */}
-            <footer className="bg-white shadow-md mt-12">
-                <div className="container mx-auto px-4 py-8">
-                    <div className="flex flex-col md:flex-row justify-between items-center">
-                        <div className="flex items-center mb-4 md:mb-0">
-                            <Award size={24} className="text-blue-600 mr-2" />
-                            <span className="text-lg font-bold text-gray-800">
-                                FAST-C
+            {/* Progress Overview */}
+            <section className="flex flex-col md:flex-row items-center bg-white rounded-2xl shadow-md mb-10 overflow-hidden">
+                <div className="p-8 md:w-1/3 flex justify-center items-center">
+                    <div className="relative w-40 h-40">
+                        <svg className="absolute inset-0" viewBox="0 0 36 36">
+                            <path
+                                className="text-gray-200"
+                                strokeWidth="3.8"
+                                stroke="currentColor"
+                                fill="none"
+                                d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path
+                                className="text-indigo-600"
+                                strokeWidth="3.8"
+                                strokeDasharray={`${avgProgress}, 100`}
+                                stroke="currentColor"
+                                fill="none"
+                                strokeLinecap="round"
+                                d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col justify-center items-center">
+                            <span className="text-3xl font-bold text-gray-800">
+                                {avgProgress}%
+                            </span>
+                            <span className="text-gray-500 text-sm">
+                                Avg Progress
                             </span>
                         </div>
-                        <div className="flex space-x-6">
-                            <a
-                                href="mailto:cpesocsfp2023@gmail.com"
-                                className="text-gray-600 hover:text-blue-600"
-                            >
-                                <Mail size={24} />
-                            </a>
-                            <a
-                                href="tel:0905-404-2950"
-                                className="text-gray-600 hover:text-blue-600"
-                            >
-                                <Phone size={24} />
-                            </a>
-                        </div>
-                    </div>
-                    <div className="border-t border-gray-400 mt-8 pt-8 text-center text-gray-500 text-sm">
-                        <p>© 2025 FAST-C. All rights reserved.</p>
                     </div>
                 </div>
-            </footer>
+                <div className="p-8 md:w-2/3">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-3">
+                        Learning Insights
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                        You’re doing great! Keep your streak going by completing
+                        your current courses and earning more certificates.
+                    </p>
+                    <Link
+                        to="/user/courses"
+                        className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
+                    >
+                        <Activity size={16} className="mr-2" /> View My Courses
+                    </Link>
+                </div>
+            </section>
+
+            {/* Recent Courses */}
+            <section>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                        Recent Courses
+                    </h3>
+                    <Link
+                        to="/user/courses"
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                        View All
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {dashboardData.courses.slice(0, 4).map((course) => (
+                        <div
+                            key={course.courseId}
+                            className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition flex flex-col"
+                        >
+                            <div className="flex justify-between items-center mb-3">
+                                <h4 className="font-medium text-gray-800">
+                                    {user?.profileStatus === "pending" ? (
+                                        <span>{course.title}</span>
+                                    ) : (
+                                        <Link
+                                            to={`/user/courses/${course.courseId}`}
+                                            className="hover:text-blue-600"
+                                        >
+                                            {course.title}
+                                        </Link>
+                                    )}
+                                </h4>
+                                <span className="text-sm font-semibold text-gray-600">
+                                    {course.progress}%
+                                </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
+                                <div
+                                    className="bg-indigo-600 h-2.5 rounded-full"
+                                    style={{ width: `${course.progress}%` }}
+                                ></div>
+                            </div>
+                            <div className="flex justify-between text-sm text-gray-500">
+                                <span>Status: {course.status}</span>
+                                <div className="flex items-center">
+                                    <Star
+                                        size={14}
+                                        className="mr-1 text-yellow-500"
+                                    />
+                                    <span>{course.rating || "4.8"}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+
+                    {dashboardData.courses.length === 0 && (
+                        <div className="bg-white rounded-2xl shadow-md p-6 text-center text-gray-600">
+                            No courses yet —{" "}
+                            <Link
+                                to="/user/courses"
+                                className="text-blue-600 hover:text-blue-800 font-medium"
+                            >
+                                enroll now
+                            </Link>{" "}
+                            to start learning!
+                        </div>
+                    )}
+                </div>
+            </section>
         </div>
     );
-};
+}
 
 export default UserDashboard;

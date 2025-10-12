@@ -9,6 +9,7 @@ const cookieParser = require("cookie-parser");
 require("./models/user");
 require("./models/course");
 require("./models/completion");
+require("./models/shortlist");
 
 // config
 const config = require("./config/index");
@@ -28,6 +29,7 @@ const {
     certificate,
     completion,
     course,
+    match,
 } = require("./routes/index");
 
 const app = express();
@@ -65,6 +67,7 @@ app.use("/api/upload", upload);
 app.use("/api/certificates", certificate);
 app.use("/api/completion", completion);
 app.use("/api/courses", course);
+app.use("/api/match", match);
 
 app.use((req, res) => {
     res.status(statusCodes.NOT_FOUND).json({ message: "Invalid route." });

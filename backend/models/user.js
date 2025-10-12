@@ -72,38 +72,46 @@ const userSchema = new mongoose.Schema(
             default: false,
         },
         birthdate: {
-            type: String,
+            type: Date,
         },
         gender: {
             type: String,
+            enum: ["male", "female", "other"],
         },
         contactNumber: {
             type: String,
+            trim: true,
         },
         address: {
             type: String,
+            trim: true,
         },
-        education: [
+        educations: [
             {
-                educationLevel: { type: String },
-                schoolName: { type: String },
-                yearGraduated: { type: String },
-                proof: { type: String },
+                level: { type: String, trim: true },
+                school: { type: String, trim: true },
+                year: { type: String, trim: true },
+                file: { type: String }, // Path to uploaded file
             },
         ],
         certificates: [
             {
-                name: { type: String },
-                issuer: { type: String },
-                date: { type: String },
-                proof: { type: String },
+                name: { type: String, trim: true },
+                issuer: { type: String, trim: true },
+                date: { type: Date },
+                file: { type: String }, // Path to uploaded file
             },
         ],
-        position: {
+        skills: [
+            {
+                type: String,
+                trim: true,
+            },
+        ],
+        availability: {
             type: String,
-        },
-        idProof: {
-            type: String,
+            enum: ["Full-time", "Part-time", "N/A"],
+            default: "N/A",
         },
         industryType: {
             type: String,

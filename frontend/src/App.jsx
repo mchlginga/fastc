@@ -21,8 +21,8 @@ import CompanyProfileSetup from "./pages/auth/CompanyProfileSetup";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 
 /* user or trainees */
+import UserHeaderFooter from "./pages/user/UserHeaderFooter";
 import UserDashboard from "./pages/user/UserDashboard";
-import UserHome from "./pages/user/UserHome";
 import UserCourses from "./pages/user/UserCourses";
 import UserCertificates from "./pages/user/UserCertificates";
 import UserProfile from "./pages/user/UserProfile";
@@ -31,14 +31,13 @@ import CourseDetail from "./pages/user/CourseDetail";
 import Lesson from "./pages/user/Lesson";
 
 /* admin */
+import AdminHeaderFooter from "./pages/admin/AdminHeaderFooter";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProfileReview from "./pages/admin/AdminProfileReview";
-import AdminHome from "./pages/admin/Home";
-import AdminUsers from "./pages/admin/Users";
-import AdminCourses from "./pages/admin/Courses";
-import AdminCertificates from "./pages/admin/Certificates";
-import AdminJob from "./pages/admin/JobMatching";
-import AdminProfile from "./pages/admin/Profile";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminCourses from "./pages/admin/AdminCourses";
+import AdminCertificates from "./pages/admin/AdminCertificates";
+import AdminJob from "./pages/admin/AdminJobMatching";
+import AdminProfile from "./pages/admin/AdminProfile";
 
 /* company */
 import CompanyDashboard from "./pages/company/CompanyDashboard";
@@ -109,11 +108,11 @@ function App() {
                     path="/user/*"
                     element={
                         <ProtectedRoute allowedRoles={["user", "superAdmin"]}>
-                            <UserDashboard />
+                            <UserHeaderFooter />
                         </ProtectedRoute>
                     }
                 >
-                    <Route path="" element={<UserHome />} />
+                    <Route path="" element={<UserDashboard />} />
                     <Route path="courses" element={<UserCourses />} />
                     <Route path="certificates" element={<UserCertificates />} />
                     <Route path="profile" element={<UserProfile />} />
@@ -133,11 +132,11 @@ function App() {
                     path="/admin/*"
                     element={
                         <ProtectedRoute allowedRoles={["admin", "superAdmin"]}>
-                            <AdminDashboard />
+                            <AdminHeaderFooter />
                         </ProtectedRoute>
                     }
                 >
-                    <Route path="" element={<AdminHome />} />
+                    <Route path="" element={<AdminDashboard />} />
                     <Route path="users" element={<AdminUsers />} />
                     <Route path="courses" element={<AdminCourses />} />
                     <Route
@@ -146,10 +145,6 @@ function App() {
                     />
                     <Route path="job-match" element={<AdminJob />} />
                     <Route path="profile" element={<AdminProfile />} />
-                    <Route
-                        path="profile-review"
-                        element={<AdminProfileReview />}
-                    />
                 </Route>
 
                 {/* Company Routes */}

@@ -8,7 +8,18 @@ const path = require("path");
 const { statusCodes, PATHS } = require("../utils/constant");
 const ensureDirExist = require("../utils/ensureDirExist");
 
-// Generate certificate PDF
+// Map certificate names to skills
+const certificateToSkillMap = {
+    "Welding I": "Welding",
+    "Welding II": "Welding",
+    "Beauty Care I": "Beauty Care",
+    "Massage Therapy I": "Massage Therapy",
+    "Housekeeping I": "Housekeeping",
+    "Carpentry I": "Carpentry",
+    "Masonry I": "Masonry",
+};
+
+// Generate certificate PDF (unchanged)
 const generateCertificatePDF = (
     user,
     course,
@@ -23,102 +34,76 @@ const generateCertificatePDF = (
         });
         const fileName = `certificate_${user._id}_${course._id}.pdf`;
         const filePath = path.join(PATHS.certDir, fileName);
-
         console.log(`Generating certificate at: ${filePath}`);
         ensureDirExist(PATHS.certDir);
-
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
 
-        // helper para center text safely sa loob ng border
         function centerText(text, y, options = {}) {
             doc.text(text, 50, y, {
-                width: doc.page.width - 100, // respect 50 margin left/right
+                width: doc.page.width - 100,
                 align: "center",
                 ...options,
             });
         }
 
-        // === BORDER ===
         doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40)
             .lineWidth(4)
             .strokeColor("#3B82F6")
             .stroke();
-
         doc.rect(35, 35, doc.page.width - 70, doc.page.height - 70)
             .lineWidth(1)
             .strokeColor("#93C5FD")
             .stroke();
-
-        // === WATERMARK ===
         doc.fontSize(120)
             .fillColor("#F3F4F6")
             .opacity(0.25)
             .rotate(-30, { origin: [400, 300] })
             .text("FAST-C", 100, 250, { align: "center", width: 600 });
         doc.rotate(30, { origin: [400, 300] }).opacity(1);
-
-        // === HEADER ===
         doc.font("Times-Bold").fontSize(24).fillColor("#1E3A8A");
         centerText("FERNANDINO ASSESSMENT AND SKILLS TRAINING CENTER", 80);
-
         doc.font("Times-Roman").fontSize(18).fillColor("#374151");
         centerText("Certificate of Completion", 120);
-
-        // === BODY ===
         doc.font("Times-Roman").fontSize(14).fillColor("#111827");
         centerText("This certificate is proudly presented to", 180);
-
         doc.font("Times-Bold").fontSize(30).fillColor("#000000");
         centerText(user.name, 215);
-
         doc.font("Times-Roman").fontSize(14).fillColor("#111827");
         centerText("For successfully completing the training course on", 260);
-
         doc.font("Times-Bold").fontSize(22).fillColor("#1E3A8A");
         centerText(course.title, 290);
-
-        // === DATES ===
         doc.font("Times-Roman").fontSize(12).fillColor("#374151");
         centerText(`Completion Date: ${completionDate.toDateString()}`, 360);
         centerText(`Expiration Date: ${expirationDate.toDateString()}`, 380);
 
-        // === SIGNATURES (centered layout) ===
         const sigY = 460;
-        const marginX = 70; // start inside border
-        const sectionWidth = (doc.page.width - marginX * 2) / 2; // hati page sa 2
-
-        // left signature
+        const marginX = 70;
+        const sectionWidth = (doc.page.width - marginX * 2) / 2;
         doc.moveTo(marginX, sigY)
             .lineTo(marginX + sectionWidth - 40, sigY)
             .strokeColor("#6B7280")
             .stroke();
-
         doc.fontSize(10)
             .fillColor("#111827")
             .text("Authorized Signature", marginX, sigY + 5, {
                 width: sectionWidth - 40,
                 align: "center",
             });
-
-        // right signature
         const rightStart = marginX + sectionWidth + 40;
         doc.moveTo(rightStart, sigY)
-            .lineTo(marginX + sectionWidth * 2, sigY) // hanggang loob ng border
+            .lineTo(marginX + sectionWidth * 2, sigY)
             .stroke();
-
         doc.text("Training Director", rightStart, sigY + 5, {
             width: sectionWidth - 40,
             align: "center",
         });
 
-        // === FOOTER ===
         doc.fontSize(8).fillColor("#6B7280");
         centerText(
             "Issued by FAST-C Digital Profiling and Certification System",
             doc.page.height - 60
         );
-
         doc.end();
 
         stream.on("finish", () => {
@@ -139,6 +124,7 @@ exports.createCertificate = async (req, res, next) => {
         console.log(
             `Creating certificate for user: ${userId}, course: ${courseId}`
         );
+
         const completion = await Completion.findOne({
             user: userId,
             course: courseId,
@@ -184,6 +170,24 @@ exports.createCertificate = async (req, res, next) => {
             status: "active",
         });
 
+        // Add to User.certificates and User.skills
+        const skill = certificateToSkillMap[course.title] || course.title; // Fallback to course title if no mapping
+        await User.findByIdAndUpdate(
+            userId,
+            {
+                $addToSet: {
+                    certificates: {
+                        name: course.title,
+                        issuer: "FAST-C",
+                        date: completionDate,
+                        file: certificate.certificateUrl,
+                    },
+                    skills: skill, // Add corresponding skill
+                },
+            },
+            { new: true }
+        );
+
         console.log(`Certificate created: ${certificate._id}`);
         res.status(statusCodes.CREATED).json({
             certificateId: certificate._id.toString(),
@@ -199,7 +203,7 @@ exports.createCertificate = async (req, res, next) => {
     }
 };
 
-// Get user's certificates
+// Get user's certificates (unchanged)
 exports.getCertificates = async (req, res, next) => {
     try {
         const { user } = req.query;
@@ -207,6 +211,7 @@ exports.getCertificates = async (req, res, next) => {
         const certificates = await Certificate.find({ user })
             .populate("course", "image duration")
             .lean();
+
         const now = new Date();
         const formattedCertificates = certificates.map((cert) => ({
             certificateId: cert._id.toString(),
@@ -220,6 +225,7 @@ exports.getCertificates = async (req, res, next) => {
                 new Date(cert.expirationDate) < now ? "expired" : cert.status,
             certificateUrl: cert.certificateUrl,
         }));
+
         console.log(`Fetched certificates:`, formattedCertificates);
         res.status(statusCodes.OK).json({
             certificates: formattedCertificates,
@@ -230,7 +236,7 @@ exports.getCertificates = async (req, res, next) => {
     }
 };
 
-// Download certificate PDF
+// Download certificate PDF (unchanged)
 exports.downloadCertificate = async (req, res, next) => {
     try {
         const { certificateId } = req.params;
@@ -242,12 +248,10 @@ exports.downloadCertificate = async (req, res, next) => {
                 message: "Certificate not found.",
             });
         }
-
         console.log(`Certificate found: ${JSON.stringify(certificate)}`);
         const fileName = path.basename(certificate.certificateUrl);
         const filePath = path.join(PATHS.certDir, fileName);
         console.log(`Resolved file path: ${filePath}`);
-
         if (!fs.existsSync(filePath)) {
             console.log(
                 `File not found, regenerating certificate: ${certificateId}`
@@ -278,17 +282,14 @@ exports.downloadCertificate = async (req, res, next) => {
             }
             console.log(`Certificate regenerated successfully: ${filePath}`);
         }
-
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
             `attachment; filename="FAST-C_Certificate_${certificate.title}.pdf"`
         );
-
         const fileStream = fs.createReadStream(filePath);
         console.log(`Streaming file: ${filePath}`);
         fileStream.pipe(res);
-
         fileStream.on("error", (err) => {
             console.error(`Error reading file: ${err.message}`);
             res.status(statusCodes.INTERNAL_SERVER_ERROR).json({

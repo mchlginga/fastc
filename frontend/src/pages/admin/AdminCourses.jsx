@@ -1,4 +1,4 @@
-const AdminDashboard = () => {
+const AdminCourses = () => {
     return (
         <div>
             <div></div>
@@ -6,4 +6,4 @@ const AdminDashboard = () => {
     );
 };
 
-export default AdminDashboard;
+export default AdminCourses;
