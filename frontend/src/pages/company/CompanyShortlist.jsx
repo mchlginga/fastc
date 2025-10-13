@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Eye, Trash2, Bookmark, Download } from "react-feather";
 
-const Shortlist = () => {
+const CompanyShortlist = () => {
     const [shortlist, setShortlist] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [message, setMessage] = useState("");
@@ -172,4 +172,4 @@ const Shortlist = () => {
     );
 };
 
-export default Shortlist;
+export default CompanyShortlist;

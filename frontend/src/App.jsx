@@ -40,11 +40,10 @@ import AdminJob from "./pages/admin/AdminJobMatching";
 import AdminProfile from "./pages/admin/AdminProfile";
 
 /* company */
+import CompanyHeaderFooter from "./pages/company/CompanyHeaderFooter";
 import CompanyDashboard from "./pages/company/CompanyDashboard";
-import CompanyHome from "./pages/company/Home";
-import CompanyTrainees from "./pages/company/Trainees";
-import CompanyShortlist from "./pages/company/Shortlist";
-import CompanyProfile from "./pages/company/Profile";
+import CompanyShortlist from "./pages/company/CompanyShortlist";
+import CompanyProfile from "./pages/company/CompanyProfile";
 
 function App() {
     return (
@@ -154,12 +153,11 @@ function App() {
                         <ProtectedRoute
                             allowedRoles={["company", "superAdmin"]}
                         >
-                            <CompanyDashboard />
+                            <CompanyHeaderFooter />
                         </ProtectedRoute>
                     }
                 >
-                    <Route path="" element={<CompanyHome />} />
-                    <Route path="trainees" element={<CompanyTrainees />} />
+                    <Route path="" element={<CompanyDashboard />} />
                     <Route path="shortlist" element={<CompanyShortlist />} />
                     <Route path="profile" element={<CompanyProfile />} />
                 </Route>

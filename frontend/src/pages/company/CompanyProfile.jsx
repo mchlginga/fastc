@@ -13,7 +13,7 @@ import {
     Save,
 } from "react-feather";
 
-const Profile = () => {
+const CompanyProfile = () => {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState("company");
     const [companyInfo, setCompanyInfo] = useState({
@@ -63,24 +63,30 @@ const Profile = () => {
 
     const validateCompanyInfo = () => {
         const newErrors = {};
-        if (!companyInfo.companyName.trim()) newErrors.companyName = "Company name is required";
+        if (!companyInfo.companyName.trim())
+            newErrors.companyName = "Company name is required";
         if (!companyInfo.email.trim()) {
             newErrors.email = "Email is required";
         } else if (!/\S+@\S+\.\S+/.test(companyInfo.email)) {
             newErrors.email = "Invalid email format";
         }
-        if (!companyInfo.address.trim()) newErrors.address = "Address is required";
-        if (!companyInfo.industry.trim()) newErrors.industry = "Industry is required";
+        if (!companyInfo.address.trim())
+            newErrors.address = "Address is required";
+        if (!companyInfo.industry.trim())
+            newErrors.industry = "Industry is required";
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const validatePassword = () => {
         const newErrors = {};
-        if (!password.current.trim()) newErrors.current = "Current password is required";
+        if (!password.current.trim())
+            newErrors.current = "Current password is required";
         if (!password.new.trim()) newErrors.new = "New password is required";
-        if (password.new.length < 8) newErrors.new = "New password must be at least 8 characters";
-        if (password.new !== password.confirm) newErrors.confirm = "Passwords do not match";
+        if (password.new.length < 8)
+            newErrors.new = "New password must be at least 8 characters";
+        if (password.new !== password.confirm)
+            newErrors.confirm = "Passwords do not match";
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -117,14 +123,18 @@ const Profile = () => {
     const handleDeleteAccount = () => {
         console.log("Deleting account");
         // Placeholder for API call (e.g., DELETE /account)
-        setSubmitMessage("Account deletion requested. Please confirm with admin.");
+        setSubmitMessage(
+            "Account deletion requested. Please confirm with admin."
+        );
         setTimeout(() => setSubmitMessage(""), 3000);
     };
 
     return (
         <div>
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-800">Company Profile</h1>
+                <h1 className="text-2xl font-bold text-gray-800">
+                    Company Profile
+                </h1>
                 <p className="text-gray-600">
                     Manage your company information and account settings
                 </p>
@@ -161,7 +171,10 @@ const Profile = () => {
             </div>
 
             {/* Tab Content */}
-            <div className={activeTab === "company" ? "" : "hidden"} id="company">
+            <div
+                className={activeTab === "company" ? "" : "hidden"}
+                id="company"
+            >
                 <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">
                         Company Information
@@ -181,7 +194,9 @@ const Profile = () => {
                                 }`}
                             />
                             {errors.companyName && (
-                                <p className="text-sm text-red-500 mt-1">{errors.companyName}</p>
+                                <p className="text-sm text-red-500 mt-1">
+                                    {errors.companyName}
+                                </p>
                             )}
                         </div>
                         <div>
@@ -198,7 +213,9 @@ const Profile = () => {
                                 }`}
                             />
                             {errors.email && (
-                                <p className="text-sm text-red-500 mt-1">{errors.email}</p>
+                                <p className="text-sm text-red-500 mt-1">
+                                    {errors.email}
+                                </p>
                             )}
                         </div>
                         <div>
@@ -227,7 +244,9 @@ const Profile = () => {
                                 }`}
                             />
                             {errors.address && (
-                                <p className="text-sm text-red-500 mt-1">{errors.address}</p>
+                                <p className="text-sm text-red-500 mt-1">
+                                    {errors.address}
+                                </p>
                             )}
                         </div>
                         <div>
@@ -242,14 +261,20 @@ const Profile = () => {
                                     errors.industry ? "border-red-500" : ""
                                 }`}
                             >
-                                <option value="Construction">Construction</option>
-                                <option value="Manufacturing">Manufacturing</option>
+                                <option value="Construction">
+                                    Construction
+                                </option>
+                                <option value="Manufacturing">
+                                    Manufacturing
+                                </option>
                                 <option value="Healthcare">Healthcare</option>
                                 <option value="Education">Education</option>
                                 <option value="Other">Other</option>
                             </select>
                             {errors.industry && (
-                                <p className="text-sm text-red-500 mt-1">{errors.industry}</p>
+                                <p className="text-sm text-red-500 mt-1">
+                                    {errors.industry}
+                                </p>
                             )}
                         </div>
                         <div>
@@ -266,7 +291,9 @@ const Profile = () => {
                         {submitMessage && activeTab === "company" && (
                             <p
                                 className={`text-sm ${
-                                    submitMessage.includes("successfully") ? "text-green-600" : "text-red-500"
+                                    submitMessage.includes("successfully")
+                                        ? "text-green-600"
+                                        : "text-red-500"
                                 }`}
                             >
                                 {submitMessage}
@@ -283,7 +310,10 @@ const Profile = () => {
                 </div>
             </div>
 
-            <div className={activeTab === "certificates" ? "" : "hidden"} id="certificates">
+            <div
+                className={activeTab === "certificates" ? "" : "hidden"}
+                id="certificates"
+            >
                 <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold text-gray-800">
@@ -350,7 +380,10 @@ const Profile = () => {
                 </div>
             </div>
 
-            <div className={activeTab === "settings" ? "" : "hidden"} id="settings">
+            <div
+                className={activeTab === "settings" ? "" : "hidden"}
+                id="settings"
+            >
                 <div className="bg-white rounded-xl shadow-sm p-6 card-hover transition">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">
                         Account Settings
@@ -371,11 +404,15 @@ const Profile = () => {
                                         value={password.current}
                                         onChange={handlePasswordChange}
                                         className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                            errors.current ? "border-red-500" : ""
+                                            errors.current
+                                                ? "border-red-500"
+                                                : ""
                                         }`}
                                     />
                                     {errors.current && (
-                                        <p className="text-sm text-red-500 mt-1">{errors.current}</p>
+                                        <p className="text-sm text-red-500 mt-1">
+                                            {errors.current}
+                                        </p>
                                     )}
                                 </div>
                                 <div>
@@ -392,7 +429,9 @@ const Profile = () => {
                                         }`}
                                     />
                                     {errors.new && (
-                                        <p className="text-sm text-red-500 mt-1">{errors.new}</p>
+                                        <p className="text-sm text-red-500 mt-1">
+                                            {errors.new}
+                                        </p>
                                     )}
                                 </div>
                                 <div>
@@ -405,17 +444,25 @@ const Profile = () => {
                                         value={password.confirm}
                                         onChange={handlePasswordChange}
                                         className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                            errors.confirm ? "border-red-500" : ""
+                                            errors.confirm
+                                                ? "border-red-500"
+                                                : ""
                                         }`}
                                     />
                                     {errors.confirm && (
-                                        <p className="text-sm text-red-500 mt-1">{errors.confirm}</p>
+                                        <p className="text-sm text-red-500 mt-1">
+                                            {errors.confirm}
+                                        </p>
                                     )}
                                 </div>
                                 {submitMessage && activeTab === "settings" && (
                                     <p
                                         className={`text-sm ${
-                                            submitMessage.includes("successfully") ? "text-green-600" : "text-red-500"
+                                            submitMessage.includes(
+                                                "successfully"
+                                            )
+                                                ? "text-green-600"
+                                                : "text-red-500"
                                         }`}
                                     >
                                         {submitMessage}
@@ -462,7 +509,11 @@ const Profile = () => {
                                 {submitMessage && activeTab === "settings" && (
                                     <p
                                         className={`text-sm ${
-                                            submitMessage.includes("successfully") ? "text-green-600" : "text-red-500"
+                                            submitMessage.includes(
+                                                "successfully"
+                                            )
+                                                ? "text-green-600"
+                                                : "text-red-500"
                                         }`}
                                     >
                                         {submitMessage}
@@ -482,7 +533,8 @@ const Profile = () => {
                                 Delete Account
                             </h3>
                             <p className="text-sm text-gray-600 mb-4">
-                                Permanently delete your company account and all associated data. This action cannot be undone.
+                                Permanently delete your company account and all
+                                associated data. This action cannot be undone.
                             </p>
                             <button
                                 onClick={handleDeleteAccount}
@@ -499,4 +551,4 @@ const Profile = () => {
     );
 };
 
-export default Profile;
+export default CompanyProfile;

@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Award, Menu, X, User, Mail, Phone } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 
-const AdminHeaderFooter = () => {
+const CompanyHeaderFooter = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -48,7 +48,7 @@ const AdminHeaderFooter = () => {
             <header className="bg-white sticky top-0 mx-auto px-4 sm:px-6 lg:px-8 shadow-sm z-50">
                 <div className="container mx-auto px-4 py-4 flex justify-between items-center">
                     <Link
-                        to="/admin"
+                        to="/company"
                         className="flex items-center cursor-pointer"
                     >
                         <Award size={32} className="text-blue-600 mr-2" />
@@ -58,7 +58,7 @@ const AdminHeaderFooter = () => {
                     </Link>
                     <div className="hidden md:flex items-center space-x-6">
                         <NavLink
-                            to="/admin"
+                            to="/company"
                             end
                             className={({ isActive }) =>
                                 isActive
@@ -69,7 +69,7 @@ const AdminHeaderFooter = () => {
                             Dashboard
                         </NavLink>
                         <NavLink
-                            to="/admin/users"
+                            to="/company/shortlist"
                             end
                             className={({ isActive }) =>
                                 isActive
@@ -77,40 +77,7 @@ const AdminHeaderFooter = () => {
                                     : "text-gray-600 font-semibold hover:text-blue-600 transition duration-200"
                             }
                         >
-                            Users
-                        </NavLink>
-                        <NavLink
-                            to="/admin/courses"
-                            end
-                            className={({ isActive }) =>
-                                isActive
-                                    ? "text-blue-600 font-semibold border-b-2 border-blue-600"
-                                    : "text-gray-600 font-semibold hover:text-blue-600 transition duration-200"
-                            }
-                        >
-                            Courses
-                        </NavLink>
-                        <NavLink
-                            to="/admin/certificates"
-                            end
-                            className={({ isActive }) =>
-                                isActive
-                                    ? "text-blue-600 font-semibold border-b-2 border-blue-600"
-                                    : "text-gray-600 font-semibold hover:text-blue-600 transition duration-200"
-                            }
-                        >
-                            Certificates
-                        </NavLink>
-                        <NavLink
-                            to="/admin/job-match"
-                            end
-                            className={({ isActive }) =>
-                                isActive
-                                    ? "text-blue-600 font-semibold border-b-2 border-blue-600"
-                                    : "text-gray-600 font-semibold hover:text-blue-600 transition duration-200"
-                            }
-                        >
-                            Job Matching
+                            Shortlist
                         </NavLink>
                         <div className="relative">
                             <div
@@ -122,14 +89,14 @@ const AdminHeaderFooter = () => {
                             {isDropdownOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-md z-50">
                                     <NavLink
-                                        to="/admin/profile"
+                                        to="/company/profile"
                                         onClick={closeDropdown}
                                         className="block px-4 py-2 text-gray-600 font-semibold hover:bg-blue-50 hover:text-blue-600 transition duration-200"
                                     >
                                         Profile
                                     </NavLink>
                                     <NavLink
-                                        to="/user/settings"
+                                        to="/company/settings"
                                         onClick={closeDropdown}
                                         className="block px-4 py-2 text-gray-600 font-semibold hover:bg-blue-50 hover:text-blue-600 transition duration-200"
                                     >
@@ -162,7 +129,7 @@ const AdminHeaderFooter = () => {
                     <div className="md:hidden bg-white shadow-xl absolute top-16 left-0 w-full z-50">
                         <div className="flex flex-col items-center space-y-3 py-6">
                             <NavLink
-                                to="/admin"
+                                to="/company"
                                 end
                                 onClick={closeMenu}
                                 className={({ isActive }) =>
@@ -174,7 +141,7 @@ const AdminHeaderFooter = () => {
                                 Dashboard
                             </NavLink>
                             <NavLink
-                                to="/admin/users"
+                                to="/company/shortlist"
                                 end
                                 onClick={closeMenu}
                                 className={({ isActive }) =>
@@ -183,44 +150,11 @@ const AdminHeaderFooter = () => {
                                         : "text-gray-600 font-semibold text-lg w-full text-center py-2 hover:bg-blue-50 hover:text-blue-600 transition duration-200"
                                 }
                             >
-                                Users
+                                Shortlist
                             </NavLink>
                             <NavLink
-                                to="/admin/courses"
+                                to="/company/profile"
                                 end
-                                onClick={closeMenu}
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "text-blue-600 font-semibold text-lg w-full text-center py-2 bg-blue-50"
-                                        : "text-gray-600 font-semibold text-lg w-full text-center py-2 hover:bg-blue-50 hover:text-blue-600 transition duration-200"
-                                }
-                            >
-                                Courses
-                            </NavLink>
-                            <NavLink
-                                to="/admin/certificates"
-                                onClick={closeMenu}
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "text-blue-600 font-semibold text-lg w-full text-center py-2 bg-blue-50"
-                                        : "text-gray-600 font-semibold text-lg w-full text-center py-2 hover:bg-blue-50 hover:text-blue-600 transition duration-200"
-                                }
-                            >
-                                Certificates
-                            </NavLink>
-                            <NavLink
-                                to="/admin/job-match"
-                                onClick={closeMenu}
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "text-blue-600 font-semibold text-lg w-full text-center py-2 bg-blue-50"
-                                        : "text-gray-600 font-semibold text-lg w-full text-center py-2 hover:bg-blue-50 hover:text-blue-600 transition duration-200"
-                                }
-                            >
-                                Job Matching
-                            </NavLink>
-                            <NavLink
-                                to="/admin/profile"
                                 onClick={closeMenu}
                                 className={({ isActive }) =>
                                     isActive
@@ -231,7 +165,7 @@ const AdminHeaderFooter = () => {
                                 Profile
                             </NavLink>
                             <NavLink
-                                to="/admin/settings"
+                                to="/company/settings"
                                 onClick={closeMenu}
                                 className={({ isActive }) =>
                                     isActive
@@ -319,4 +253,4 @@ const AdminHeaderFooter = () => {
     );
 };
 
-export default AdminHeaderFooter;
+export default CompanyHeaderFooter;
