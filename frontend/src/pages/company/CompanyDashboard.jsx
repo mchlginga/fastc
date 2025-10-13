@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { Filter, X, Download } from "react-feather";
 import debounce from "lodash/debounce";
 
-const CompanyDashboard = () => {
+const AdminJobMatching = () => {
     const { user } = useAuth();
     const [trainees, setTrainees] = useState([]);
     const [filteredTrainees, setFilteredTrainees] = useState([]);
@@ -179,75 +179,43 @@ const CompanyDashboard = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <div className="grid grid-cols-1 md:grid-cols-1 xl:grid-cols-2 gap-6 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-                    {[...Array(6)].map((_, i) => (
-                        <div
-                            key={i}
-                            className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 animate-pulse"
-                        >
-                            <div className="flex items-center mb-4">
-                                <div className="h-12 w-12 rounded-full bg-blue-100"></div>
-                                <div className="ml-4 space-y-2">
-                                    <div className="h-4 w-32 bg-gray-200 rounded"></div>
-                                    <div className="h-3 w-48 bg-gray-200 rounded"></div>
-                                </div>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="h-3 w-20 bg-gray-200 rounded"></div>
-                                <div className="flex flex-wrap gap-2">
-                                    {[...Array(3)].map((_, j) => (
-                                        <div
-                                            key={j}
-                                            className="h-5 w-16 bg-blue-100 rounded-full"
-                                        ></div>
-                                    ))}
-                                </div>
-                                <div className="h-3 w-20 bg-gray-200 rounded"></div>
-                                <div className="flex flex-wrap gap-2">
-                                    {[...Array(2)].map((_, j) => (
-                                        <div
-                                            key={j}
-                                            className="h-5 w-20 bg-purple-100 rounded-full"
-                                        ></div>
-                                    ))}
-                                </div>
-                                <div className="h-3 w-20 bg-gray-200 rounded"></div>
-                                <div className="h-5 w-16 bg-gray-100 rounded-full"></div>
-                            </div>
-                        </div>
-                    ))}
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600 font-medium">
+                        Loading trainees...
+                    </p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* Header */}
-                <div className="mb-10 bg-blue-900 text-white rounded-2xl p-6 shadow-lg">
-                    <h1 className="text-4xl font-extrabold">
-                        Company Dashboard
-                    </h1>
-                    <p className="text-blue-100 mt-2 text-lg">
-                        Match skilled trainees to your job openings with
-                        FAST-C's smart system.
-                    </p>
-                    <p className="text-sm text-blue-200 mt-1">
-                        Company: {user?.companyName || "Your Company"}
-                    </p>
+        <div className="bg-gray-100">
+            <div className="max-w-7xl mx-auto">
+                {/* Hero Section */}
+                <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl text-white p-10 mb-12 shadow-lg overflow-hidden">
+                    <div className="absolute inset-0 opacity-10 bg-[url('/wave-pattern.svg')] bg-cover"></div>
+                    <div className="relative z-10">
+                        <h1 className="text-4xl font-bold mb-2">
+                            Welcome back, {user?.name || "Learner"} 👋
+                        </h1>
+                        <p className="text-blue-100 text-lg">
+                            Match skilled trainees to your job openings with
+                            FAST-C's smart system.
+                        </p>
+                    </div>
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Filter Panel */}
                     <div className="w-full lg:w-80 flex-shrink-0">
-                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sticky top-8 transition-all duration-300">
+                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sticky top-8">
                             <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-extrabold text-gray-900">
+                                <h2 className="text-xl font-semibold text-gray-900">
                                     Filters
                                 </h2>
                                 <button
-                                    className="lg:hidden text-blue-600 hover:text-blue-800 p-2 rounded-full bg-blue-50"
+                                    className="lg:hidden text-blue-600 hover:text-blue-800 p-2 rounded-xl bg-blue-50 cursor-pointer"
                                     onClick={() =>
                                         setIsFilterOpen(!isFilterOpen)
                                     }
@@ -263,13 +231,13 @@ const CompanyDashboard = () => {
                                     isFilterOpen ? "block" : "hidden"
                                 } lg:static fixed inset-0 bg-white z-50 p-6 overflow-y-auto`}
                             >
-                                <div className="lg:hidden flex justify-between items-center mb-4 sticky top-0 bg-white py-2">
-                                    <h2 className="text-xl font-extrabold text-gray-900">
+                                <div className="lg:hidden flex justify-between items-center mb-4 sticky top-0 bg-white py-2 mt-10">
+                                    <h2 className="text-xl font-semibold text-gray-900">
                                         Filters
                                     </h2>
                                     <button
                                         onClick={() => setIsFilterOpen(false)}
-                                        className="text-gray-600 hover:text-gray-800 p-2 rounded-full bg-gray-100 transition-transform hover:scale-110"
+                                        className="text-gray-600 hover:text-gray-800 p-2 rounded-xl cursor-pointer bg-gray-100"
                                         aria-label="Close filter panel"
                                     >
                                         <X size={24} />
@@ -289,13 +257,13 @@ const CompanyDashboard = () => {
                                 {/* Skills Filter */}
                                 <div className="mb-6">
                                     <div
-                                        className="flex justify-between items-center cursor-pointer transition-all duration-200"
+                                        className="flex justify-between items-center cursor-pointer"
                                         onClick={() => toggleSection("skills")}
                                     >
                                         <h3 className="text-sm font-medium text-gray-700">
                                             Skills
                                         </h3>
-                                        <span className="text-blue-600">
+                                        <span>
                                             {expandedSections.skills
                                                 ? "−"
                                                 : "+"}
@@ -339,9 +307,9 @@ const CompanyDashboard = () => {
                                                                     filters.skills.includes(
                                                                         skill
                                                                     )
-                                                                        ? "bg-blue-100 text-blue-800"
+                                                                        ? "bg-blue-50"
                                                                         : ""
-                                                                } transition-colors duration-200`}
+                                                                }`}
                                                             >
                                                                 <input
                                                                     type="checkbox"
@@ -371,7 +339,7 @@ const CompanyDashboard = () => {
                                 {/* Certifications Filter */}
                                 <div className="mb-6">
                                     <div
-                                        className="flex justify-between items-center cursor-pointer transition-all duration-200"
+                                        className="flex justify-between items-center cursor-pointer"
                                         onClick={() =>
                                             toggleSection("certifications")
                                         }
@@ -379,7 +347,7 @@ const CompanyDashboard = () => {
                                         <h3 className="text-sm font-medium text-gray-700">
                                             Certifications
                                         </h3>
-                                        <span className="text-blue-600">
+                                        <span>
                                             {expandedSections.certifications
                                                 ? "−"
                                                 : "+"}
@@ -426,9 +394,9 @@ const CompanyDashboard = () => {
                                                                     filters.certifications.includes(
                                                                         cert
                                                                     )
-                                                                        ? "bg-blue-100 text-blue-800"
+                                                                        ? "bg-blue-50"
                                                                         : ""
-                                                                } transition-colors duration-200`}
+                                                                }`}
                                                             >
                                                                 <input
                                                                     type="checkbox"
@@ -458,13 +426,13 @@ const CompanyDashboard = () => {
                                 {/* Issuer Filter */}
                                 <div className="mb-6">
                                     <div
-                                        className="flex justify-between items-center cursor-pointer transition-all duration-200"
+                                        className="flex justify-between items-center cursor-pointer"
                                         onClick={() => toggleSection("issuer")}
                                     >
                                         <h3 className="text-sm font-medium text-gray-700">
                                             Issuer
                                         </h3>
-                                        <span className="text-blue-600">
+                                        <span>
                                             {expandedSections.issuer
                                                 ? "−"
                                                 : "+"}
@@ -479,9 +447,9 @@ const CompanyDashboard = () => {
                                                         filters.issuer.includes(
                                                             issuer
                                                         )
-                                                            ? "bg-blue-100 text-blue-800"
+                                                            ? "bg-blue-50"
                                                             : ""
-                                                    } transition-colors duration-200`}
+                                                    }`}
                                                 >
                                                     <input
                                                         type="checkbox"
@@ -509,7 +477,7 @@ const CompanyDashboard = () => {
                                 {/* Availability Filter */}
                                 <div>
                                     <div
-                                        className="flex justify-between items-center cursor-pointer transition-all duration-200"
+                                        className="flex justify-between items-center cursor-pointer"
                                         onClick={() =>
                                             toggleSection("availability")
                                         }
@@ -517,7 +485,7 @@ const CompanyDashboard = () => {
                                         <h3 className="text-sm font-medium text-gray-700">
                                             Availability
                                         </h3>
-                                        <span className="text-blue-600">
+                                        <span>
                                             {expandedSections.availability
                                                 ? "−"
                                                 : "+"}
@@ -533,9 +501,9 @@ const CompanyDashboard = () => {
                                                             filters.availability.includes(
                                                                 option
                                                             )
-                                                                ? "bg-blue-100 text-blue-800"
+                                                                ? "bg-blue-50"
                                                                 : ""
-                                                        } transition-colors duration-200`}
+                                                        }`}
                                                     >
                                                         <input
                                                             type="checkbox"
@@ -562,7 +530,7 @@ const CompanyDashboard = () => {
                                 </div>
 
                                 {/* Close Filters Button (Mobile) */}
-                                <div className="lg:hidden mt-6 sticky bottom-0 bg-white py-2">
+                                <div className="lg:hidden mt-6">
                                     <button
                                         onClick={() => setIsFilterOpen(false)}
                                         className="w-full px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-xl transition-colors cursor-pointer"
@@ -625,7 +593,7 @@ const CompanyDashboard = () => {
                             </p>
                             <button
                                 onClick={exportToCSV}
-                                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors cursor-pointer"
+                                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer"
                                 aria-label="Export trainees to CSV"
                             >
                                 <Download size={16} className="mr-2" /> Export
@@ -662,7 +630,7 @@ const CompanyDashboard = () => {
                                 filteredTrainees.map((trainee) => (
                                     <div
                                         key={trainee._id}
-                                        className="bg-white rounded-2xl shadow-lg border border-gradient-to-r from-blue-200 to-blue-400 p-6 hover:shadow-xl hover:scale-105 transition-all duration-300"
+                                        className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200"
                                     >
                                         <div className="flex items-center mb-4">
                                             <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
@@ -782,4 +750,4 @@ const CompanyDashboard = () => {
     );
 };
 
-export default CompanyDashboard;
+export default AdminJobMatching;

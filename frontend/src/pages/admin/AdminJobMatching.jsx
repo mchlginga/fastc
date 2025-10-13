@@ -190,7 +190,7 @@ const AdminJobMatching = () => {
     }
 
     return (
-        <div className="bg-gray-100">
+        <div>
             <div className="max-w-7xl mx-auto">
                 {/* Welcome */}
                 <section className="mb-10">
