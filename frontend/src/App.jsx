@@ -38,12 +38,13 @@ import AdminCourses from "./pages/admin/AdminCourses";
 import AdminCertificates from "./pages/admin/AdminCertificates";
 import AdminJob from "./pages/admin/AdminJobMatching";
 import AdminProfile from "./pages/admin/AdminProfile";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 /* company */
 import CompanyHeaderFooter from "./pages/company/CompanyHeaderFooter";
 import CompanyDashboard from "./pages/company/CompanyDashboard";
-import CompanyShortlist from "./pages/company/CompanyShortlist";
 import CompanyProfile from "./pages/company/CompanyProfile";
+import CompanySettings from "./pages/company/CompanySettings";
 
 function App() {
     return (
@@ -144,6 +145,7 @@ function App() {
                     />
                     <Route path="job-match" element={<AdminJob />} />
                     <Route path="profile" element={<AdminProfile />} />
+                    <Route path="settings" element={<AdminSettings />} />
                 </Route>
 
                 {/* Company Routes */}
@@ -158,8 +160,8 @@ function App() {
                     }
                 >
                     <Route path="" element={<CompanyDashboard />} />
-                    <Route path="shortlist" element={<CompanyShortlist />} />
                     <Route path="profile" element={<CompanyProfile />} />
+                    <Route path="settings" element={<CompanySettings />} />
                 </Route>
 
                 <Route path="*" element={<NotFound />} />

@@ -103,7 +103,7 @@ function UserProfile() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto px-4 space-y-10">
+        <div className="max-w-7xl mx-auto space-y-10">
             {/* warning */}
             {user?.profileStatus === "pending" && (
                 <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">

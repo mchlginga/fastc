@@ -1,4 +1,4 @@
-const CompanyProfile = () => {
+const AdminSettings = () => {
     return (
         <div className="bg-gray-100">
             <div className="max-w-7xl mx-auto">
@@ -18,4 +18,4 @@ const CompanyProfile = () => {
     );
 };
 
-export default CompanyProfile;
+export default AdminSettings;

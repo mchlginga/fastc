@@ -78,7 +78,7 @@ function UserDashboard() {
             : 0;
 
     return (
-        <div className="max-w-6xl mx-auto px-4 pb-16">
+        <div className="max-w-7xl mx-auto">
             {/* Hero Section */}
             <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl text-white p-10 mb-12 shadow-lg overflow-hidden">
                 <div className="absolute inset-0 opacity-10 bg-[url('/wave-pattern.svg')] bg-cover"></div>

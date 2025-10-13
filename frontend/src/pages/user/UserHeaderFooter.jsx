@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Award, Menu, X, User, Mail, Phone } from "react-feather";
+import { Award, Menu, X, User, Mail, Phone, ArrowUp } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 
 const UserHeaderFooter = () => {
@@ -42,10 +42,14 @@ const UserHeaderFooter = () => {
         navigate("/login");
     };
 
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
     return (
         <div>
             {/* HEADER */}
-            <header className="bg-white sticky top-0 mx-auto px-4 sm:px-6 lg:px-8 shadow-sm z-50">
+            <header className="bg-white sticky top-0 mx-auto shadow-sm z-50">
                 <div className="container mx-auto px-4 py-4 flex justify-between items-center">
                     <Link
                         to="/user"
@@ -237,39 +241,42 @@ const UserHeaderFooter = () => {
             )}
 
             {/* main content */}
-            <main className="container mx-auto px-4 py-8 min-h-screen">
+            <main className="container mx-auto px-4 py-6 min-h-screen">
                 <Outlet />
             </main>
 
             {/* footer */}
-            <footer className="bg-white shadow-md mt-12">
+            <footer className="bg-gray-800 text-white shadow-md mt-6 relative">
                 <div className="container mx-auto px-4 py-8">
-                    <div className="flex flex-col md:flex-row justify-between items-center">
-                        <div className="flex items-center mb-4 md:mb-0">
-                            <Award size={24} className="text-blue-600 mr-2" />
-                            <span className="text-lg font-bold text-gray-800">
-                                FAST-C
-                            </span>
-                        </div>
-                        <div className="flex space-x-6">
+                    <div className="text-center">
+                        <p className="text-sm opacity-80">
+                            Developed for Fernandino Assessment and Skills
+                            Training Center (FAST-C), City of San Fernando,
+                            Pampanga.
+                        </p>
+                        <div className="mt-4 flex justify-center space-x-6">
                             <a
                                 href="mailto:cpesocsfp2023@gmail.com"
-                                className="text-gray-600 hover:text-blue-600"
+                                className="text-gray-400 hover:text-white transition duration-200"
                             >
-                                <Mail size={24} />
+                                <Mail size={20} />
                             </a>
                             <a
                                 href="tel:0905-404-2950"
-                                className="text-gray-600 hover:text-blue-600"
+                                className="text-gray-400 hover:text-white transition duration-200"
                             >
-                                <Phone size={24} />
+                                <Phone size={20} />
                             </a>
                         </div>
                     </div>
-                    <div className="border-t border-gray-400 mt-8 pt-8 text-center text-gray-500 text-sm">
-                        <p>© 2025 FAST-C. All rights reserved.</p>
-                    </div>
                 </div>
+                <button
+                    onClick={scrollToTop}
+                    className="fixed bottom-8 right-8 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 cursor-pointer"
+                    aria-label="Back to Top"
+                >
+                    <ArrowUp size={20} />
+                </button>
             </footer>
         </div>
     );

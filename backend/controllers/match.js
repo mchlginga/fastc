@@ -3,15 +3,38 @@ const User = require("../models/user");
 const { statusCodes } = require("../utils/constant");
 const tf = require("@tensorflow/tfjs");
 
-// Generate dynamic training data with balanced skill/cert emphasis
+// Generate dynamic training data from users collection
 async function generateTrainingData() {
     try {
         const trainees = await User.find({
             role: "user",
             profileStatus: "approved",
         }).select("skills certificates availability");
-        const maxSkills = 5; // Max expected skills
+        const maxSkills = 5; // Max expected skills for normalization
         const maxCerts = 5; // Max expected certificates
+
+        let trainingData = trainees.map((trainee) => {
+            const skillMatch = (trainee.skills?.length || 0) / maxSkills;
+            const certMatch = (trainee.certificates?.length || 0) / maxCerts;
+            const availability =
+                trainee.availability === "Full-time"
+                    ? 1.0
+                    : trainee.availability === "Part-time"
+                    ? 0.67
+                    : 0;
+            // Baseline output: 50% skills, 30% certs, 20% availability
+            const output = Math.min(
+                0.2 + 0.5 * skillMatch + 0.3 * certMatch + 0.2 * availability,
+                0.85
+            );
+
+            return {
+                input: { skillMatch, certMatch, availability },
+                output,
+            };
+        });
+
+        // Add filter-specific cases for common skills/certs (Philippine vocational context, e.g., TESDA certs)
         const commonSkills = [
             "Dress-making",
             "Massage Therapy",
@@ -37,28 +60,6 @@ async function generateTrainingData() {
             "Masonry I",
         ];
 
-        let trainingData = trainees.map((trainee) => {
-            const skillMatch = (trainee.skills?.length || 0) / maxSkills;
-            const certMatch = (trainee.certificates?.length || 0) / maxCerts;
-            const availability =
-                trainee.availability === "Full-time"
-                    ? 1.0
-                    : trainee.availability === "Part-time"
-                    ? 0.67
-                    : 0;
-            // Baseline output: 50% skills, 30% certs, 20% availability, capped lower
-            const output = Math.min(
-                0.2 + 0.5 * skillMatch + 0.3 * certMatch + 0.2 * availability,
-                0.75
-            );
-
-            return {
-                input: { skillMatch, certMatch, availability },
-                output,
-            };
-        });
-
-        // Add filter-specific cases with skill emphasis
         trainees.forEach((trainee) => {
             commonSkills.forEach((skill) => {
                 const skillMatch = trainee.skills?.includes(skill) ? 1.0 : 0.0;
@@ -74,22 +75,12 @@ async function generateTrainingData() {
                         ? 0.67
                         : 0;
                 if (skillMatch > 0) {
-                    // High score for skill matches
+                    // High score for skill matches (industry emphasis on skills)
                     trainingData.push({
                         input: { skillMatch, certMatch, availability },
                         output: Math.min(
                             0.92 + 0.05 * skillMatch + 0.03 * certMatch,
                             0.98
-                        ),
-                    });
-                }
-                if (certMatch > 0) {
-                    // Slightly lower score for cert-only matches
-                    trainingData.push({
-                        input: { skillMatch: 0.0, certMatch, availability },
-                        output: Math.min(
-                            0.85 + 0.05 * certMatch + 0.02 * availability,
-                            0.92
                         ),
                     });
                 }
@@ -144,7 +135,7 @@ async function generateTrainingData() {
     }
 }
 
-// Enhanced TensorFlow.js model
+// Simple TensorFlow.js model
 let model;
 async function trainModel() {
     if (model) return model;
@@ -152,10 +143,10 @@ async function trainModel() {
     const trainingData = await generateTrainingData();
     model = tf.sequential();
     model.add(
-        tf.layers.dense({ units: 24, activation: "relu", inputShape: [3] })
-    ); // More units
+        tf.layers.dense({ units: 16, activation: "relu", inputShape: [3] })
+    );
     model.add(tf.layers.dropout({ rate: 0.2 }));
-    model.add(tf.layers.dense({ units: 12, activation: "relu" }));
+    model.add(tf.layers.dense({ units: 8, activation: "relu" }));
     model.add(tf.layers.dense({ units: 1, activation: "sigmoid" }));
     model.compile({ optimizer: "adam", loss: "meanSquaredError" });
 
@@ -173,7 +164,7 @@ async function trainModel() {
     );
 
     await model.fit(xs, ys, {
-        epochs: 400, // Increased for better convergence
+        epochs: 300, // Increased for better learning
         shuffle: true,
         verbose: 0,
     });
@@ -225,12 +216,12 @@ const calculateJobMatch = async (
     );
     const prediction = model.predict(inputTensor);
     const score = (await prediction.data())[0] * 100; // Convert to percentage
-    const matchPercentage = Math.min(Math.round(score * 1.1), 100); // Scale up filtered scores slightly
+    const matchPercentage = Math.min(Math.round(score), 100);
 
     inputTensor.dispose();
     prediction.dispose();
 
-    // Category determination
+    // Category determination (unchanged)
     if (
         trainee.skills?.includes("Welding") ||
         trainee.skills?.includes("Masonry") ||

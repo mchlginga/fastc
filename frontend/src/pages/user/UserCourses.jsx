@@ -92,7 +92,7 @@ function UserCourses() {
     );
 
     return (
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto">
             {/* Warning Message */}
             {user?.profileStatus === "pending" && (
                 <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
