@@ -86,12 +86,12 @@ const userSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
-        educations: [
+        education: [
             {
                 level: { type: String, trim: true },
                 school: { type: String, trim: true },
                 year: { type: String, trim: true },
-                file: { type: String }, // Path to uploaded file
+                proof: { type: String }, // Path to uploaded file
             },
         ],
         certificates: [
@@ -99,7 +99,7 @@ const userSchema = new mongoose.Schema(
                 name: { type: String, trim: true },
                 issuer: { type: String, trim: true },
                 date: { type: Date },
-                file: { type: String }, // Path to uploaded file
+                proof: { type: String }, // Path to uploaded file
             },
         ],
         skills: [

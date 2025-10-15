@@ -444,17 +444,8 @@ function ProfileSetup() {
                                                 <option value="highSchool">
                                                     High School
                                                 </option>
-                                                <option value="associate">
-                                                    Associate
-                                                </option>
-                                                <option value="bachelor">
-                                                    Bachelor
-                                                </option>
-                                                <option value="master">
-                                                    Master
-                                                </option>
-                                                <option value="doctorate">
-                                                    Doctorate
+                                                <option value="senioHighSchool">
+                                                    Senior High School
                                                 </option>
                                             </select>
                                         </div>
@@ -584,7 +575,7 @@ function ProfileSetup() {
                     {step === 3 && (
                         <>
                             <h4 className="text-lg font-medium text-gray-800 mb-4">
-                                Certificates
+                                Certificates (Optional)
                             </h4>
                             {form.certificates.map((cert, index) => (
                                 <div

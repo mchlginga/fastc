@@ -264,8 +264,6 @@ export const updateProfile = async ({
     education,
     certificates,
     proofs,
-    position,
-    idProof,
     industryType,
     businessPermit,
     representative,
@@ -284,8 +282,6 @@ export const updateProfile = async ({
         if (proofs && proofs.length) {
             proofs.forEach((proof) => formData.append("proofs", proof));
         }
-        if (position) formData.append("position", position);
-        if (idProof) formData.append("idProof", idProof);
         if (industryType) formData.append("industryType", industryType);
         if (businessPermit) formData.append("businessPermit", businessPermit);
         if (representative)

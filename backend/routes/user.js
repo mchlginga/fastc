@@ -11,8 +11,6 @@ const {
     updateProfile,
     reviewProfile,
     getPendingProfiles,
-    getOnlineUsers,
-    updateLastActive,
 } = require("../controllers/user");
 
 router.patch("/profile", protect, upload.array("proofs", 10), updateProfile);
@@ -49,12 +47,5 @@ router.get(
     checkRoles(["superAdmin", "admin"]),
     getPendingProfiles
 );
-router.get(
-    "/online",
-    protect,
-    checkRoles(["superAdmin", "admin"]),
-    getOnlineUsers
-);
-router.patch("/last-active", protect, updateLastActive);
 
 module.exports = router;
