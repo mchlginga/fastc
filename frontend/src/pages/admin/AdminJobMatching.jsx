@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../../services/api";
+import { logCsvExport } from "../../services/matchService";
 import { useAuth } from "../../context/AuthContext";
 import { Filter, X, Download } from "react-feather";
 import debounce from "lodash/debounce";
@@ -25,6 +26,7 @@ const AdminJobMatching = () => {
         issuer: true,
         availability: true,
     });
+    const [exporting, setExporting] = useState(false);
 
     const skillsList = [
         "Dress-making",
@@ -127,38 +129,66 @@ const AdminJobMatching = () => {
         300
     );
 
-    const exportToCSV = () => {
-        const headers = [
-            "Name",
-            "Email",
-            "Skills",
-            "Certifications",
-            "Availability",
-            "Match Score",
-            "Category",
-        ];
-        const rows = filteredTrainees.map((trainee) => [
-            trainee.name,
-            trainee.email,
-            trainee.skills?.join(", ") || "None",
-            trainee.certificates
-                ?.map((c) => `${c.name} (${c.issuer})`)
-                .join(", ") || "None",
-            trainee.availability || "N/A",
-            `${trainee.match.score}%`,
-            trainee.match.category,
-        ]);
-        const csvContent = [
-            headers.join(","),
-            ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-        ].join("\n");
-        const blob = new Blob([csvContent], {
-            type: "text/csv;charset=utf-8;",
-        });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "trainees_export.csv";
-        link.click();
+    const exportToCSV = async () => {
+        try {
+            setExporting(true);
+
+            const headers = [
+                "Name",
+                "Email",
+                "Skills",
+                "Certifications",
+                "Availability",
+                "Match Score",
+                "Category",
+            ];
+
+            const rows = filteredTrainees.map((trainee) => [
+                trainee.name,
+                trainee.email,
+                trainee.skills?.join(", ") || "None",
+                trainee.certificates
+                    ?.map((c) => `${c.name} (${c.issuer})`)
+                    .join(", ") || "None",
+                trainee.availability || "N/A",
+                `${trainee.match.score}%`,
+                trainee.match.category,
+            ]);
+
+            const csvContent = [
+                headers.join(","),
+                ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+            ].join("\n");
+            const blob = new Blob([csvContent], {
+                type: "text/csv;charset=utf-8;",
+            });
+
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "trainees_export.csv";
+            link.click();
+
+            await logCsvExport({
+                exportType: "job-matching",
+                recordsCount: trainees.length,
+                filters: {
+                    skills: filters.skills,
+                    certifications: filters.certifications,
+                    availability: filters.availability,
+                    issuer: filters.issuer,
+                },
+            });
+
+            setStats((prev) => ({
+                ...prev,
+                totalExports: prev.totalExports + 1,
+            }));
+        } catch (error) {
+            console.error("Failed to export CSV:", err);
+            alert("Failed to export CSV. Please try again.");
+        } finally {
+            setExporting(false);
+        }
     };
 
     const getMatchBadgeClass = (matchLevel) => {

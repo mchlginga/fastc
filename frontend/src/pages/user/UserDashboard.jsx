@@ -77,22 +77,39 @@ function UserDashboard() {
             ? Math.round(totalProgress / dashboardData.courses.length)
             : 0;
 
+    const statCards = [
+        {
+            title: "Active Courses",
+            icon: <Book size={26} className="text-blue-600" />,
+            value: dashboardData.activeCourses,
+            bg: "bg-blue-100",
+            link: "/user/courses",
+        },
+        {
+            title: "Certificates",
+            icon: <FileText size={26} className="text-green-600" />,
+            value: dashboardData.certificates,
+            bg: "bg-green-100",
+            link: "/user/certificates",
+        },
+        {
+            title: "Pending Enrollments",
+            icon: <Clock size={26} className="text-purple-600" />,
+            value: dashboardData.pendingEnrollments,
+            bg: "bg-purple-100",
+            link: "/user/courses",
+        },
+        {
+            title: "Avg Progress",
+            icon: <TrendingUp size={26} className="text-orange-600" />,
+            value: `${avgProgress}%`,
+            bg: "bg-orange-100",
+            link: "/user/courses",
+        },
+    ];
+
     return (
         <div className="max-w-7xl mx-auto">
-            {/* Hero Section */}
-            <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl text-white p-10 mb-12 shadow-lg overflow-hidden">
-                <div className="absolute inset-0 opacity-10 bg-[url('/wave-pattern.svg')] bg-cover"></div>
-                <div className="relative z-10">
-                    <h1 className="text-4xl font-bold mb-2">
-                        Welcome back, {user?.firstName || "Learner"} 👋
-                    </h1>
-                    <p className="text-blue-100 text-lg">
-                        Continue your learning journey and track your progress
-                        below.
-                    </p>
-                </div>
-            </div>
-
             {/* Profile Warning */}
             {user?.profileStatus === "pending" && (
                 <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
@@ -108,40 +125,27 @@ function UserDashboard() {
                     </p>
                 </div>
             )}
+            {/* Hero Section */}
+            <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl text-white p-10 mb-10 shadow-lg overflow-hidden">
+                <div className="absolute inset-0 opacity-10 bg-[url('/wave-pattern.svg')] bg-cover"></div>
+                <div className="relative z-10">
+                    <h1 className="text-4xl font-bold mb-2">
+                        Welcome back, {user?.firstName || "Learner"} 👋
+                    </h1>
+                    <p className="text-blue-100 text-lg">
+                        Continue your learning journey and track your progress
+                        below.
+                    </p>
+                </div>
+            </div>
 
             {/* Dashboard Stats */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                {[
-                    {
-                        title: "Active Courses",
-                        icon: <Book size={26} className="text-blue-600" />,
-                        value: dashboardData.activeCourses,
-                        bg: "bg-blue-100",
-                    },
-                    {
-                        title: "Certificates",
-                        icon: <FileText size={26} className="text-green-600" />,
-                        value: dashboardData.certificates,
-                        bg: "bg-green-100",
-                    },
-                    {
-                        title: "Pending Enrollments",
-                        icon: <Clock size={26} className="text-purple-600" />,
-                        value: dashboardData.pendingEnrollments,
-                        bg: "bg-purple-100",
-                    },
-                    {
-                        title: "Avg Progress",
-                        icon: (
-                            <TrendingUp size={26} className="text-orange-600" />
-                        ),
-                        value: `${avgProgress}%`,
-                        bg: "bg-orange-100",
-                    },
-                ].map((card, idx) => (
-                    <div
+                {statCards.map((card, idx) => (
+                    <Link
                         key={idx}
-                        className="bg-white rounded-2xl shadow-md p-6 flex items-center justify-between hover:-translate-y-1 hover:shadow-lg transition transform"
+                        to={card.link}
+                        className="bg-white rounded-2xl shadow-md p-6 flex items-center justify-between hover:-translate-y-1 hover:shadow-lg transition transform cursor-pointer"
                     >
                         <div className={`${card.bg} p-3 rounded-xl mr-4`}>
                             {card.icon}
@@ -154,7 +158,7 @@ function UserDashboard() {
                                 {card.title}
                             </p>
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </section>
 
@@ -173,7 +177,7 @@ function UserDashboard() {
                                 a 15.9155 15.9155 0 0 1 0 -31.831"
                             />
                             <path
-                                className="text-indigo-600"
+                                className="text-blue-600"
                                 strokeWidth="3.8"
                                 strokeDasharray={`${avgProgress}, 100`}
                                 stroke="currentColor"

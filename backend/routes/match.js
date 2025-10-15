@@ -1,36 +1,20 @@
 const express = require("express");
 const router = express.Router();
 const { protect, checkRoles } = require("../middlewares/index");
-const {
-    getJobMatches,
-    addShortlist,
-    removeShortlist,
-    getShortlisted,
-} = require("../controllers/match");
+const { getJobMatches, logCsvExport } = require("../controllers/match");
 
 router.get(
     "/matches",
     protect,
-    checkRoles(["superAdmin", "admin"]),
+    checkRoles(["superAdmin", "admin", "company"]),
     getJobMatches
 );
+
 router.post(
-    "/shortlist",
+    "/log-export",
     protect,
-    checkRoles(["superAdmin", "admin"]),
-    addShortlist
-);
-router.delete(
-    "/shortlist/:traineeId",
-    protect,
-    checkRoles(["superAdmin", "admin"]),
-    removeShortlist
-);
-router.get(
-    "/shortlist",
-    protect,
-    checkRoles(["superAdmin", "admin"]),
-    getShortlisted
+    checkRoles(["superAdmin", "admin", "company"]),
+    logCsvExport
 );
 
 module.exports = router;

@@ -5,6 +5,7 @@ const certificate = require("./certificate");
 const completion = require("./completion");
 const course = require("./course");
 const match = require("./match");
+const statistics = require("./statistics");
 
 module.exports = {
     auth,
@@ -14,4 +15,5 @@ module.exports = {
     completion,
     course,
     match,
+    statistics,
 };

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { api } from "../../services/api";
+import { logCsvExport } from "../../services/matchService";
 import { useAuth } from "../../context/AuthContext";
 import { Filter, X, Download } from "react-feather";
 import debounce from "lodash/debounce";
 
-const AdminJobMatching = () => {
+const CompanyDashboard = () => {
     const { user } = useAuth();
     const [trainees, setTrainees] = useState([]);
     const [filteredTrainees, setFilteredTrainees] = useState([]);
@@ -14,6 +15,12 @@ const AdminJobMatching = () => {
         certifications: [],
         availability: [],
         issuer: [],
+    });
+    const [exporting, setExporting] = useState(false);
+    const [stats, setStats] = useState({
+        totalSearches: 0,
+        totalExports: 0,
+        avgMatchScore: 0,
     });
     const [skillSearch, setSkillSearch] = useState("");
     const [certSearch, setCertSearch] = useState("");
@@ -84,6 +91,9 @@ const AdminJobMatching = () => {
                 setFilteredTrainees(sortedTrainees);
             } catch (err) {
                 console.error("Failed to fetch trainees:", err);
+                setError(
+                    "Failed to load trainees. Please check your connection or try again."
+                );
             } finally {
                 setLoading(false);
             }
@@ -127,38 +137,66 @@ const AdminJobMatching = () => {
         300
     );
 
-    const exportToCSV = () => {
-        const headers = [
-            "Name",
-            "Email",
-            "Skills",
-            "Certifications",
-            "Availability",
-            "Match Score",
-            "Category",
-        ];
-        const rows = filteredTrainees.map((trainee) => [
-            trainee.name,
-            trainee.email,
-            trainee.skills?.join(", ") || "None",
-            trainee.certificates
-                ?.map((c) => `${c.name} (${c.issuer})`)
-                .join(", ") || "None",
-            trainee.availability || "N/A",
-            `${trainee.match.score}%`,
-            trainee.match.category,
-        ]);
-        const csvContent = [
-            headers.join(","),
-            ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-        ].join("\n");
-        const blob = new Blob([csvContent], {
-            type: "text/csv;charset=utf-8;",
-        });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "trainees_export.csv";
-        link.click();
+    const exportToCSV = async () => {
+        try {
+            setExporting(true);
+
+            const headers = [
+                "Name",
+                "Email",
+                "Skills",
+                "Certifications",
+                "Availability",
+                "Match Score",
+                "Category",
+            ];
+
+            const rows = filteredTrainees.map((trainee) => [
+                trainee.name,
+                trainee.email,
+                trainee.skills?.join(", ") || "None",
+                trainee.certificates
+                    ?.map((c) => `${c.name} (${c.issuer})`)
+                    .join(", ") || "None",
+                trainee.availability || "N/A",
+                `${trainee.match.score}%`,
+                trainee.match.category,
+            ]);
+
+            const csvContent = [
+                headers.join(","),
+                ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+            ].join("\n");
+            const blob = new Blob([csvContent], {
+                type: "text/csv;charset=utf-8;",
+            });
+
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "trainees_export.csv";
+            link.click();
+
+            await logCsvExport({
+                exportType: "job-matching",
+                recordsCount: trainees.length,
+                filters: {
+                    skills: filters.skills,
+                    certifications: filters.certifications,
+                    availability: filters.availability,
+                    issuer: filters.issuer,
+                },
+            });
+
+            setStats((prev) => ({
+                ...prev,
+                totalExports: prev.totalExports + 1,
+            }));
+        } catch (error) {
+            console.error("Failed to export CSV:", err);
+            alert("Failed to export CSV. Please try again.");
+        } finally {
+            setExporting(false);
+        }
     };
 
     const getMatchBadgeClass = (matchLevel) => {
@@ -193,11 +231,11 @@ const AdminJobMatching = () => {
         <div className="bg-gray-100">
             <div className="max-w-7xl mx-auto">
                 {/* Hero Section */}
-                <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl text-white p-10 mb-12 shadow-lg overflow-hidden">
+                <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl text-white p-10 mb-10 shadow-lg overflow-hidden">
                     <div className="absolute inset-0 opacity-10 bg-[url('/wave-pattern.svg')] bg-cover"></div>
                     <div className="relative z-10">
                         <h1 className="text-4xl font-bold mb-2">
-                            Welcome back, {user?.name || "Learner"} 👋
+                            Welcome back, {user?.name || "Company"} 👋
                         </h1>
                         <p className="text-blue-100 text-lg">
                             Match skilled trainees to your job openings with
@@ -593,11 +631,12 @@ const AdminJobMatching = () => {
                             </p>
                             <button
                                 onClick={exportToCSV}
+                                disabled={exporting}
                                 className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer"
                                 aria-label="Export trainees to CSV"
                             >
-                                <Download size={16} className="mr-2" /> Export
-                                to CSV
+                                <Download size={16} className="mr-2" />
+                                {exporting ? "Exporting" : "Export to CSV"}
                             </button>
                         </div>
 
@@ -750,4 +789,4 @@ const AdminJobMatching = () => {
     );
 };
 
-export default AdminJobMatching;
+export default CompanyDashboard;

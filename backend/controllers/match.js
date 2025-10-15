@@ -1,5 +1,5 @@
-const Shortlist = require("../models/shortlist");
 const User = require("../models/user");
+const ExportLog = require("../models/exportLog");
 const { statusCodes } = require("../utils/constant");
 const tf = require("@tensorflow/tfjs");
 
@@ -34,7 +34,7 @@ async function generateTrainingData() {
             };
         });
 
-        // Add filter-specific cases for common skills/certs (Philippine vocational context, e.g., TESDA certs)
+        // filter-specific cases for common skills/certs (Philippine vocational context, e.g., TESDA certs)
         const commonSkills = [
             "Dress-making",
             "Massage Therapy",
@@ -293,14 +293,6 @@ exports.getJobMatches = async (req, res, next) => {
         // Fetch trainees
         const trainees = await User.find(query).select("-password");
 
-        // Fetch shortlisted trainees for the current user
-        const shortlisted = await Shortlist.find({ shortlister }).select(
-            "trainee"
-        );
-        const shortlistedIds = new Set(
-            shortlisted.map((s) => s.trainee.toString())
-        );
-
         // Calculate matches for each trainee
         const traineesWithMatches = await Promise.all(
             trainees.map(async (trainee) => ({
@@ -310,78 +302,47 @@ exports.getJobMatches = async (req, res, next) => {
                     filterSkills,
                     filterCerts
                 ),
-                isShortlisted: shortlistedIds.has(trainee._id.toString()),
             }))
         );
 
         res.status(statusCodes.OK).json({
             trainees: traineesWithMatches,
-            shortlistedCount: shortlistedIds.size,
         });
     } catch (error) {
         next(error);
     }
 };
 
-// Shortlist controllers (unchanged)
-exports.addShortlist = async (req, res, next) => {
+exports.logCsvExport = async (req, res, next) => {
     try {
-        const { traineeId } = req.body;
-        const shortlister = req.user.id;
+        const { exportType, recordsCount, filters } = req.body;
+        const userId = req.user.id;
+        const userRole = req.user.role;
 
-        const existing = await Shortlist.findOne({
-            shortlister,
-            trainee: traineeId,
-        });
-        if (existing) {
-            return res
-                .status(statusCodes.BAD_REQUEST)
-                .json({ message: "Already shortlisted." });
+        // Validate export type
+        const validTypes = [
+            "trainees",
+            "courses",
+            "certificates",
+            "job-matching",
+        ];
+        if (!validTypes.includes(exportType)) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                message: "Invalid export type",
+            });
         }
 
-        const shortlist = await Shortlist.create({
-            shortlister,
-            trainee: traineeId,
+        // Create export log
+        await ExportLog.create({
+            user: userId,
+            role: userRole,
+            exportType,
+            recordsCount: recordsCount || 0,
+            filters: filters || {},
         });
 
-        res.status(statusCodes.CREATED).json({ shortlist });
-    } catch (error) {
-        next(error);
-    }
-};
-
-exports.removeShortlist = async (req, res, next) => {
-    try {
-        const { traineeId } = req.params;
-        const shortlister = req.user.id;
-
-        const deleted = await Shortlist.findOneAndDelete({
-            shortlister,
-            trainee: traineeId,
-        });
-
-        if (!deleted) {
-            return res
-                .status(statusCodes.NOT_FOUND)
-                .json({ message: "Not shortlisted." });
-        }
-
-        res.status(statusCodes.OK).json({ message: "Removed from shortlist." });
-    } catch (error) {
-        next(error);
-    }
-};
-
-exports.getShortlisted = async (req, res, next) => {
-    try {
-        const shortlister = req.user.id;
-        const shortlisted = await Shortlist.find({ shortlister }).populate(
-            "trainee",
-            "-password"
-        );
-
-        res.status(statusCodes.OK).json({
-            shortlisted: shortlisted.map((s) => s.trainee),
+        res.status(statusCodes.CREATED).json({
+            message: "Export logged successfully",
         });
     } catch (error) {
         next(error);
