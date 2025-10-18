@@ -88,9 +88,9 @@ const userSchema = new mongoose.Schema(
         },
         education: [
             {
-                level: { type: String, trim: true },
-                school: { type: String, trim: true },
-                year: { type: String, trim: true },
+                educationLevel: { type: String, trim: true },
+                schoolName: { type: String, trim: true },
+                yearGraduated: { type: String, trim: true },
                 proof: { type: String }, // Path to uploaded file
             },
         ],
@@ -99,6 +99,7 @@ const userSchema = new mongoose.Schema(
                 name: { type: String, trim: true },
                 issuer: { type: String, trim: true },
                 date: { type: Date },
+                expiration: { type: Date },
                 proof: { type: String }, // Path to uploaded file
             },
         ],
@@ -148,13 +149,9 @@ const userSchema = new mongoose.Schema(
                         this.contactNumber &&
                         this.address &&
                         this.education.some((edu) =>
-                            [
-                                "highSchool",
-                                "associate",
-                                "bachelor",
-                                "master",
-                                "doctorate",
-                            ].includes(edu.educationLevel)
+                            ["highSchool", "senioHighSchool"].includes(
+                                edu.educationLevel
+                            )
                         )
                     );
                 } else if (this.role === "company") {

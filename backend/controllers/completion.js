@@ -230,7 +230,7 @@ exports.completeLesson = async (req, res, next) => {
                     title: course.title,
                     completionDate,
                     expirationDate,
-                    certificateUrl: `/data/upload/certificates/${path.basename(
+                    certificateUrl: `/uploads/certificates/${path.basename(
                         certificateUrl
                     )}`,
                     status: "active",

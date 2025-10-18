@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const { statusCodes } = require("../utils/constant");
+const { certificateToSkillMap } = require("./certificate");
 
 exports.createUser = async (req, res, next) => {
     const { firstName, surname, email, password, role, privacyAgreement } =
@@ -221,15 +222,6 @@ exports.updateProfile = async (req, res, next) => {
             }
         }
 
-        if (
-            user.role === "admin" &&
-            files.length > educationFilesIndex + certificateFilesIndex
-        ) {
-            idProofFile = `/uploads/profiles/${
-                files[educationFilesIndex + certificateFilesIndex]?.filename
-            }`;
-        }
-
         if (user.role === "company") {
             if (files.length > educationFilesIndex + certificateFilesIndex) {
                 businessPermitFile = `/uploads/profiles/${
@@ -360,6 +352,124 @@ exports.updateLastActive = async (req, res, next) => {
         user.lastActive = new Date();
         await user.save();
         res.status(statusCodes.OK).json({ message: "Last active updated." });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.updateCertificate = async (req, res, next) => {
+    const { userId, certIndex } = req.params;
+    const { name, issuer, date, expiration } = req.body;
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res
+                .status(statusCodes.NOT_FOUND)
+                .json({ message: "User not found." });
+        }
+
+        // Index safety
+        if (!user.certificates || certIndex >= user.certificates.length) {
+            return res
+                .status(statusCodes.BAD_REQUEST)
+                .json({ message: "Certificate index out of bounds." });
+        }
+
+        // Update fields (only the ones sent)
+        const cert = user.certificates[certIndex];
+        if (name !== undefined) cert.name = name;
+        if (issuer !== undefined) cert.issuer = issuer;
+        if (date !== undefined) cert.date = new Date(date);
+        if (expiration !== undefined) cert.expiration = new Date(expiration);
+
+        await user.save();
+
+        const updated = await User.findById(userId).select("-password");
+        res.status(statusCodes.OK).json(updated);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// update certificate
+exports.updateCertificate = async (req, res, next) => {
+    const { userId, certIndex } = req.params;
+    const { name, issuer, date, expiration } = req.body;
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res
+                .status(statusCodes.NOT_FOUND)
+                .json({ message: "User not found." });
+        }
+
+        const certIndexNum = parseInt(certIndex);
+        if (
+            isNaN(certIndexNum) ||
+            certIndexNum < 0 ||
+            certIndexNum >= user.certificates.length
+        ) {
+            return res
+                .status(statusCodes.BAD_REQUEST)
+                .json({ message: "Invalid certificate index." });
+        }
+
+        // Get current cert to preserve proof and other fields
+        const currentCert = user.certificates[certIndexNum];
+
+        // Update only provided fields, preserve proof
+        user.certificates[certIndexNum] = {
+            ...currentCert, // Preserve everything including proof
+            name: name ?? currentCert.name,
+            issuer: issuer ?? currentCert.issuer,
+            date: date ? new Date(date) : currentCert.date,
+            expiration: expiration
+                ? new Date(expiration)
+                : currentCert.expiration,
+        };
+
+        await user.save();
+        const updatedUser = await User.findById(userId).select("-password");
+        res.status(statusCodes.OK).json(updatedUser);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// add skill from cert
+exports.addSkillFromCertificate = async (req, res, next) => {
+    const { userId, certIndex } = req.params;
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res
+                .status(statusCodes.NOT_FOUND)
+                .json({ message: "User not found." });
+        }
+
+        if (certIndex < 0 || certIndex >= user.certificates.length) {
+            return res
+                .status(statusCodes.BAD_REQUEST)
+                .json({ message: "Invalid certificate index." });
+        }
+
+        const certName = user.certificates[certIndex].name;
+        const skill = certificateToSkillMap[certName] || certName; // Map or fallback
+
+        // Add skill if not already present
+        if (!user.skills.includes(skill)) {
+            user.skills.push(skill);
+            await user.save();
+        }
+
+        const updatedUser = await User.findById(userId).select("-password");
+        res.status(statusCodes.OK).json({
+            message: `Skill "${skill}" added.`,
+            user: updatedUser,
+        });
     } catch (error) {
         next(error);
     }

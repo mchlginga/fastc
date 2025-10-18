@@ -164,7 +164,7 @@ exports.createCertificate = async (req, res, next) => {
             title: course.title,
             completionDate,
             expirationDate,
-            certificateUrl: `/data/upload/certificates/${path.basename(
+            certificateUrl: `/uploads/certificates/${path.basename(
                 certificateUrl
             )}`,
             status: "active",
@@ -180,6 +180,7 @@ exports.createCertificate = async (req, res, next) => {
                         name: course.title,
                         issuer: "FAST-C",
                         date: completionDate,
+                        expiration: expirationDate,
                         file: certificate.certificateUrl,
                     },
                     skills: skill, // Add corresponding skill

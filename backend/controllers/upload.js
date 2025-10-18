@@ -33,8 +33,7 @@ exports.uploadProfilePic = async (req, res, next) => {
         }
 
         // Update profilePic path
-        const profilePicPath =
-            `/uploads/profiles/${file.filename}`.toLowerCase();
+        const profilePicPath = `/uploads/profiles/${file.filename}`;
         user.profilePic = profilePicPath;
         await user.save();
 
