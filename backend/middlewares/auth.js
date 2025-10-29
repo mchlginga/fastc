@@ -1,3 +1,4 @@
+/* dependencies */
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const config = require("../config/index");
@@ -6,7 +7,7 @@ const { statusCodes } = require("../utils/constant");
 const protect = async (req, res, next) => {
     try {
         let token;
-        // Check Authorization header first
+        // check authorization header or cookies token
         if (
             req.headers.authorization &&
             req.headers.authorization.startsWith("Bearer")
@@ -21,20 +22,18 @@ const protect = async (req, res, next) => {
                 message: "Not authorized, no token.",
             });
         }
-
+        // verify token
         const decoded = jwt.verify(token, config.jwtSecret);
         req.user = await User.findById(decoded.id).select("-password");
+
         if (!req.user) {
             return res.status(statusCodes.UNAUTHORIZED).json({
                 message: "User not found.",
             });
         }
-
         next();
     } catch (error) {
-        res.status(statusCodes.UNAUTHORIZED).json({
-            message: "Not authorized, token failed.",
-        });
+        next(error);
     }
 };
 

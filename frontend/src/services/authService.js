@@ -1,24 +1,5 @@
 import { api } from "./api";
 
-export const login = async (email, password, rememberMe = false) => {
-    try {
-        const { data } = await api.post("/auth/login", {
-            email,
-            password,
-            rememberMe,
-        });
-        if (!data.publicUser) {
-            throw new Error("Unexpected response format from server.");
-        }
-        return data.publicUser;
-    } catch (error) {
-        throw new Error(
-            error.response?.data?.message ||
-                "Login failed. Please check your credentials."
-        );
-    }
-};
-
 export const register = async ({
     firstName,
     surname,
@@ -28,29 +9,82 @@ export const register = async ({
     role,
     privacyAgreement,
 }) => {
-    const { data } = await api.post("/auth/register", {
-        firstName,
-        surname,
-        companyName,
-        email,
-        password,
-        role,
-        privacyAgreement,
-    });
-    return data.publicUser;
+    try {
+        const { data } = await api.post("/auth/register", {
+            firstName,
+            surname,
+            companyName,
+            email,
+            password,
+            role,
+            privacyAgreement,
+        });
+        return data.publicUser;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "Failed to register");
+    }
 };
 
-export const getMe = async () => {
-    const { data } = await api.get("/auth/me");
-    return data.user;
+export const login = async (email, password, rememberMe = false) => {
+    try {
+        const { data } = await api.post("/auth/login", {
+            email,
+            password,
+            rememberMe,
+        });
+
+        if (!data.user) {
+            throw new Error("Unexpected response format from server.");
+        }
+
+        // Store token in localStorage as backup
+        if (data.token) {
+            localStorage.setItem("token", data.token);
+        }
+
+        return data.user;
+    } catch (error) {
+        throw new Error(
+            error.response?.data?.message ||
+                "Login failed. Please check your credentials."
+        );
+    }
 };
 
-export const logout = async () => {
-    await api.post("/auth/logout");
+export const verifyEmail = async (email, code) => {
+    try {
+        const { data } = await api.post("/auth/verify-email", { email, code });
+
+        // Store token in localStorage as backup
+        if (data.token) {
+            localStorage.setItem("token", data.token);
+        }
+
+        return data.publicUser || data.user;
+    } catch (error) {
+        throw new Error(
+            error.response?.data?.message || "Email verification failed"
+        );
+    }
 };
 
-export const requestPasswordReset = async (email) => {
-    const { data } = await api.post("/auth/request-password-reset", { email });
+export const resendVerificationCode = async (email) => {
+    try {
+        const { data } = await api.post("/auth/send-verification-code", {
+            email,
+        });
+        return data;
+    } catch (error) {
+        console.error(
+            "Resend verification code error:",
+            error.response?.data || error.message
+        );
+        throw error;
+    }
+};
+
+export const requestResetPassword = async (email) => {
+    const { data } = await api.post("/auth/request-reset-password", { email });
     return data;
 };
 
@@ -61,6 +95,30 @@ export const resetPassword = async ({ token, newPassword }) => {
     });
     return data;
 };
+
+export const getMe = async () => {
+    try {
+        const { data } = await api.get("/auth/me");
+        return data.user;
+    } catch (error) {
+        // Clear token if getMe fails
+        localStorage.removeItem("token");
+        throw error;
+    }
+};
+
+export const logout = async () => {
+    try {
+        localStorage.removeItem("token");
+        await api.post("/auth/logout");
+    } catch (error) {
+        // Still clear token even if logout request fails
+        localStorage.removeItem("token");
+        throw error;
+    }
+};
+
+/* --- */
 
 export const getCertificates = async (userId) => {
     try {
@@ -221,26 +279,6 @@ export const markAttendance = async (courseId, lessonId, userId) => {
         throw new Error(
             error.response?.data?.message || "Failed to mark attendance."
         );
-    }
-};
-
-export const verifyEmail = async (email, code) => {
-    const { data } = await api.post("/auth/verify-code", { email, code });
-    return data.publicUser;
-};
-
-export const resendVerificationCode = async (email) => {
-    try {
-        const { data } = await api.post("/auth/send-verification-code", {
-            email,
-        });
-        return data;
-    } catch (error) {
-        console.error(
-            "Resend verification code error:",
-            error.response?.data || error.message
-        );
-        throw error;
     }
 };
 

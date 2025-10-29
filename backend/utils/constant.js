@@ -13,6 +13,7 @@ const statusCodes = {
 const PATHS = {
     logFile: path.join(__dirname, "..", "data", "access.log"),
     profileDir: path.join(__dirname, "..", "data", "upload", "profiles"),
+    courseDir: path.join(__dirname, "..", "data", "upload", "courses"),
     certDir: path.join(__dirname, "..", "data", "upload", "certificates"),
 };
 

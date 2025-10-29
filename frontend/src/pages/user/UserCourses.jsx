@@ -1,39 +1,81 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Clock, ChevronRight, CheckCircle, Book } from "react-feather";
+import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { getCourses } from "../../services/courseService";
 import {
-    getCompletions,
-    createCompletions,
-    getCourses,
-} from "../../services/authService";
+    getUserEnrollments,
+    enrollInCourse,
+    cancelEnrollment,
+} from "../../services/enrollmentService";
+import { getUserCertificates } from "../../services/certificateService";
+
+// Components
+import {
+    CoursesHeader,
+    StatusTabs,
+    ProfileAlert,
+    AvailableCoursesSection,
+    ActiveCoursesSection,
+    PendingCoursesSection,
+    CompletedCoursesSection,
+} from "../../components/user/courses";
+
+import LoadingState from "../../components/common/LoadingState";
+import ErrorState from "../../components/common/ErrorState";
+import ToastNotification from "../../components/common/ToastNotification";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 
 function UserCourses() {
     const { user } = useAuth();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const [courses, setCourses] = useState([]);
+    const statusFilter = searchParams.get("status");
+
+    const [enrollments, setEnrollments] = useState([]);
     const [availableCourses, setAvailableCourses] = useState([]);
+    const [certificates, setCertificates] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingError, setLoadingError] = useState(null);
     const [enrollmentStatus, setEnrollmentStatus] = useState({});
+    const [cancellingEnrollment, setCancellingEnrollment] = useState(null);
 
-    // ref for Available Courses section
-    const availableCoursesRef = useRef(null);
+    // Search state
+    const [searchQuery, setSearchQuery] = useState("");
+
+    // Toast notification state
+    const [toast, setToast] = useState({
+        show: false,
+        message: "",
+        type: "success",
+    });
+
+    // Modal state
+    const [confirmationModal, setConfirmationModal] = useState({
+        isOpen: false,
+        enrollmentId: null,
+        courseTitle: "",
+        isLoading: false,
+    });
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const completionsData = await getCompletions(user._id);
-                setCourses(completionsData.courses);
 
-                const coursesData = await getCourses();
-                setAvailableCourses(coursesData);
+                const [enrollmentsResponse, coursesData, certificatesResponse] =
+                    await Promise.all([
+                        getUserEnrollments(),
+                        getCourses(),
+                        getUserCertificates(),
+                    ]);
+
+                setEnrollments(enrollmentsResponse.enrollments || []);
+                setAvailableCourses(coursesData || []);
+                setCertificates(certificatesResponse.certificates || []);
             } catch (err) {
-                console.error(
-                    "Fetch data error:",
-                    err.response?.data || err.message
-                );
+                console.error("Fetch data error:", err);
+                setLoadingError(err.message || "Failed to load courses");
+                showToast("Failed to load courses. Please try again.", "error");
             } finally {
                 setLoading(false);
             }
@@ -44,362 +86,321 @@ function UserCourses() {
         }
     }, [user]);
 
+    // Toast notification helper
+    const showToast = (message, type = "success") => {
+        setToast({
+            show: true,
+            message,
+            type,
+        });
+    };
+
+    const hideToast = () => {
+        setToast({
+            show: false,
+            message: "",
+            type: "success",
+        });
+    };
+
+    // Modal handlers
+    const showConfirmationModal = (enrollmentId, courseTitle) => {
+        setConfirmationModal({
+            isOpen: true,
+            enrollmentId,
+            courseTitle,
+            isLoading: false,
+        });
+    };
+
+    const hideConfirmationModal = () => {
+        setConfirmationModal({
+            isOpen: false,
+            enrollmentId: null,
+            courseTitle: "",
+            isLoading: false,
+        });
+    };
+
+    // Handle course card click
+    const handleCourseClick = (courseId) => {
+        navigate(`/user/courses/${courseId}/overview`);
+    };
+
+    // Filter courses based on search query
+    const filterCoursesBySearch = (courses) => {
+        if (!searchQuery.trim()) return courses;
+
+        const query = searchQuery.toLowerCase().trim();
+        return courses.filter(
+            (course) =>
+                course &&
+                (course.title?.toLowerCase().includes(query) ||
+                    course.description?.toLowerCase().includes(query) ||
+                    course.category?.toLowerCase().includes(query) ||
+                    course.skillLevel?.toLowerCase().includes(query))
+        );
+    };
+
+    // Filter enrollments based on search query
+    const filterEnrollmentsBySearch = (enrollmentsList) => {
+        if (!searchQuery.trim()) return enrollmentsList;
+
+        const query = searchQuery.toLowerCase().trim();
+        return enrollmentsList.filter(
+            (enrollment) =>
+                enrollment &&
+                enrollment.course &&
+                (enrollment.course.title?.toLowerCase().includes(query) ||
+                    enrollment.course.description
+                        ?.toLowerCase()
+                        .includes(query) ||
+                    enrollment.course.category?.toLowerCase().includes(query))
+        );
+    };
+
     const handleEnroll = async (courseId, courseTitle) => {
         try {
-            const endDate = new Date();
-            endDate.setDate(endDate.getDate() + 30);
-            await createCompletions(courseId, user._id, endDate.toISOString());
             setEnrollmentStatus((prev) => ({
                 ...prev,
-                [courseId]: "pending",
+                [courseId]: "enrolling",
             }));
-            const completionsData = await getCompletions(user._id);
-            setCourses(completionsData.courses);
-        } catch (err) {
-            console.error(
-                "Enrollment error:",
-                err.response?.data || err.message
+
+            await enrollInCourse(courseId);
+
+            // Refresh enrollments list
+            const enrollmentsResponse = await getUserEnrollments();
+            setEnrollments(enrollmentsResponse.enrollments || []);
+
+            setEnrollmentStatus((prev) => ({
+                ...prev,
+                [courseId]: "success",
+            }));
+
+            showToast(
+                `Enrollment request submitted for "${courseTitle}"! Waiting for admin approval.`,
+                "success"
             );
+
+            setTimeout(() => {
+                setEnrollmentStatus((prev) => ({
+                    ...prev,
+                    [courseId]: null,
+                }));
+            }, 2000);
+        } catch (err) {
+            console.error("Enrollment error:", err);
+            setEnrollmentStatus((prev) => ({
+                ...prev,
+                [courseId]: "error",
+            }));
+
+            showToast(
+                err.message ||
+                    `Failed to enroll in "${courseTitle}". Please try again.`,
+                "error"
+            );
+
+            setTimeout(() => {
+                setEnrollmentStatus((prev) => ({
+                    ...prev,
+                    [courseId]: null,
+                }));
+            }, 3000);
         }
     };
 
-    const handleBrowseCourses = () => {
-        if (availableCoursesRef.current) {
-            availableCoursesRef.current.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-            });
+    const handleCancelEnrollment = async (enrollmentId, courseTitle) => {
+        // Show confirmation modal instead of using window.confirm
+        showConfirmationModal(enrollmentId, courseTitle);
+    };
+
+    const confirmCancelEnrollment = async () => {
+        const { enrollmentId, courseTitle } = confirmationModal;
+
+        if (!enrollmentId) return;
+
+        try {
+            // Set loading state in modal
+            setConfirmationModal((prev) => ({ ...prev, isLoading: true }));
+            setCancellingEnrollment(enrollmentId);
+
+            await cancelEnrollment(enrollmentId);
+
+            // Refresh enrollments list
+            const enrollmentsResponse = await getUserEnrollments();
+            setEnrollments(enrollmentsResponse.enrollments || []);
+
+            showToast(
+                `Enrollment in "${courseTitle}" has been cancelled.`,
+                "success"
+            );
+
+            // Close modal
+            hideConfirmationModal();
+        } catch (err) {
+            console.error("Cancel enrollment error:", err);
+            showToast(
+                err.message ||
+                    `Failed to cancel enrollment in "${courseTitle}". Please try again.`,
+                "error"
+            );
+
+            // Close modal even on error
+            hideConfirmationModal();
+        } finally {
+            setCancellingEnrollment(null);
         }
+    };
+
+    // Check if user is enrolled in a course
+    const isUserEnrolled = (courseId) => {
+        if (!courseId) return false;
+        return enrollments.some(
+            (enrollment) =>
+                enrollment.course &&
+                enrollment.course.id === courseId &&
+                ["pending", "active", "completed"].includes(enrollment.status)
+        );
+    };
+
+    // Get enrollment status for a course
+    const getEnrollmentStatus = (courseId) => {
+        if (!courseId) return null;
+        const enrollment = enrollments.find(
+            (e) => e.course && e.course.id === courseId
+        );
+        return enrollment ? enrollment.status : null;
     };
 
     if (loading) {
-        return <div className="text-gray-600 text-center">Loading...</div>;
+        return <LoadingState type="courses-skeleton" />;
     }
 
     if (loadingError) {
         return (
-            <div className="text-red-600 text-center">
-                Error: {loadingError}
-            </div>
+            <ErrorState
+                message={loadingError}
+                onRetry={() => window.location.reload()}
+            />
         );
     }
 
-    const currentCourses = courses.filter(
-        (course) => course.status === "approved" && course.progress < 100
+    // Filter enrollments by status
+    const currentEnrollments = enrollments.filter(
+        (enrollment) => enrollment && enrollment.status === "active"
     );
-    const completedCourses = courses.filter(
-        (course) => course.status === "approved" && course.progress === 100
+
+    const pendingEnrollments = enrollments.filter(
+        (enrollment) => enrollment && enrollment.status === "pending"
     );
+
+    const completedEnrollments = enrollments.filter(
+        (enrollment) => enrollment && enrollment.status === "completed"
+    );
+
+    // Filter available courses - only show courses user is NOT actively enrolled in
+    const availableCoursesToShow = availableCourses.filter(
+        (course) => course && course._id && !isUserEnrolled(course._id)
+    );
+
+    // Apply search filtering
+    const filteredAvailableCourses = filterCoursesBySearch(
+        availableCoursesToShow
+    );
+    const filteredCurrentEnrollments =
+        filterEnrollmentsBySearch(currentEnrollments);
+    const filteredPendingEnrollments =
+        filterEnrollmentsBySearch(pendingEnrollments);
+    const filteredCompletedEnrollments =
+        filterEnrollmentsBySearch(completedEnrollments);
 
     return (
-        <div className="max-w-7xl mx-auto">
-            {/* Warning Message */}
-            {user?.profileStatus === "pending" && (
-                <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
-                    <p className="text-sm">
-                        Your profile is under review. You cannot enroll in
-                        courses until approved.
-                        <Link
-                            to="/user/settings"
-                            className="text-blue-600 hover:text-blue-800 font-medium ml-2"
-                        >
-                            Edit Profile
-                        </Link>
-                    </p>
-                </div>
-            )}
-
-            {/* Welcome */}
-            <section className="mb-10">
-                <div className="flex items-center mb-2">
-                    <h2 className="text-3xl font-bold text-gray-800">
-                        Courses
-                    </h2>
-                    <Book size={26} className="text-blue-600 ml-3" />
-                </div>
-                <p className="text-gray-600 text-lg">
-                    Continue your learning journey or explore new courses
-                </p>
-            </section>
-
-            {/* Current Courses */}
-            <section className="mb-8">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                        Your Current Courses
-                    </h3>
-                </div>
-
-                {currentCourses.length === 0 ? (
-                    <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center justify-center text-center">
-                        <Book size={32} className="text-gray-400 mb-3" />
-                        <p className="text-gray-600 text-sm mb-4">
-                            You don’t have any active courses yet.
-                        </p>
-                        <button
-                            onClick={handleBrowseCourses}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                        >
-                            Browse Courses
-                        </button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6s">
-                        {currentCourses.map((course) => (
-                            <div
-                                key={course.courseId}
-                                className="bg-white rounded-lg shadow-md flex flex-col h-full hover:shadow-lg transition"
-                            >
-                                <div className="relative">
-                                    <img
-                                        src={
-                                            availableCourses.find(
-                                                (ac) =>
-                                                    ac._id === course.courseId
-                                            )?.image || "/default.png"
-                                        }
-                                        alt={course.title}
-                                        className="w-full h-48 object-cover rounded-t-lg"
-                                    />
-                                    <div
-                                        className={`absolute top-2 right-2 text-white text-xs px-2 py-1 rounded-full ${
-                                            course.status === "pending"
-                                                ? "bg-yellow-600"
-                                                : "bg-blue-600"
-                                        }`}
-                                    >
-                                        {course.status === "pending"
-                                            ? "Pending"
-                                            : "Active"}
-                                    </div>
-                                </div>
-                                <div className="flex flex-col flex-grow p-6">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <h4 className="font-medium text-gray-800">
-                                            {course.title}
-                                        </h4>
-                                        <span className="text-sm font-medium">
-                                            {course.progress}%
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                                        <div
-                                            className="bg-indigo-600 h-2.5 rounded-full"
-                                            style={{
-                                                width: `${course.progress}%`,
-                                            }}
-                                        ></div>
-                                    </div>
-                                    <div className="flex justify-between items-center mt-auto">
-                                        <div className="flex items-center space-x-1">
-                                            <Clock
-                                                size={16}
-                                                className="text-gray-400"
-                                            />
-                                            <span className="text-gray-600 text-sm">
-                                                {course.timeRemaining}
-                                            </span>
-                                        </div>
-                                        <button
-                                            onClick={() =>
-                                                navigate(
-                                                    `/user/courses/${course.courseId}`
-                                                )
-                                            }
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                                                course.status === "pending"
-                                                    ? "bg-gray-400 text-white cursor-not-allowed"
-                                                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                                            }`}
-                                            disabled={
-                                                course.status === "pending"
-                                            }
-                                        >
-                                            {course.status === "pending"
-                                                ? "Pending"
-                                                : "Continue"}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+        <div className="min-h-screen bg-gray-50 py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Toast Notification */}
+                {toast.show && (
+                    <ToastNotification
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={hideToast}
+                    />
                 )}
-            </section>
 
-            {/* Completed Courses */}
-            <section className="mb-8">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                        Completed Courses
-                    </h3>
-                    {completedCourses.length > 0 && (
-                        <span
-                            onClick={() => navigate("/user/certificates")}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center cursor-pointer"
-                        >
-                            View Certificates
-                            <ChevronRight size={16} className="ml-1" />
-                        </span>
-                    )}
-                </div>
+                {/* Confirmation Modal */}
+                <ConfirmationModal
+                    isOpen={confirmationModal.isOpen}
+                    onClose={hideConfirmationModal}
+                    onConfirm={confirmCancelEnrollment}
+                    title="Cancel Enrollment"
+                    message={`Are you sure you want to cancel your enrollment in "${confirmationModal.courseTitle}"?`}
+                    confirmText="Yes, Cancel Enrollment"
+                    cancelText="Keep Enrollment"
+                    type="warning"
+                    isLoading={confirmationModal.isLoading}
+                />
 
-                {completedCourses.length === 0 ? (
-                    <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center justify-center text-center ">
-                        <CheckCircle size={32} className="text-gray-400 mb-3" />
-                        <p className="text-gray-600 text-sm mb-2">
-                            You haven’t completed any courses yet.
-                        </p>
-                        <p className="text-gray-500 text-xs mb-4">
-                            Finish a course to earn a certificate.
-                        </p>
-                        <button
-                            onClick={handleBrowseCourses}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                        >
-                            Browse Courses
-                        </button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {completedCourses.map((course) => (
-                            <div
-                                key={course.courseId}
-                                className="bg-white rounded-lg shadow-md flex flex-col h-full 
-                                 hover:-translate-y-1 hover:shadow-lg transition transform"
-                            >
-                                <div className="relative">
-                                    <img
-                                        src={
-                                            availableCourses.find(
-                                                (ac) =>
-                                                    ac._id === course.courseId
-                                            )?.image || "/default.png"
-                                        }
-                                        alt={course.title}
-                                        className="w-full h-48 object-cover rounded-t-lg"
-                                    />
-                                    <div className="absolute top-2 right-2 text-white text-xs px-2 py-1 rounded-full bg-green-600">
-                                        Completed
-                                    </div>
-                                </div>
-                                <div className="flex flex-col flex-grow p-6">
-                                    <h4 className="font-medium text-gray-800 mb-2">
-                                        {course.title}
-                                    </h4>
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="text-sm font-medium text-green-600">
-                                            100% Complete
-                                        </span>
-                                        <div className="flex items-center">
-                                            <Clock
-                                                size={16}
-                                                className="text-gray-400 mr-1"
-                                            />
-                                            <span className="text-gray-600 text-sm">
-                                                {course.timeRemaining}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() =>
-                                            navigate("/user/certificates")
-                                        }
-                                        className="mt-auto w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium text-center flex items-center justify-center"
-                                    >
-                                        <CheckCircle
-                                            size={16}
-                                            className="mr-1"
-                                        />
-                                        View Certificate
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                {/* Profile Alert */}
+                <ProfileAlert user={user} />
+
+                {/* Header Section */}
+                <CoursesHeader
+                    statusFilter={statusFilter}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                />
+
+                {/* Status Tabs */}
+                <StatusTabs
+                    statusFilter={statusFilter}
+                    currentEnrollments={filteredCurrentEnrollments}
+                    pendingEnrollments={filteredPendingEnrollments}
+                    completedEnrollments={filteredCompletedEnrollments}
+                />
+
+                {/* Available Courses */}
+                {!statusFilter && (
+                    <AvailableCoursesSection
+                        courses={filteredAvailableCourses}
+                        user={user}
+                        enrollmentStatus={enrollmentStatus}
+                        onEnroll={handleEnroll}
+                        onCourseClick={handleCourseClick}
+                        isUserEnrolled={isUserEnrolled}
+                        getEnrollmentStatus={getEnrollmentStatus}
+                        searchQuery={searchQuery}
+                    />
                 )}
-            </section>
 
-            {/* Available Courses */}
-            <section className="mb-8" ref={availableCoursesRef}>
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                        Available Courses
-                    </h3>
-                </div>
+                {/* Active Courses */}
+                {statusFilter === "active" && (
+                    <ActiveCoursesSection
+                        enrollments={filteredCurrentEnrollments}
+                        cancellingEnrollment={cancellingEnrollment}
+                        onCancelEnrollment={handleCancelEnrollment}
+                        searchQuery={searchQuery}
+                    />
+                )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {availableCourses.map((course) => {
-                        const isEnrolledOrPending = courses.some(
-                            (c) =>
-                                c.courseId === course._id &&
-                                (c.status === "pending" ||
-                                    c.status === "approved")
-                        );
-                        return (
-                            <div
-                                key={course._id}
-                                className="bg-white rounded-lg shadow-md flex flex-col h-full hover:-translate-y-1 hover:shadow-lg transition transform"
-                            >
-                                <img
-                                    src={course.image || "/default.png"}
-                                    alt={course.title}
-                                    className="w-full h-40 object-cover rounded-t-lg"
-                                />
-                                <div className="flex flex-col flex-grow p-6">
-                                    <div className="flex items-center mb-2">
-                                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mr-2">
-                                            New
-                                        </span>
-                                    </div>
-                                    <h4 className="font-medium text-gray-800 mb-2">
-                                        {course.title}
-                                    </h4>
-                                    <p className="text-gray-600 text-sm mb-4 flex-grow">
-                                        {course.description ||
-                                            "No description available"}
-                                    </p>
-                                    <div className="flex justify-between items-center mt-auto">
-                                        <div className="flex items-center space-x-1">
-                                            <Clock
-                                                size={16}
-                                                className="text-gray-400"
-                                            />
-                                            <span className="text-gray-600 text-sm">
-                                                {course.duration || "N/A"}
-                                            </span>
-                                        </div>
-                                        <button
-                                            onClick={() =>
-                                                handleEnroll(
-                                                    course._id,
-                                                    course.title
-                                                )
-                                            }
-                                            disabled={
-                                                isEnrolledOrPending ||
-                                                user?.profileStatus ===
-                                                    "pending"
-                                            }
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                                                isEnrolledOrPending ||
-                                                user?.profileStatus ===
-                                                    "pending"
-                                                    ? "bg-gray-400 text-white cursor-not-allowed"
-                                                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                                            }`}
-                                        >
-                                            {isEnrolledOrPending
-                                                ? "Pending/Enrolled"
-                                                : "Enroll"}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </section>
+                {/* Pending Courses */}
+                {statusFilter === "pending" && (
+                    <PendingCoursesSection
+                        enrollments={filteredPendingEnrollments}
+                        cancellingEnrollment={cancellingEnrollment}
+                        onCancelEnrollment={handleCancelEnrollment}
+                        searchQuery={searchQuery}
+                    />
+                )}
+
+                {/* Completed Courses */}
+                {statusFilter === "completed" && (
+                    <CompletedCoursesSection
+                        enrollments={filteredCompletedEnrollments}
+                        certificates={certificates}
+                        searchQuery={searchQuery}
+                    />
+                )}
+            </div>
         </div>
     );
 }

@@ -1,5 +1,5 @@
 const Certificate = require("../models/certificate");
-const Completion = require("../models/completion");
+const Enrollment = require("../models/enrollment");
 const Course = require("../models/course");
 const User = require("../models/user");
 const PDFDocument = require("pdfkit");
@@ -9,7 +9,7 @@ const { statusCodes, PATHS } = require("../utils/constant");
 const ensureDirExist = require("../utils/ensureDirExist");
 
 // Map certificate names to skills
-const certificateToSkillMap = {
+/* const certificateToSkillMap = {
     "Welding I": "Welding",
     "Welding II": "Welding",
     "Beauty Care I": "Beauty Care",
@@ -17,9 +17,9 @@ const certificateToSkillMap = {
     "Housekeeping I": "Housekeeping",
     "Carpentry I": "Carpentry",
     "Masonry I": "Masonry",
-};
+}; */
 
-// Generate certificate PDF (unchanged)
+// generate cert
 const generateCertificatePDF = (
     user,
     course,
@@ -32,10 +32,14 @@ const generateCertificatePDF = (
             layout: "landscape",
             margin: 50,
         });
-        const fileName = `certificate_${user._id}_${course._id}.pdf`;
+        const fileName = `certificate_${user._id}_${
+            course._id
+        }_${Date.now()}.pdf`;
         const filePath = path.join(PATHS.certDir, fileName);
+
         console.log(`Generating certificate at: ${filePath}`);
         ensureDirExist(PATHS.certDir);
+
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
 
@@ -47,6 +51,7 @@ const generateCertificatePDF = (
             });
         }
 
+        // Certificate design (your existing code is good)
         doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40)
             .lineWidth(4)
             .strokeColor("#3B82F6")
@@ -108,7 +113,7 @@ const generateCertificatePDF = (
 
         stream.on("finish", () => {
             console.log(`Certificate generated successfully at: ${filePath}`);
-            resolve(filePath);
+            resolve(`/uploads/certificates/${fileName}`);
         });
         stream.on("error", (err) => {
             console.error(`Error generating certificate: ${err.message}`);
@@ -117,188 +122,275 @@ const generateCertificatePDF = (
     });
 };
 
-// Create certificate when course is completed (progress = 100)
-exports.createCertificate = async (req, res, next) => {
+// Manual certificate generation endpoint
+exports.generateCertificate = async (req, res, next) => {
+    const { enrollmentId } = req.body;
+    const userId = req.user.id;
+
     try {
-        const { userId, courseId } = req.body;
-        console.log(
-            `Creating certificate for user: ${userId}, course: ${courseId}`
-        );
-
-        const completion = await Completion.findOne({
+        const enrollment = await Enrollment.findOne({
+            _id: enrollmentId,
             user: userId,
-            course: courseId,
-        });
-        if (!completion || completion.progress !== 100) {
-            console.error(
-                `Completion not found or progress < 100: ${userId}, ${courseId}`
-            );
-            return res.status(statusCodes.BAD_REQUEST).json({
-                message: "Course not completed or not found.",
-            });
-        }
+            status: "completed",
+        })
+            .populate("course")
+            .populate("user");
 
-        const user = await User.findById(userId);
-        const course = await Course.findById(courseId);
-        if (!user || !course) {
-            console.error(`User or course not found: ${userId}, ${courseId}`);
+        if (!enrollment) {
             return res.status(statusCodes.NOT_FOUND).json({
-                message: "User or course not found.",
+                success: false,
+                message: "Completed enrollment not found",
             });
         }
 
-        const completionDate = new Date();
+        // Check if certificate already exists
+        const existingCertificate = await Certificate.findOne({
+            enrollment: enrollmentId,
+        });
+
+        if (existingCertificate) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Certificate already exists for this enrollment",
+                certificate: existingCertificate,
+            });
+        }
+
+        // Generate certificate
+        const completionDate = enrollment.completedAt || new Date();
         const expirationDate = new Date(completionDate);
-        expirationDate.setFullYear(completionDate.getFullYear() + 1); // 1-year expiration
+        expirationDate.setFullYear(completionDate.getFullYear() + 1);
 
         const certificateUrl = await generateCertificatePDF(
-            user,
-            course,
+            enrollment.user,
+            enrollment.course,
             completionDate,
             expirationDate
         );
 
+        // Add skill to user if mapped
+        /* const skillToAdd = certificateToSkillMap[enrollment.course.title];
+        if (skillToAdd) {
+            const user = await User.findById(userId);
+            if (user && !user.skills.includes(skillToAdd)) {
+                user.skills.push(skillToAdd);
+                await user.save();
+            }
+        } */
+
+        // Create certificate record
         const certificate = await Certificate.create({
             user: userId,
-            course: courseId,
-            title: course.title,
+            course: enrollment.course._id,
+            enrollment: enrollmentId,
+            title: enrollment.course.title,
             completionDate,
             expirationDate,
-            certificateUrl: `/uploads/certificates/${path.basename(
-                certificateUrl
-            )}`,
+            certificateUrl,
             status: "active",
+            verificationCode: generateVerificationCode(),
+            issuedBy: "FAST-C",
         });
 
-        // Add to User.certificates and User.skills
-        const skill = certificateToSkillMap[course.title] || course.title; // Fallback to course title if no mapping
-        await User.findByIdAndUpdate(
-            userId,
-            {
-                $addToSet: {
-                    certificates: {
-                        name: course.title,
-                        issuer: "FAST-C",
-                        date: completionDate,
-                        expiration: expirationDate,
-                        file: certificate.certificateUrl,
-                    },
-                    skills: skill, // Add corresponding skill
-                },
-            },
-            { new: true }
-        );
-
-        console.log(`Certificate created: ${certificate._id}`);
         res.status(statusCodes.CREATED).json({
-            certificateId: certificate._id.toString(),
-            title: certificate.title,
-            completionDate: certificate.completionDate,
-            expirationDate: certificate.expirationDate,
-            certificateUrl: certificate.certificateUrl,
-            status: certificate.status,
+            success: true,
+            message: "Certificate generated successfully",
+            certificate: {
+                id: certificate._id,
+                title: certificate.title,
+                completionDate: certificate.completionDate,
+                expirationDate: certificate.expirationDate,
+                certificateUrl: certificate.certificateUrl,
+                verificationCode: certificate.verificationCode,
+            },
         });
     } catch (error) {
-        console.error(`Create certificate error: ${error.message}`);
         next(error);
     }
 };
 
-// Get user's certificates (unchanged)
-exports.getCertificates = async (req, res, next) => {
+// Public certificate verification
+exports.verifyCertificate = async (req, res, next) => {
+    const { verificationCode } = req.query;
+
     try {
-        const { user } = req.query;
-        console.log(`Fetching certificates for user: ${user}`);
-        const certificates = await Certificate.find({ user })
-            .populate("course", "image duration")
+        if (!verificationCode) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Verification code is required",
+            });
+        }
+
+        const certificate = await Certificate.findOne({ verificationCode })
+            .populate("user", "name email")
+            .populate("course", "title description duration");
+
+        if (!certificate) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Certificate not found or invalid verification code",
+            });
+        }
+
+        // Check if certificate is expired
+        const isExpired = new Date() > new Date(certificate.expirationDate);
+        const isRevoked = certificate.status === "revoked";
+
+        res.status(statusCodes.OK).json({
+            success: true,
+            certificate: {
+                id: certificate._id,
+                title: certificate.title,
+                recipient: {
+                    name: certificate.user.name,
+                    email: certificate.user.email,
+                },
+                course: {
+                    title: certificate.course.title,
+                    description: certificate.course.description,
+                    duration: certificate.course.duration,
+                },
+                completionDate: certificate.completionDate,
+                expirationDate: certificate.expirationDate,
+                status: isRevoked
+                    ? "revoked"
+                    : isExpired
+                    ? "expired"
+                    : "active",
+                issuedBy: certificate.issuedBy,
+                verifiedAt: new Date(),
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Get user certificates
+exports.getUserCertificates = async (req, res, next) => {
+    const userId = req.user.id;
+
+    try {
+        const certificates = await Certificate.find({ user: userId })
+            .populate("course", "title description category")
+            .sort({ completionDate: -1 })
             .lean();
 
-        const now = new Date();
-        const formattedCertificates = certificates.map((cert) => ({
-            certificateId: cert._id.toString(),
-            courseId: cert.course._id.toString(),
-            title: cert.title,
-            image: cert.course.image || "/default.png",
-            completionDate: cert.completionDate,
-            expirationDate: cert.expirationDate,
-            duration: cert.course.duration || "N/A",
-            status:
-                new Date(cert.expirationDate) < now ? "expired" : cert.status,
-            certificateUrl: cert.certificateUrl,
-        }));
+        const formattedCertificates = certificates.map((cert) => {
+            const isExpired = new Date() > new Date(cert.expirationDate);
 
-        console.log(`Fetched certificates:`, formattedCertificates);
+            return {
+                id: cert._id,
+                title: cert.title,
+                course: cert.course,
+                completionDate: cert.completionDate,
+                expirationDate: cert.expirationDate,
+                certificateUrl: cert.certificateUrl,
+                verificationCode: cert.verificationCode,
+                status:
+                    cert.status === "revoked"
+                        ? "revoked"
+                        : isExpired
+                        ? "expired"
+                        : "active",
+                issuedBy: cert.issuedBy,
+            };
+        });
+
         res.status(statusCodes.OK).json({
+            success: true,
+            count: formattedCertificates.length,
             certificates: formattedCertificates,
         });
     } catch (error) {
-        console.error(`Get certificates error: ${error.message}`);
         next(error);
     }
 };
 
-// Download certificate PDF (unchanged)
+// ownload certificate
 exports.downloadCertificate = async (req, res, next) => {
+    const { certificateId } = req.params;
+    const userId = req.user.id;
+
     try {
-        const { certificateId } = req.params;
-        console.log(`Attempting to download certificate: ${certificateId}`);
-        const certificate = await Certificate.findById(certificateId);
+        console.log(`📥 Download request for certificate: ${certificateId}`);
+
+        const certificate = await Certificate.findOne({
+            _id: certificateId,
+            user: userId,
+        });
+
         if (!certificate) {
-            console.error(`Certificate not found: ${certificateId}`);
             return res.status(statusCodes.NOT_FOUND).json({
-                message: "Certificate not found.",
+                success: false,
+                message: "Certificate not found",
             });
         }
-        console.log(`Certificate found: ${JSON.stringify(certificate)}`);
-        const fileName = path.basename(certificate.certificateUrl);
-        const filePath = path.join(PATHS.certDir, fileName);
-        console.log(`Resolved file path: ${filePath}`);
-        if (!fs.existsSync(filePath)) {
-            console.log(
-                `File not found, regenerating certificate: ${certificateId}`
+
+        console.log(`📄 Certificate URL: ${certificate.certificateUrl}`);
+
+        // 🆕 QUICK FIX: Handle different path formats
+        let filePath;
+
+        if (certificate.certificateUrl.startsWith("/uploads/certificates/")) {
+            // Remove '/uploads/certificates/' and join with certDir
+            const relativePath = certificate.certificateUrl.replace(
+                "/uploads/certificates/",
+                ""
             );
-            const user = await User.findById(certificate.user);
-            const course = await Course.findById(certificate.course);
-            if (!user || !course) {
-                console.error(
-                    `User or course not found for certificate: ${certificateId}`
-                );
-                return res.status(statusCodes.NOT_FOUND).json({
-                    message: "User or course not found.",
-                });
-            }
-            await generateCertificatePDF(
-                user,
-                course,
-                certificate.completionDate,
-                certificate.expirationDate
+            filePath = path.join(PATHS.certDir, relativePath);
+        } else if (certificate.certificateUrl.startsWith("/uploads/")) {
+            // Remove '/uploads/' and join with upload base directory
+            const relativePath = certificate.certificateUrl.replace(
+                "/uploads/",
+                ""
             );
-            if (!fs.existsSync(filePath)) {
-                console.error(
-                    `Regeneration failed, file still missing: ${filePath}`
-                );
-                return res.status(statusCodes.NOT_FOUND).json({
-                    message: "Certificate file not found after regeneration.",
-                });
-            }
-            console.log(`Certificate regenerated successfully: ${filePath}`);
+            filePath = path.join(
+                __dirname,
+                "..",
+                "data",
+                "upload",
+                relativePath
+            );
+        } else {
+            // Assume it's just a filename in the certificates directory
+            filePath = path.join(PATHS.certDir, certificate.certificateUrl);
         }
+
+        console.log(`🔍 Looking for file at: ${filePath}`);
+
+        if (!fs.existsSync(filePath)) {
+            console.log(`❌ File not found at: ${filePath}`);
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Certificate file not found",
+            });
+        }
+
+        console.log(`✅ File found, streaming...`);
+
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            `attachment; filename="FAST-C_Certificate_${certificate.title}.pdf"`
+            `attachment; filename="FAST-C_Certificate_${certificate.title.replace(
+                /\s+/g,
+                "_"
+            )}.pdf"`
         );
+
         const fileStream = fs.createReadStream(filePath);
-        console.log(`Streaming file: ${filePath}`);
         fileStream.pipe(res);
-        fileStream.on("error", (err) => {
-            console.error(`Error reading file: ${err.message}`);
-            res.status(statusCodes.INTERNAL_SERVER_ERROR).json({
-                message: "Error reading certificate file.",
-            });
-        });
     } catch (error) {
-        console.error(`Download certificate error: ${error.message}`);
+        console.error(`❌ Download error: ${error.message}`);
         next(error);
     }
+};
+
+function generateVerificationCode() {
+    return "FAST-C" + Math.random().toString(36).substr(2, 9).toUpperCase();
+}
+
+module.exports = {
+    generateCertificatePDF,
+    ...exports,
 };

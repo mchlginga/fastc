@@ -3,35 +3,25 @@ const router = express.Router();
 const { protect, checkRoles } = require("../middlewares/index");
 const {
     getDashboardStats,
-    getOnlineUsers,
     getRecentActivities,
-    getExportHistory,
+    getSystemOverview,
+    getOnlineUsers
 } = require("../controllers/statistics");
 
-// All routes require superAdmin or admin role
-router.get(
-    "/dashboard",
-    protect,
-    checkRoles(["superAdmin", "admin"]),
-    getDashboardStats
-);
-router.get(
-    "/online-users",
-    protect,
-    checkRoles(["superAdmin", "admin"]),
-    getOnlineUsers
-);
-router.get(
-    "/recent-activities",
-    protect,
-    checkRoles(["superAdmin", "admin"]),
-    getRecentActivities
-);
-router.get(
-    "/export-history",
-    protect,
-    checkRoles(["superAdmin", "admin"]),
-    getExportHistory
-);
+// All routes are protected and require admin role
+router.use(protect);
+router.use(checkRoles(["admin", "superAdmin"]));
+
+// Dashboard statistics
+router.get("/dashboard", getDashboardStats);
+
+// Recent activities
+router.get("/activities", getRecentActivities);
+
+// System overview
+router.get("/overview", getSystemOverview);
+
+// Online users
+router.get("/online-users", getOnlineUsers);
 
 module.exports = router;

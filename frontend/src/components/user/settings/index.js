@@ -1,0 +1,9 @@
+export { default as ProfileSection } from "./ProfileSection";
+export { default as EducationSection } from "./EducationSection";
+export { default as CertificatesSection } from "./CertificatesSection";
+export { default as SecuritySection } from "./SecuritySection";
+export { default as SettingsNavigation } from "./SettingsNavigation";
+export { default as SettingsHeader } from "./SettingsHeader";
+export { default as SettingsSkeleton } from "./SettingsSkeleton";
+export { default as PasswordChangeModal } from "./PasswordChangeModal";
+export { default as DeleteAccountModal } from "./DeleteAccountModal";

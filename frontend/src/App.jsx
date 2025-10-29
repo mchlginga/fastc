@@ -29,12 +29,14 @@ import UserProfile from "./pages/user/UserProfile";
 import UserSettings from "./pages/user/UserSettings";
 import CourseDetail from "./pages/user/CourseDetail";
 import Lesson from "./pages/user/Lesson";
+import CourseOverviewPage from "./pages/user/CourseOverviewPage";
 
 /* admin */
 import AdminHeaderFooter from "./pages/admin/AdminHeaderFooter";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminCourses from "./pages/admin/AdminCourses";
+import AdminEnrollments from "./pages/admin/AdminEnrollments";
 import AdminCertificates from "./pages/admin/AdminCertificates";
 import AdminJob from "./pages/admin/AdminJobMatching";
 import AdminProfile from "./pages/admin/AdminProfile";
@@ -59,7 +61,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
                 <Route
-                    path="/reset-password/:token?"
+                    path="/forgot-password/:token?"
                     element={<ResetPassword />}
                 />
                 <Route path="/verify-email" element={<VerifyEmail />} />
@@ -71,15 +73,7 @@ function App() {
                 <Route
                     path="/profile-setup"
                     element={
-                        <ProtectedRoute
-                            allowedRoles={["user", "superAdmin"]}
-                            condition={(user) =>
-                                user &&
-                                (user.role === "superAdmin" ||
-                                    !user.isProfileComplete)
-                            }
-                            redirectTo="/user"
-                        >
+                        <ProtectedRoute allowedRoles={["user", "superAdmin"]}>
                             <ProfileSetup />
                         </ProtectedRoute>
                     }
@@ -91,12 +85,6 @@ function App() {
                     element={
                         <ProtectedRoute
                             allowedRoles={["company", "superAdmin"]}
-                            condition={(user) =>
-                                user &&
-                                (user.role === "superAdmin" ||
-                                    !user.isProfileComplete)
-                            }
-                            redirectTo="/company"
                         >
                             <CompanyProfileSetup />
                         </ProtectedRoute>
@@ -125,6 +113,10 @@ function App() {
                         path="courses/:courseId/lesson/:lessonId"
                         element={<Lesson />}
                     />
+                    <Route
+                        path="courses/:courseId/overview"
+                        element={<CourseOverviewPage />}
+                    />
                 </Route>
 
                 {/* Admin Routes */}
@@ -146,6 +138,7 @@ function App() {
                     <Route path="job-match" element={<AdminJob />} />
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="settings" element={<AdminSettings />} />
+                    <Route path="enrollments" element={<AdminEnrollments />} />
                 </Route>
 
                 {/* Company Routes */}

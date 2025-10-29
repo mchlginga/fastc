@@ -7,6 +7,12 @@ import {
     resendVerificationCode,
 } from "../../services/authService";
 
+// Centralized route configuration
+const ROUTE_CONFIG = {
+    user: "/profile-setup",
+    company: "/company-profile-setup",
+};
+
 const VerifyEmail = () => {
     const { setUser } = useAuth();
     const [code, setCode] = useState("");
@@ -14,68 +20,122 @@ const VerifyEmail = () => {
     const [loading, setLoading] = useState(false);
     const [resendLoading, setResendLoading] = useState(false);
     const [resendMessage, setResendMessage] = useState("");
+    const [resendCooldown, setResendCooldown] = useState(0);
+
     const navigate = useNavigate();
     const { state } = useLocation();
-    const email = state?.email || "";
-    const resendSuccess = state?.resendSuccess || false;
 
+    // Better state handling with fallbacks
+    const email = state?.email || "";
+
+    // Enhanced route protection
     useEffect(() => {
-        if (!email) navigate("/login", { replace: true });
+        if (!email) {
+            console.warn(
+                "VerifyEmail: No email provided, redirecting to register"
+            );
+            navigate("/register", { replace: true });
+            return;
+        }
     }, [email, navigate]);
+
+    // Resend cooldown timer
+    useEffect(() => {
+        if (resendCooldown > 0) {
+            const timer = setTimeout(
+                () => setResendCooldown(resendCooldown - 1),
+                1000
+            );
+            return () => clearTimeout(timer);
+        }
+    }, [resendCooldown]);
 
     const handleChange = (e) => {
         const value = e.target.value.replace(/\D/g, "").slice(0, 6);
         setCode(value);
-        setError("");
+        // Clear errors when user starts typing
+        if (error) setError("");
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Enhanced validation
         if (code.length !== 6) {
-            setError("Please enter a 6-digit code.");
+            setError("Please enter a complete 6-digit code.");
             return;
         }
+
+        if (!/^\d{6}$/.test(code)) {
+            setError("Verification code must contain only numbers.");
+            return;
+        }
+
         setLoading(true);
         setError("");
+
         try {
             const publicUser = await verifyEmail(email, code);
             setUser(publicUser);
-            // Redirect based on role
-            let redirectTo = "/profile-setup";
-            if (publicUser.role === "admin") {
-                redirectTo = "/admin-profile-setup";
-            } else if (publicUser.role === "company") {
-                redirectTo = "/company-profile-setup";
-            }
-            navigate(redirectTo, { replace: true });
+
+            // Use centralized route config with fallback
+            const redirectTo =
+                ROUTE_CONFIG[publicUser.role] || ROUTE_CONFIG.user;
+            navigate(redirectTo, {
+                replace: true,
+                state: {
+                    welcomeMessage: "Email verified successfully!",
+                    freshLogin: true,
+                },
+            });
         } catch (err) {
             setError(
-                err.response?.data?.message || "Invalid verification code."
+                err.response?.data?.message ||
+                    "Invalid verification code. Please check and try again."
             );
+            // Clear code on error for better UX
+            setCode("");
         } finally {
             setLoading(false);
         }
     };
 
     const handleResend = async () => {
+        if (resendCooldown > 0) return;
+
         setResendLoading(true);
         setResendMessage("");
         setError("");
+
         try {
             await resendVerificationCode(email);
-            setResendMessage("A new code has been sent to your email.");
+            setResendMessage(
+                "A new verification code has been sent to your email."
+            );
+            setResendCooldown(30); // 30-second cooldown
         } catch (err) {
             setError(
                 err.response?.data?.message ||
-                    "Failed to resend code. Try again."
+                    "Unable to resend code. Please try again in a few minutes."
             );
         } finally {
             setResendLoading(false);
         }
     };
 
+    // Early return for better readability
+    if (!email) {
+        return (
+            <div className=" flex items-center justify-center p-6 ">
+                <div className="text-center">
+                    <p className="text-gray-600">Redirecting...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen flex items-center justify-center p-6">
+        <div className=" flex items-center justify-center p-6 ">
             <div className="w-full max-w-md bg-white rounded-xl shadow-md p-8">
                 {/* Header */}
                 <div className="flex items-center justify-center mb-6">
@@ -83,33 +143,42 @@ const VerifyEmail = () => {
                     <h1 className="text-2xl font-bold text-gray-800">FAST-C</h1>
                 </div>
 
-                {/* Title */}
-                <h3 className="text-2xl font-bold text-gray-800 text-center mb-3">
-                    Email Verification
-                </h3>
-                <p className="text-gray-600 text-center mb-6">
-                    Enter the 6-digit code sent to{" "}
-                    <span className="font-medium">{email}</span>.
-                </p>
+                {/* Title & Instructions */}
+                <div className="text-center mb-6">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                        Verify Your Email
+                    </h3>
 
-                {/* Feedback */}
-                {error && (
-                    <p className="text-red-500 text-sm text-center mb-4">
-                        {error}
+                    <p className="text-sm text-gray-500">
+                        Code sent to:{" "}
+                        <span className="font-medium text-gray-700">
+                            {email}
+                        </span>
                     </p>
+                </div>
+
+                {/* Feedback Messages */}
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg cursor-default">
+                        <p className="text-red-700 text-sm text-center">
+                            {error}
+                        </p>
+                    </div>
                 )}
                 {resendMessage && (
-                    <p className="text-green-600 text-sm text-center mb-4">
-                        {resendMessage}
-                    </p>
+                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg cursor-default">
+                        <p className="text-green-700 text-sm text-center">
+                            {resendMessage}
+                        </p>
+                    </div>
                 )}
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Verification Form */}
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label
                             htmlFor="code"
-                            className="block text-sm font-medium text-gray-700 mb-1"
+                            className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer"
                         >
                             Verification Code
                         </label>
@@ -122,52 +191,96 @@ const VerifyEmail = () => {
                                 id="code"
                                 name="code"
                                 type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 value={code}
                                 onChange={handleChange}
                                 maxLength={6}
-                                placeholder="Enter 6-digit code"
+                                placeholder="000000"
                                 required
+                                autoFocus
                                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 
-                                           focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                           text-gray-700 transition duration-200"
+                                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                                           text-gray-700 text-center text-lg font-semibold tracking-widest
+                                           transition duration-200 cursor-text"
                             />
                         </div>
+                        <p className="text-xs text-gray-500 mt-1 text-center cursor-default">
+                            Enter the 6-digit code from your email
+                        </p>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || code.length !== 6}
                         className="w-full py-3 px-4 rounded-lg text-sm font-medium text-white 
                                    bg-blue-600 hover:bg-blue-700 focus:outline-none 
-                                   focus:ring-2 focus:ring-blue-500 transition duration-200 
-                                   disabled:opacity-50 cursor-pointer"
+                                   focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                                   transition duration-200 
+                                   disabled:opacity-50 disabled:cursor-not-allowed
+                                   shadow-sm hover:shadow-md cursor-pointer"
                     >
-                        {loading ? "Verifying..." : "Verify Email"}
+                        {loading ? (
+                            <span className="flex items-center justify-center cursor-wait">
+                                <svg
+                                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle
+                                        className="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                    ></circle>
+                                    <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    ></path>
+                                </svg>
+                                Verifying...
+                            </span>
+                        ) : (
+                            "Verify Email"
+                        )}
                     </button>
                 </form>
 
-                {/* Resend Code */}
-                <div className="mt-4 text-center">
+                {/* Resend Code Section */}
+                <div className="mt-6 text-center">
+                    <p className="text-sm text-gray-600 mb-2 cursor-default">
+                        Didn't receive the code?
+                    </p>
                     <button
                         onClick={handleResend}
-                        disabled={resendLoading}
-                        className="text-sm text-blue-600 hover:text-blue-800 
-                                   font-medium transition duration-200 disabled:opacity-50 cursor-pointer"
+                        disabled={resendLoading || resendCooldown > 0}
+                        className="text-sm font-medium text-blue-600 hover:text-blue-800 
+                                   transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+                                   underline cursor-pointer"
                     >
-                        {resendLoading ? "Sending..." : "Resend Code"}
+                        {resendLoading
+                            ? "Sending..."
+                            : resendCooldown > 0
+                            ? `Resend available in ${resendCooldown}s`
+                            : "Resend Verification Code"}
                     </button>
                 </div>
 
-                {/* Footer */}
-                <p className="mt-6 text-center text-sm text-gray-600">
-                    Back to{" "}
-                    <Link
-                        to="/login"
-                        className="text-blue-600 hover:text-blue-800 font-medium transition duration-200"
-                    >
-                        Login
-                    </Link>
-                </p>
+                {/* Footer Navigation */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                    <p className="text-center text-sm text-gray-600 cursor-default">
+                        Return to{" "}
+                        <Link
+                            to="/login"
+                            className="font-medium text-blue-600 hover:text-blue-800 transition duration-200 cursor-pointer"
+                        >
+                            Login
+                        </Link>
+                    </p>
+                </div>
             </div>
         </div>
     );

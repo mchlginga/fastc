@@ -4,25 +4,22 @@ const { protect } = require("../middlewares/index");
 const {
     register,
     login,
+    verifyEmail,
+    resendVerificationCode,
+    requestResetPassword,
+    resetPassword,
     getMe,
     logout,
-    requestPasswordReset,
-    resetPassword,
-    sendVerificationCode,
-    verifyCode,
-    checkUsername,
-    updateProfile, // Added this
+    // logout,
 } = require("../controllers/auth");
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/verify-email", verifyEmail);
+router.post("/send-verification-code", resendVerificationCode);
+router.post("/request-reset-password", requestResetPassword);
+router.post("/reset-password", resetPassword);
 router.get("/me", protect, getMe);
 router.post("/logout", logout);
-router.post("/request-password-reset", requestPasswordReset);
-router.post("/reset-password", resetPassword);
-router.post("/send-verification-code", sendVerificationCode);
-router.post("/verify-code", verifyCode);
-router.post("/check-username", checkUsername);
-router.put("/profile", protect, updateProfile); // Added this route
 
 module.exports = router;

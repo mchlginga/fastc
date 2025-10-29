@@ -1,40 +1,10 @@
+// backend/models/user.js
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema(
     {
-        username: {
-            type: String,
-            required: false,
-            unique: true,
-            trim: true,
-            sparse: true,
-        },
-        firstName: {
-            type: String,
-            required: function () {
-                return this.role !== "company";
-            },
-            trim: true,
-        },
-        surname: {
-            type: String,
-            required: function () {
-                return this.role !== "company";
-            },
-            trim: true,
-        },
-        companyName: {
-            type: String,
-            required: function () {
-                return this.role === "company";
-            },
-            trim: true,
-        },
-        name: {
-            type: String,
-            trim: true,
-        },
+        /* --- authorization --- */
         email: {
             type: String,
             required: true,
@@ -50,14 +20,69 @@ const userSchema = new mongoose.Schema(
             enum: ["superAdmin", "admin", "company", "user"],
             default: "user",
         },
-        profilePic: {
-            type: String,
-            default: "",
-        },
         privacyAgreement: {
             type: Boolean,
             required: true,
             default: false,
+        },
+
+        /* --- personal details  --- */
+        firstName: {
+            type: String,
+            required: function () {
+                return this.role !== "company";
+            },
+            trim: true,
+        },
+        surname: {
+            type: String,
+            required: function () {
+                return this.role !== "company";
+            },
+            trim: true,
+        },
+        name: {
+            type: String,
+            trim: true,
+        },
+        profileStatus: {
+            type: String,
+            enum: ["pending", "approved", "rejected"],
+            default: "pending",
+        },
+        lastActive: {
+            type: Date,
+            default: null,
+        },
+
+        companyName: {
+            type: String,
+            required: function () {
+                return this.role === "company";
+            },
+            trim: true,
+        },
+
+        // 🆕 UPDATED: Skills now come from certificates only (virtual field)
+        // ❌ REMOVED: skills: [String]
+
+        availability: {
+            type: String,
+            enum: ["Full-time", "Part-time", "N/A"],
+            default: "N/A",
+        },
+
+        profilePic: {
+            type: String,
+            default: "",
+        },
+
+        /* --- verification --- */
+        verificationCode: {
+            type: String,
+        },
+        verificationCodeExpires: {
+            type: Date,
         },
         resetPasswordToken: {
             type: String,
@@ -65,12 +90,12 @@ const userSchema = new mongoose.Schema(
         resetPasswordExpires: {
             type: Date,
         },
-        verificationCode: String,
-        verificationCodeExpires: Date,
         isEmailVerified: {
             type: Boolean,
             default: false,
         },
+
+        /* --- profiling --- */
         birthdate: {
             type: Date,
         },
@@ -78,107 +103,69 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum: ["male", "female", "other"],
         },
-        contactNumber: {
-            type: String,
-            trim: true,
-        },
-        address: {
-            type: String,
-            trim: true,
-        },
         education: [
             {
-                educationLevel: { type: String, trim: true },
-                schoolName: { type: String, trim: true },
-                yearGraduated: { type: String, trim: true },
-                proof: { type: String }, // Path to uploaded file
+                educationLevel: {
+                    type: String,
+                    trim: true,
+                },
+                schoolName: {
+                    type: String,
+                    trim: true,
+                },
+                yearGraduated: {
+                    type: String,
+                    trim: true,
+                },
+                proof: {
+                    type: String,
+                },
             },
         ],
-        certificates: [
-            {
-                name: { type: String, trim: true },
-                issuer: { type: String, trim: true },
-                date: { type: Date },
-                expiration: { type: Date },
-                proof: { type: String }, // Path to uploaded file
-            },
-        ],
-        skills: [
-            {
+
+        // ❌ REMOVED: Manual certificates array
+        // certificates: [{ name, issuer, date, expiration, proof }]
+
+        representative: {
+            name: {
                 type: String,
-                trim: true,
             },
-        ],
-        availability: {
-            type: String,
-            enum: ["Full-time", "Part-time", "N/A"],
-            default: "N/A",
-        },
-        industryType: {
-            type: String,
+            email: {
+                type: String,
+            },
+            contactNumber: {
+                type: String,
+            },
         },
         businessPermit: {
             type: String,
         },
-        representative: {
-            name: { type: String },
-            position: { type: String },
-            contactNumber: { type: String },
-            idProof: { type: String },
-        },
-        profileStatus: {
+
+        address: {
             type: String,
-            enum: ["pending", "approved", "rejected"],
-            default: "pending",
+            trim: true,
         },
-        isProfileComplete: {
-            type: Boolean,
-            default: false,
-            get: function () {
-                if (this.role === "admin") {
-                    return !!(
-                        this.username &&
-                        this.position &&
-                        this.contactNumber
-                    );
-                } else if (this.role === "user") {
-                    return !!(
-                        this.username &&
-                        this.birthdate &&
-                        this.gender &&
-                        this.contactNumber &&
-                        this.address &&
-                        this.education.some((edu) =>
-                            ["highSchool", "senioHighSchool"].includes(
-                                edu.educationLevel
-                            )
-                        )
-                    );
-                } else if (this.role === "company") {
-                    return !!(
-                        this.companyName &&
-                        this.industryType &&
-                        this.address &&
-                        this.contactNumber &&
-                        this.representative &&
-                        this.representative.name &&
-                        this.representative.position &&
-                        this.representative.contactNumber
-                    );
-                }
-                return false;
-            },
-        },
-        lastActive: {
-            type: Date,
-            default: null, // Tracks last user activity
+        contactNumber: {
+            type: String,
+            trim: true,
         },
     },
     {
         timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true },
     }
 );
 
+// 🆕 NEW: Virtual field for certificates (from Certificate collection)
+userSchema.virtual("certificates", {
+    ref: "Certificate",
+    localField: "_id",
+    foreignField: "user",
+    justOne: false,
+});
+
+// Pre-save middleware
 userSchema.pre("save", async function (next) {
     if (
         this.isModified("firstName") ||
@@ -205,6 +192,86 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// 🆕 NEW: Get all verified skills from certificates
+userSchema.methods.getSkills = async function () {
+    try {
+        const Certificate = require("./certificate");
+        const Skill = require("./skill");
+
+        const certificates = await Certificate.find({
+            user: this._id,
+            status: "active",
+        }).populate("verifiedSkills.skill");
+
+        // Extract unique skills with level and certificate count
+        const skillMap = new Map();
+
+        certificates.forEach((cert) => {
+            if (cert.verifiedSkills && cert.verifiedSkills.length > 0) {
+                cert.verifiedSkills.forEach((vs) => {
+                    if (vs.skill) {
+                        const skillId = vs.skill._id.toString();
+
+                        if (!skillMap.has(skillId)) {
+                            skillMap.set(skillId, {
+                                skill: vs.skill,
+                                level: vs.level,
+                                certificateCount: 1,
+                                verifiedAt: vs.verifiedAt,
+                            });
+                        } else {
+                            const existing = skillMap.get(skillId);
+                            existing.certificateCount++;
+
+                            // Keep highest level
+                            if (
+                                levelRank(vs.level) > levelRank(existing.level)
+                            ) {
+                                existing.level = vs.level;
+                            }
+
+                            // Keep earliest verification date
+                            if (
+                                new Date(vs.verifiedAt) <
+                                new Date(existing.verifiedAt)
+                            ) {
+                                existing.verifiedAt = vs.verifiedAt;
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        return Array.from(skillMap.values());
+    } catch (error) {
+        console.error("Error getting user skills:", error);
+        return [];
+    }
+};
+
+// 🆕 NEW: Sync skills from certificates (for backward compatibility)
+userSchema.methods.syncSkillsFromCertificates = async function () {
+    try {
+        // This method exists for backward compatibility
+        // Skills are now fetched dynamically using getSkills()
+        const skills = await this.getSkills();
+        console.log(`✅ User ${this._id} has ${skills.length} verified skills`);
+        return skills;
+    } catch (error) {
+        console.error("Error syncing skills from certificates:", error);
+        return [];
+    }
+};
+
+// ❌ REMOVED: updateSkillsFromCertificates (replaced by getSkills)
+
+// Helper function for skill level ranking
+function levelRank(level) {
+    const ranks = { beginner: 1, intermediate: 2, advanced: 3 };
+    return ranks[level] || 0;
+}
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;

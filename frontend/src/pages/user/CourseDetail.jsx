@@ -1,67 +1,92 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Clock, Book, ChevronLeft, Check, Play, Lock } from "react-feather";
-import { useAuth } from "../../context/AuthContext";
 import {
-    getCourseById,
-    getCompletions,
-    completeLesson,
-    markAttendance,
-} from "../../services/authService";
+    Clock,
+    Book,
+    ChevronLeft,
+    Check,
+    Play,
+    Lock,
+    Users,
+    Award,
+    BarChart2,
+    CheckCircle,
+    Calendar,
+} from "react-feather";
+import { useAuth } from "../../context/AuthContext";
+import { getCourseById } from "../../services/courseService";
+import { getUserEnrollments } from "../../services/enrollmentService";
+import {
+    getImageUrl,
+    getEnrollmentDeadline,
+    getCourseAccessType,
+} from "../../utils/courseUtils";
+import LoadingState from "../../components/common/LoadingState";
+import ErrorState from "../../components/common/ErrorState";
+import CourseDetailSkeleton from "../../components/user/courses/CourseDetailSkeleton";
 
 function CourseDetail() {
     const { courseId } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
     const [course, setCourse] = useState(null);
-    const [completion, setCompletion] = useState(null);
+    const [enrollment, setEnrollment] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedLessonId, setSelectedLessonId] = useState(null);
-    const [cameraError, setCameraError] = useState(null);
-    const videoRef = useRef(null);
-    const streamRef = useRef(null);
+
+    console.log("📋 CourseDetail - courseId:", courseId);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
+                console.log("🔄 Starting to fetch course data...");
+
+                // Get course details
                 const courseData = await getCourseById(courseId);
+                console.log("📦 Course data:", courseData);
+
                 if (!courseData) {
                     throw new Error("Course not found");
                 }
                 setCourse(courseData);
 
-                if (user?._id) {
-                    const completionsData = await getCompletions(user._id);
-                    const userCompletion = completionsData.courses.find(
-                        (c) =>
-                            c.courseId === courseId && c.status === "approved"
+                // Get ALL user enrollments and find the one for this course
+                console.log("🔄 Fetching user enrollments...");
+                const enrollmentsResponse = await getUserEnrollments();
+                console.log("📦 All enrollments:", enrollmentsResponse);
+
+                if (
+                    enrollmentsResponse.success &&
+                    enrollmentsResponse.enrollments
+                ) {
+                    // Find enrollment for this specific course
+                    const courseEnrollment =
+                        enrollmentsResponse.enrollments.find(
+                            (enrollment) => enrollment.course.id === courseId
+                        );
+                    console.log(
+                        "🎯 Found course enrollment:",
+                        courseEnrollment
                     );
-                    setCompletion(
-                        userCompletion || {
-                            progress: 0,
-                            timeRemaining: "30 days left",
-                            completedLessons: [],
-                        }
-                    );
+
+                    if (courseEnrollment) {
+                        setEnrollment(courseEnrollment);
+                    } else {
+                        throw new Error("You are not enrolled in this course");
+                    }
+                } else {
+                    throw new Error("Failed to load enrollment data");
                 }
             } catch (err) {
-                console.error(
-                    "Fetch error:",
-                    err.response?.data || err.message
-                );
-                setError(
-                    err.response?.data?.message ||
-                        "Failed to load course details."
-                );
+                console.error("❌ Fetch error:", err);
+                setError(err.message || "Failed to load course details.");
             } finally {
                 setLoading(false);
             }
         };
 
-        if (user?._id && courseId) {
+        if (user && courseId) {
             fetchData();
         } else {
             setError("User or course ID not found.");
@@ -69,366 +94,610 @@ function CourseDetail() {
         }
     }, [courseId, user]);
 
+    // Debug enrollment data
     useEffect(() => {
-        if (isModalOpen) {
-            // Start webcam
-            navigator.mediaDevices
-                .getUserMedia({ video: true })
-                .then((stream) => {
-                    streamRef.current = stream;
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                    }
-                    setCameraError(null);
-                })
-                .catch((err) => {
-                    console.error("Camera error:", err);
-                    setCameraError(
-                        "No camera detected. Please use a device with a camera or allow camera access."
-                    );
-                });
-        } else {
-            // Stop webcam when modal closes
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach((track) => track.stop());
-                streamRef.current = null;
+        if (enrollment) {
+            console.log("🔍 Enrollment debug data:", {
+                timeRemaining: enrollment.timeRemaining,
+                accessStatus: enrollment.accessStatus,
+                courseDuration: course?.duration,
+                enrollmentPeriod: course?.enrollmentPeriod,
+                status: enrollment.status,
+            });
+        }
+    }, [enrollment, course]);
+
+    // SIMPLE LESSON START HANDLER - DIRECT NAVIGATION
+    const handleStartLesson = (lessonId) => {
+        console.log("🎯 Starting lesson:", lessonId);
+        navigate(`/user/courses/${courseId}/lesson/${lessonId}`);
+    };
+
+    const getNextAvailableLesson = () => {
+        if (!enrollment || !course.lessons) return null;
+
+        const completedLessons = enrollment.completedLessons || [];
+        const nextLesson = course.lessons.find(
+            (lesson) => !completedLessons.includes(lesson._id)
+        );
+
+        console.log("➡️ Next available lesson:", nextLesson);
+        return nextLesson;
+    };
+
+    const getLessonStatus = (lessonId) => {
+        if (!enrollment) return "locked";
+
+        const completedLessons = enrollment.completedLessons || [];
+        if (completedLessons.includes(lessonId)) {
+            return "completed";
+        }
+
+        // Check if this is the next available lesson
+        const nextLesson = getNextAvailableLesson();
+        if (nextLesson && nextLesson._id === lessonId) {
+            return "available";
+        }
+
+        // Check if previous lessons are completed
+        const lessonIndex = course.lessons.findIndex(
+            (lesson) => lesson._id === lessonId
+        );
+        if (lessonIndex > 0) {
+            const prevLesson = course.lessons[lessonIndex - 1];
+            if (completedLessons.includes(prevLesson._id)) {
+                return "available";
             }
         }
 
-        // Cleanup on unmount
-        return () => {
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach((track) => track.stop());
-                streamRef.current = null;
-            }
-        };
-    }, [isModalOpen]);
-
-    const handleStartLesson = async (lessonId) => {
-        setSelectedLessonId(lessonId);
-        setIsModalOpen(true);
+        return lessonIndex === 0 ? "available" : "locked";
     };
 
-    const handleVerifyAttendance = async () => {
-        try {
-            if (cameraError) {
-                setError("Cannot verify attendance without camera access.");
-                return;
-            }
-            await markAttendance(courseId, selectedLessonId, user._id);
-            setIsModalOpen(false);
-            navigate(`/user/courses/${courseId}/lesson/${selectedLessonId}`);
-        } catch (err) {
-            console.error(
-                "Attendance error:",
-                err.response?.data || err.message
-            );
-            setError(
-                err.response?.data?.message || "Failed to mark attendance."
-            );
-        }
-    };
-
-    const handleCancelAttendance = () => {
-        setIsModalOpen(false);
-        setSelectedLessonId(null);
-        setCameraError(null);
-    };
+    // Safe data access helpers
+    const getCourseTitle = () => course?.title || "Untitled Course";
+    const getCourseDescription = () =>
+        course?.description || "No description available";
+    const getCourseImage = () => course?.image || "";
+    const getSkillLevel = () => course?.skillLevel || "All Levels";
+    const getCategory = () => course?.category || "";
+    const getDuration = () => course?.duration || "Self-paced";
+    const getLessons = () => course?.lessons || [];
+    const getOutcomes = () => course?.outcomes || [];
+    const getRequirements = () => course?.requirements || [];
 
     if (loading) {
-        return (
-            <div className="text-gray-600 text-center text-sm">Loading...</div>
-        );
+        return <CourseDetailSkeleton />;
     }
 
     if (error) {
         return (
-            <div className="text-red-600 text-center text-sm">
-                Error: {error}
+            <div className="min-h-screen bg-gray-50 py-6">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <ErrorState
+                        message={error}
+                        onRetry={() => window.location.reload()}
+                    />
+                </div>
             </div>
         );
     }
 
-    if (!course) {
+    if (!course || !enrollment) {
         return (
-            <div className="text-gray-600 text-center text-sm">
-                Course not found
+            <div className="min-h-screen bg-gray-50 py-6">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <ErrorState
+                        message="Course not found"
+                        onRetry={() => navigate("/user/courses")}
+                    />
+                </div>
             </div>
         );
     }
 
-    const nextLesson = course.lessons.find(
-        (lesson) => !completion.completedLessons.includes(lesson._id)
-    );
+    const nextLesson = getNextAvailableLesson();
+    const sortedLessons = getLessons().sort((a, b) => a.order - b.order) || [];
+    const enrollmentDeadline = getEnrollmentDeadline(course);
+    const courseAccessType = getCourseAccessType(course);
 
     return (
-        <div>
-            {/* Course Header */}
-            <section className="mb-8">
-                <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="min-h-screen bg-gray-50 py-6">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Back Button */}
+                <div className="mb-6">
+                    <button
+                        onClick={() => navigate("/user/courses")}
+                        className="flex items-center text-gray-600 hover:text-gray-800 transition cursor-pointer"
+                    >
+                        <ChevronLeft size={20} className="mr-2" />
+                        Back to Courses
+                    </button>
+                </div>
+
+                {/* Course Header - Updated Design */}
+                <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-8">
                     <div className="md:flex">
-                        <div className="md:w-1/3 min-h-0">
+                        <div className="md:flex-shrink-0 md:w-1/3">
                             <img
-                                src={course.image || "/default.png"}
-                                alt={course.title}
-                                className="w-full h-full object-cover"
+                                src={getImageUrl(getCourseImage())}
+                                alt={getCourseTitle()}
+                                className="h-64 w-full md:h-full object-cover"
+                                onError={(e) => {
+                                    e.target.src = "/default-course.jpg";
+                                }}
                             />
                         </div>
-                        <div className="md:w-2/3 p-6">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <Link
-                                        to="/user/courses"
-                                        className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium mb-2"
-                                    >
-                                        <ChevronLeft
-                                            size={16}
-                                            className="mr-1"
-                                        />
-                                        Back to Courses
-                                    </Link>
-                                    <h2 className="text-2xl font-bold text-gray-800">
-                                        {course.title}
-                                    </h2>
-                                    <p className="text-gray-600 text-sm mt-1">
-                                        By FAST-C
-                                    </p>
+                        <div className="p-8 md:w-2/3">
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                <span
+                                    className={`px-3 py-1 rounded-full text-sm font-medium ${enrollmentDeadline.color}`}
+                                >
+                                    <Calendar
+                                        size={12}
+                                        className="inline mr-1"
+                                    />
+                                    {enrollmentDeadline.text}
+                                </span>
+                                <span
+                                    className={`px-3 py-1 rounded-full text-sm font-medium ${courseAccessType.color}`}
+                                >
+                                    {courseAccessType.displayText}
+                                </span>
+                                {getCategory() && (
+                                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                                        {getCategory()}
+                                    </span>
+                                )}
+                                <span
+                                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                        enrollment.status === "active"
+                                            ? "bg-green-100 text-green-800"
+                                            : enrollment.status === "completed"
+                                            ? "bg-blue-100 text-blue-800"
+                                            : "bg-yellow-100 text-yellow-800"
+                                    }`}
+                                >
+                                    {enrollment.status.charAt(0).toUpperCase() +
+                                        enrollment.status.slice(1)}
+                                </span>
+                            </div>
+
+                            <h1 className="text-3xl font-bold text-gray-800 mb-4">
+                                {getCourseTitle()}
+                            </h1>
+
+                            <p className="text-gray-600 text-lg mb-6">
+                                {getCourseDescription()}
+                            </p>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                <div className="flex items-center text-gray-600">
+                                    <Clock size={18} className="mr-2" />
+                                    <span className="text-sm">
+                                        {getDuration()}
+                                    </span>
                                 </div>
-                                <div className="flex items-center">
-                                    <span className="text-sm font-medium text-gray-800">
-                                        {completion.progress}% Complete
+                                <div className="flex items-center text-gray-600">
+                                    <Users size={18} className="mr-2" />
+                                    <span className="text-sm">
+                                        {getSkillLevel()}
+                                    </span>
+                                </div>
+                                <div className="flex items-center text-gray-600">
+                                    <Book size={18} className="mr-2" />
+                                    <span className="text-sm">
+                                        {getLessons().length} Lessons
+                                    </span>
+                                </div>
+                                <div className="flex items-center text-gray-600">
+                                    <Award size={18} className="mr-2" />
+                                    <span className="text-sm">Certificate</span>
+                                </div>
+                            </div>
+
+                            {/* Progress Section */}
+                            <div className="mb-6">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-medium text-gray-700">
+                                        Your Progress
+                                    </span>
+                                    <span className="text-sm font-bold text-blue-600">
+                                        {enrollment.progress || 0}%
+                                    </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-3">
+                                    <div
+                                        className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                                        style={{
+                                            width: `${
+                                                enrollment.progress || 0
+                                            }%`,
+                                        }}
+                                    ></div>
+                                </div>
+                                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>
+                                        {enrollment.completedLessonsCount || 0}{" "}
+                                        completed
+                                    </span>
+                                    <span>
+                                        {getLessons().length -
+                                            (enrollment.completedLessonsCount ||
+                                                0)}{" "}
+                                        remaining
                                     </span>
                                 </div>
                             </div>
-                            <p className="text-gray-600 text-sm mb-4">
-                                {course.description ||
-                                    "No description available"}
-                            </p>
-                            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                                <div
-                                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                                    style={{ width: `${completion.progress}%` }}
-                                ></div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center space-x-4">
-                                    <div className="flex items-center">
-                                        <Clock
-                                            size={16}
-                                            className="text-gray-400 mr-2"
-                                            aria-label="Time remaining"
-                                        />
-                                        <span className="text-gray-600 text-sm">
-                                            {completion.timeRemaining}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center">
-                                        <Book
-                                            size={16}
-                                            className="text-gray-400 mr-2"
-                                            aria-label="Lessons completed"
-                                        />
-                                        <span className="text-gray-600 text-sm">
-                                            {completion.completedLessons.length}
-                                            /{course.lessons.length} lessons
-                                            completed
-                                        </span>
-                                    </div>
-                                </div>
+
+                            {/* Continue Learning Button */}
+                            <div className="flex gap-4">
                                 <button
-                                    id="start-lesson-btn"
-                                    className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                                        !nextLesson
-                                            ? "bg-gray-400 cursor-not-allowed"
-                                            : ""
-                                    }`}
-                                    aria-label="Start next lesson"
-                                    disabled={!nextLesson}
                                     onClick={() =>
                                         nextLesson &&
                                         handleStartLesson(nextLesson._id)
                                     }
+                                    disabled={
+                                        !nextLesson ||
+                                        enrollment.status !== "active"
+                                    }
+                                    className={`flex-1 py-3 px-6 rounded-lg font-medium text-white transition ${
+                                        !nextLesson ||
+                                        enrollment.status !== "active"
+                                            ? "bg-gray-400 cursor-not-allowed"
+                                            : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                                    }`}
                                 >
                                     {nextLesson
-                                        ? "Start Next Lesson"
-                                        : "All Lessons Completed"}
+                                        ? "Continue Learning"
+                                        : "Course Completed"}
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
 
-            {/* Facial Recognition Modal */}
-            {isModalOpen && (
-                <div
-                    id="attendance-modal"
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-                >
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                            Verify Attendance
-                        </h3>
-                        <p className="text-gray-600 text-sm mb-4">
-                            Please position your face in the frame for
-                            attendance verification.
-                        </p>
-                        <div
-                            id="video-container"
-                            className="h-48 rounded-lg overflow-hidden flex items-center justify-center"
-                        >
-                            {cameraError ? (
-                                <p className="text-red-600 text-sm text-center px-4">
-                                    {cameraError}
-                                </p>
-                            ) : (
-                                <video
-                                    ref={videoRef}
-                                    autoPlay
-                                    className="w-full h-full object-cover"
-                                ></video>
-                            )}
-                        </div>
-                        <div className="flex justify-end space-x-3 mt-4">
-                            <button
-                                id="cancel-scan"
-                                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                aria-label="Cancel verification"
-                                onClick={handleCancelAttendance}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                id="confirm-scan"
-                                className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                    cameraError
-                                        ? "bg-gray-400 cursor-not-allowed"
-                                        : ""
-                                }`}
-                                aria-label="Verify attendance"
-                                onClick={handleVerifyAttendance}
-                                disabled={!!cameraError}
-                            >
-                                Verify
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                {/* Course Details */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Main Content */}
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* What You'll Learn */}
+                        {getOutcomes().length > 0 && (
+                            <div className="bg-white rounded-2xl shadow-md p-6">
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                                    <CheckCircle
+                                        size={20}
+                                        className="mr-2 text-green-600"
+                                    />
+                                    What You'll Learn
+                                </h2>
+                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {getOutcomes().map((outcome, index) => (
+                                        <li
+                                            key={index}
+                                            className="flex items-center text-gray-600"
+                                        >
+                                            <CheckCircle
+                                                size={16}
+                                                className="mr-2 text-green-500 flex-shrink-0"
+                                            />
+                                            <span className="text-sm">
+                                                {outcome}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
-            {/* Course Modules */}
-            <section className="mb-8">
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="p-6 border-b border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-800">
-                            Course Modules
-                        </h3>
-                    </div>
-                    <div className="p-6">
-                        {course.lessons.length === 0 ? (
-                            <p className="text-gray-600 text-sm text-center">
-                                No lessons available
+                        {/* Course Content */}
+                        <div className="bg-white rounded-2xl shadow-md p-6">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                                <Book
+                                    size={20}
+                                    className="mr-2 text-blue-600"
+                                />
+                                Course Content
+                            </h2>
+                            <p className="text-gray-600 text-sm mb-4">
+                                {sortedLessons.length} lessons •{" "}
+                                {enrollment.completedLessonsCount || 0}{" "}
+                                completed
                             </p>
-                        ) : (
-                            <ul className="space-y-4">
-                                {course.lessons
-                                    .sort((a, b) => a.order - b.order)
-                                    .map((lesson, index) => {
+                            <div className="space-y-3">
+                                {sortedLessons.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <Book
+                                            size={48}
+                                            className="text-gray-400 mx-auto mb-4"
+                                        />
+                                        <p className="text-gray-600 text-sm">
+                                            No lessons available yet.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    sortedLessons.map((lesson, index) => {
+                                        const status = getLessonStatus(
+                                            lesson._id
+                                        );
                                         const isCompleted =
-                                            completion.completedLessons.includes(
-                                                lesson._id
-                                            );
-                                        const isLocked =
-                                            index >
-                                            completion.completedLessons.length;
+                                            status === "completed";
+                                        const isAvailable =
+                                            status === "available";
+                                        const isLocked = status === "locked";
+
                                         return (
-                                            <li
+                                            <div
                                                 key={lesson._id}
-                                                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                                                className={`flex items-center justify-between p-4 rounded-xl border transition ${
+                                                    isCompleted
+                                                        ? "bg-green-50 border-green-200"
+                                                        : isAvailable
+                                                        ? "bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm"
+                                                        : "bg-gray-50 border-gray-200"
+                                                }`}
                                             >
-                                                <div className="flex items-center space-x-3">
-                                                    {isCompleted ? (
-                                                        <Check
-                                                            size={20}
-                                                            className="text-green-600"
-                                                        />
-                                                    ) : isLocked ? (
-                                                        <Lock
-                                                            size={20}
-                                                            className="text-gray-400"
-                                                        />
-                                                    ) : (
-                                                        <Play
-                                                            size={20}
-                                                            className="text-blue-600"
-                                                        />
-                                                    )}
-                                                    <div>
-                                                        <h4 className="text-sm font-medium text-gray-800">
-                                                            {lesson.title}
-                                                        </h4>
-                                                        <p className="text-xs text-gray-600">
-                                                            {lesson.duration}
+                                                <div className="flex items-center space-x-4 flex-1">
+                                                    <div
+                                                        className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                                                            isCompleted
+                                                                ? "bg-green-100 text-green-600"
+                                                                : isAvailable
+                                                                ? "bg-blue-100 text-blue-600"
+                                                                : "bg-gray-100 text-gray-400"
+                                                        }`}
+                                                    >
+                                                        {isCompleted ? (
+                                                            <Check size={20} />
+                                                        ) : isAvailable ? (
+                                                            <Play size={20} />
+                                                        ) : (
+                                                            <Lock size={20} />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h3
+                                                            className={`font-medium ${
+                                                                isCompleted
+                                                                    ? "text-green-800"
+                                                                    : isAvailable
+                                                                    ? "text-gray-800"
+                                                                    : "text-gray-500"
+                                                            }`}
+                                                        >
+                                                            {lesson.title ||
+                                                                "Untitled Lesson"}
+                                                        </h3>
+                                                        <p className="text-sm text-gray-500">
+                                                            Lesson {index + 1} •{" "}
+                                                            {lesson.duration ||
+                                                                "Self-paced"}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <button
-                                                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                                                        isCompleted
-                                                            ? "bg-green-100 text-green-800 cursor-default"
-                                                            : isLocked
-                                                            ? "bg-gray-200 text-gray-600 cursor-not-allowed"
-                                                            : "bg-blue-600 hover:bg-blue-700 text-white"
-                                                    }`}
-                                                    disabled={
-                                                        isCompleted || isLocked
-                                                    }
                                                     onClick={() =>
                                                         handleStartLesson(
                                                             lesson._id
                                                         )
                                                     }
+                                                    disabled={
+                                                        !isAvailable ||
+                                                        enrollment.status !==
+                                                            "active"
+                                                    }
+                                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                                                        isCompleted
+                                                            ? "bg-green-100 text-green-800 cursor-default"
+                                                            : isAvailable &&
+                                                              enrollment.status ===
+                                                                  "active"
+                                                            ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                                                            : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                                    }`}
                                                 >
                                                     {isCompleted
                                                         ? "Completed"
-                                                        : isLocked
-                                                        ? "Locked"
-                                                        : "Start"}
+                                                        : isAvailable
+                                                        ? "Start"
+                                                        : "Locked"}
                                                 </button>
-                                            </li>
+                                            </div>
                                         );
-                                    })}
-                            </ul>
+                                    })
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Course Description */}
+                        {course.description && (
+                            <div className="bg-white rounded-2xl shadow-md p-6">
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                                    <Book
+                                        size={20}
+                                        className="mr-2 text-gray-600"
+                                    />
+                                    About This Course
+                                </h2>
+                                <p className="text-gray-600 text-sm leading-relaxed">
+                                    {course.description}
+                                </p>
+                            </div>
                         )}
                     </div>
-                </div>
-            </section>
 
-            {/* About Section */}
-            <section className="mb-8">
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="p-6 border-b border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-800">
-                            About This Course
-                        </h3>
-                    </div>
-                    <div className="p-6">
-                        <p className="text-gray-600 text-sm mb-4">
-                            {course.description || "No description available"}
-                        </p>
-                        <h4 className="text-sm font-medium text-gray-800 mb-2">
-                            What You'll Learn
-                        </h4>
-                        <ul className="list-disc list-inside text-gray-600 text-sm space-y-1">
-                            <li>
-                                Core techniques for {course.title.toLowerCase()}
-                            </li>
-                            <li>Safety and best practices</li>
-                            <li>Hands-on project skills</li>
-                        </ul>
+                    {/* Sidebar */}
+                    <div className="space-y-6">
+                        {/* Requirements */}
+                        {getRequirements().length > 0 && (
+                            <div className="bg-white rounded-2xl shadow-md p-6">
+                                <h3 className="font-semibold text-gray-800 mb-3">
+                                    Requirements
+                                </h3>
+                                <ul className="space-y-2">
+                                    {getRequirements().map(
+                                        (requirement, index) => (
+                                            <li
+                                                key={index}
+                                                className="flex items-center text-sm text-gray-600"
+                                            >
+                                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2"></div>
+                                                {requirement}
+                                            </li>
+                                        )
+                                    )}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Course Stats */}
+                        <div className="bg-white rounded-2xl shadow-md p-6">
+                            <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+                                <BarChart2 size={18} className="mr-2" />
+                                Course Details
+                            </h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">
+                                        Status
+                                    </span>
+                                    <span
+                                        className={`font-medium ${
+                                            enrollment.status === "active"
+                                                ? "text-green-600"
+                                                : enrollment.status ===
+                                                  "completed"
+                                                ? "text-blue-600"
+                                                : "text-yellow-600"
+                                        }`}
+                                    >
+                                        {enrollment.status
+                                            .charAt(0)
+                                            .toUpperCase() +
+                                            enrollment.status.slice(1)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">
+                                        Enrolled
+                                    </span>
+                                    <span className="font-medium text-gray-800">
+                                        {enrollment.enrolledAt
+                                            ? new Date(
+                                                  enrollment.enrolledAt
+                                              ).toLocaleDateString()
+                                            : "Unknown"}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">
+                                        Duration
+                                    </span>
+                                    <span className="font-medium text-gray-800">
+                                        {getDuration()}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">
+                                        Access
+                                    </span>
+                                    <span className="font-medium text-gray-800">
+                                        {enrollment.accessStatus ||
+                                            enrollment.timeRemaining ||
+                                            "Self-paced"}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">
+                                        Category
+                                    </span>
+                                    <span className="font-medium text-gray-800">
+                                        {getCategory()}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">Level</span>
+                                    <span className="font-medium text-gray-800">
+                                        {getSkillLevel()}
+                                    </span>
+                                </div>
+                                {enrollment.completedAt && (
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-600">
+                                            Completed
+                                        </span>
+                                        <span className="font-medium text-gray-800">
+                                            {new Date(
+                                                enrollment.completedAt
+                                            ).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Progress Stats */}
+                        <div className="bg-white rounded-2xl shadow-md p-6">
+                            <h3 className="font-semibold text-gray-800 mb-4">
+                                Your Progress
+                            </h3>
+                            <div className="space-y-4">
+                                <div className="text-center">
+                                    <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-50 rounded-full mb-2">
+                                        <span className="text-2xl font-bold text-blue-600">
+                                            {enrollment.progress || 0}%
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                        Overall Progress
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 text-center">
+                                    <div>
+                                        <div className="text-lg font-bold text-gray-800">
+                                            {enrollment.completedLessonsCount ||
+                                                0}
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                            Completed
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="text-lg font-bold text-gray-800">
+                                            {(enrollment.totalLessonsCount ||
+                                                0) -
+                                                (enrollment.completedLessonsCount ||
+                                                    0)}
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                            Remaining
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {enrollment.status === "completed" && (
+                                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                                        <Award
+                                            size={20}
+                                            className="text-green-600 mx-auto mb-1"
+                                        />
+                                        <p className="text-sm font-medium text-green-800">
+                                            Course Completed!
+                                        </p>
+                                        <p className="text-xs text-green-600 mt-1">
+                                            {enrollment.completedAt
+                                                ? `Completed on ${new Date(
+                                                      enrollment.completedAt
+                                                  ).toLocaleDateString()}`
+                                                : "Congratulations!"}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
+            </div>
         </div>
     );
 }

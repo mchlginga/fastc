@@ -1,4 +1,5 @@
 const Course = require("../models/course");
+const Enrollment = require("../models/enrollment");
 const Completion = require("../models/completion");
 const { statusCodes } = require("../utils/constant");
 
@@ -29,24 +30,36 @@ exports.getCourseById = async (req, res, next) => {
 exports.getActiveCourses = async (req, res, next) => {
     try {
         const now = new Date();
+
+        // Get courses that are active AND (have no end date OR end date is in future)
         const courses = await Course.find({
+            isActive: true,
             $or: [{ endDate: { $gt: now } }, { endDate: null }],
         }).lean();
+
         const activeCourses = await Promise.all(
             courses.map(async (course) => {
-                const enrollees = await Completion.countDocuments({
+                const enrollees = await Enrollment.countDocuments({
                     course: course._id,
-                    status: "approved",
+                    status: { $in: ["active", "completed"] },
                 });
+
                 return {
                     _id: course._id.toString(),
                     title: course.title,
                     desc: course.duration
                         ? `${course.duration} • ${enrollees} enrollees`
                         : `${enrollees} enrollees`,
+                    // Enrollment deadline info
+                    enrollmentDeadline: course.endDate
+                        ? `Enroll until ${new Date(
+                              course.endDate
+                          ).toLocaleDateString()}`
+                        : "Open enrollment",
                 };
             })
         );
+
         res.status(statusCodes.OK).json(activeCourses);
     } catch (error) {
         next(error);
