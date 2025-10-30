@@ -68,11 +68,36 @@ app.use(
     "/uploads",
     express.static(path.join(__dirname, "data", "upload"), {
         setHeaders: (res, path) => {
-            res.setHeader("Access-Control-Allow-Origin", config.frontendUrl);
+            res.setHeader("Access-Control-Allow-Origin", "*");
             res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+            res.setHeader("Access-Control-Allow-Credentials", "false");
+            res.setHeader("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
         },
     })
 );
+
+// Add a specific route for profile pictures to handle different path formats
+app.get("/api/uploads/profiles/:filename", (req, res) => {
+    const { filename } = req.params;
+    const filePath = path.join(
+        __dirname,
+        "data",
+        "upload",
+        "profiles",
+        filename
+    );
+
+    // Set proper headers
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error("Error serving profile image:", err);
+            res.status(404).json({ error: "Image not found" });
+        }
+    });
+});
 
 // morgan access logs
 ensureFileExist(PATHS.logFile);
