@@ -1,6 +1,25 @@
+// C:\Users\y\OneDrive\Desktop\fastc\frontend\src\components\admin\job-matching\TraineeGrid.jsx
 import { Download, Filter, X } from "react-feather";
 import { memo } from "react";
 import TraineeCard from "./TraineeCard";
+
+// 🆕 IMPROVED: Better filter display names
+const getFilterDisplayName = (category, value) => {
+    switch (category) {
+        case "skills":
+            return value; // Just show "Welding", "Dress-making", etc.
+        case "certifications":
+            return value; // Just show "Welding I", "Dressmaking II", etc.
+        case "availability":
+            return value; // Just show "Full-time", "Part-time"
+        case "issuer":
+            return value; // Just show "FAST-C", "TESDA", etc.
+        case "category":
+            return value; // Just show the category name
+        default:
+            return value;
+    }
+};
 
 const ActiveFilters = memo(({ filters, onRemoveFilter }) => {
     const hasFilters = Object.values(filters).some((arr) => arr.length > 0);
@@ -13,12 +32,14 @@ const ActiveFilters = memo(({ filters, onRemoveFilter }) => {
                 values.map((value) => (
                     <span
                         key={`${category}-${value}`}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
                     >
-                        {category}: {value}
+                        {/* 🆕 IMPROVED: Show only the value, not the category name */}
+                        {getFilterDisplayName(category, value)}
                         <button
                             onClick={() => onRemoveFilter(category, value)}
-                            className="ml-2 focus:outline-none cursor-pointer"
+                            className="ml-2 focus:outline-none cursor-pointer hover:text-blue-900 transition-colors"
+                            aria-label={`Remove ${value} filter`}
                         >
                             <X size={14} />
                         </button>
@@ -39,6 +60,7 @@ const TraineeGrid = memo(
         onExport,
         onClearFilters,
         filters = {},
+        onRemoveFilter, // 🆕 NEW: Add this prop
     }) => {
         const getMatchBadgeClass = (matchLevel) => {
             switch (matchLevel) {
@@ -53,9 +75,11 @@ const TraineeGrid = memo(
             }
         };
 
+        // 🆕 IMPROVED: Use the passed onRemoveFilter function
         const handleRemoveFilter = (category, value) => {
-            // This would need to be connected to the parent component's filter handling
-            console.log(`Remove filter: ${category} - ${value}`);
+            if (onRemoveFilter) {
+                onRemoveFilter(category, value);
+            }
         };
 
         return (
@@ -67,7 +91,7 @@ const TraineeGrid = memo(
                 />
 
                 {/* Results and Actions */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+                <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 mb-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <p className="text-sm text-gray-600">

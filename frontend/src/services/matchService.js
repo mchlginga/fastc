@@ -2,7 +2,7 @@ import { api } from "./api";
 
 // Cache for job matches
 const cache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 2 * 60 * 1000; // 🆕 REDUCED: 2 minutes for fresher data
 
 const getCacheKey = (params = {}) => {
     return JSON.stringify(params);
@@ -39,8 +39,14 @@ export const getJobMatches = async (params = {}) => {
     }
 };
 
-// Clear cache when needed
-export const clearJobMatchesCache = () => {
+// 🆕 IMPROVED: Clear specific cache when filters change
+export const clearJobMatchesCache = (params = {}) => {
+    const cacheKey = getCacheKey(params);
+    cache.delete(cacheKey);
+};
+
+// Clear all cache
+export const clearAllJobMatchesCache = () => {
     cache.clear();
 };
 
@@ -66,7 +72,7 @@ export const logCsvExport = async (exportData) => {
     }
 };
 
-// For company role (similar functionality)
+// For company role
 export const companyMatchService = {
     getTrainees: async (params = {}) => {
         try {

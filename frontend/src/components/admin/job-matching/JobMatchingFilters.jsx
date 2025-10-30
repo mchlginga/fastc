@@ -2,6 +2,22 @@ import { useState } from "react";
 import { Filter, X } from "react-feather";
 import debounce from "lodash/debounce";
 
+// Custom hook for debounced search
+const useDebouncedSearch = (onSearch, delay = 300) => {
+    const [localValue, setLocalValue] = useState("");
+
+    const debouncedSearch = debounce((value) => {
+        onSearch(value.toLowerCase());
+    }, delay);
+
+    const handleChange = (value) => {
+        setLocalValue(value);
+        debouncedSearch(value);
+    };
+
+    return [localValue, handleChange];
+};
+
 const FilterSection = ({ title, isExpanded, onToggle, children }) => (
     <div className="mb-6">
         <div
@@ -72,53 +88,22 @@ const JobMatchingFilters = ({
     filterOptions,
     expandedSections,
     isFilterOpen,
-    skillSearch,
-    certSearch,
-    categorySearch,
     hasFilters,
     onFilterChange,
     onToggleSection,
     onClearFilters,
     onSkillSearch,
     onCertSearch,
-    onCategorySearch,
     onToggleFilterOpen,
 }) => {
-    const [localSkillSearch, setLocalSkillSearch] = useState(skillSearch);
-    const [localCertSearch, setLocalCertSearch] = useState(certSearch);
-    const [localCategorySearch, setLocalCategorySearch] =
-        useState(categorySearch);
-
-    const debouncedSkillSearch = debounce(
-        (value) => onSkillSearch(value.toLowerCase()),
-        300
-    );
-    const debouncedCertSearch = debounce(
-        (value) => onCertSearch(value.toLowerCase()),
-        300
-    );
-    const debouncedCategorySearch = debounce(
-        (value) => onCategorySearch(value.toLowerCase()),
-        300
-    );
-
-    const handleSkillSearch = (value) => {
-        setLocalSkillSearch(value);
-        debouncedSkillSearch(value);
-    };
-
-    const handleCertSearch = (value) => {
-        setLocalCertSearch(value);
-        debouncedCertSearch(value);
-    };
-
-    const handleCategorySearch = (value) => {
-        setLocalCategorySearch(value);
-        debouncedCategorySearch(value);
-    };
+    // Use the custom hook for each search type
+    const [localSkillSearch, handleSkillSearch] =
+        useDebouncedSearch(onSkillSearch);
+    const [localCertSearch, handleCertSearch] =
+        useDebouncedSearch(onCertSearch);
 
     return (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sticky top-8">
+        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 sticky top-8">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">
                     AI Filters
@@ -160,25 +145,6 @@ const JobMatchingFilters = ({
                         Clear All Filters
                     </button>
                 )}
-
-                {/* Category Filter */}
-                <FilterSection
-                    title="Job Category"
-                    isExpanded={expandedSections.category}
-                    onToggle={() => onToggleSection("category")}
-                >
-                    <SearchableFilter
-                        searchValue={localCategorySearch}
-                        onSearchChange={handleCategorySearch}
-                        placeholder="Search categories..."
-                        options={filterOptions.categories}
-                        selectedValues={filters.category}
-                        onValueToggle={(value) =>
-                            onFilterChange("category", value)
-                        }
-                        type="categories"
-                    />
-                </FilterSection>
 
                 {/* Skills Filter */}
                 <FilterSection

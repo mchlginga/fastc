@@ -8,7 +8,6 @@ function StatsGrid({ dashboardData }) {
             value: dashboardData.activeEnrollments,
             bg: "bg-blue-100",
             link: "/user/courses?status=active",
-            description: "Courses in progress",
         },
         {
             title: "Completed",
@@ -16,7 +15,6 @@ function StatsGrid({ dashboardData }) {
             value: dashboardData.completedEnrollments,
             bg: "bg-green-100",
             link: "/user/courses?status=completed",
-            description: "Finished courses",
         },
         {
             title: "Pending Approval",
@@ -24,7 +22,6 @@ function StatsGrid({ dashboardData }) {
             value: dashboardData.pendingEnrollments,
             bg: "bg-yellow-100",
             link: "/user/courses?status=pending",
-            description: "Waiting for admin approval",
         },
         {
             title: "Certificates",
@@ -32,7 +29,6 @@ function StatsGrid({ dashboardData }) {
             value: dashboardData.certificates,
             bg: "bg-purple-100",
             link: "/user/certificates",
-            description: "Earned certificates",
         },
     ];
 

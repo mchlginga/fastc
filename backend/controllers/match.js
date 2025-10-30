@@ -6,63 +6,17 @@ const ExportLog = require("../models/exportLog");
 const { statusCodes } = require("../utils/constant");
 const tf = require("@tensorflow/tfjs");
 const NodeCache = require("node-cache");
-const cache = new NodeCache({ stdTTL: 300 }); // 5 minute cache
+const cache = new NodeCache({ stdTTL: 300 });
 
-// 🆕 IMPROVED: Pre-trained model with lazy loading
+// Model and stats
 let trainedModel = null;
 let isTraining = false;
 let trainingPromise = null;
+let datasetStats = null;
 
-// 🆕 NEW: Get skills dynamically from Skills collection (cached)
-const getDynamicSkillsData = async () => {
-    const cacheKey = "dynamicSkillsData";
-    const cached = cache.get(cacheKey);
-    if (cached) return cached;
-
-    try {
-        // Get all active skills from Skills taxonomy
-        const skills = await Skill.find({ isActive: true }).lean();
-
-        // Get unique categories
-        const categories = [...new Set(skills.map((s) => s.category))];
-
-        // Get skill names for filtering
-        const skillNames = skills.map((s) => s.name);
-
-        // Get all active certificates with populated course info
-        const certificates = await Certificate.find({ status: "active" })
-            .populate({
-                path: "verifiedSkills.skill",
-                select: "name category",
-            })
-            .lean();
-
-        // Extract certificate titles for filtering
-        const certificateTitles = [
-            ...new Set(certificates.map((cert) => cert.title).filter(Boolean)),
-        ];
-
-        const result = {
-            skills: skillNames,
-            categories: categories,
-            certificates: certificateTitles,
-        };
-
-        cache.set(cacheKey, result);
-        return result;
-    } catch (error) {
-        console.error("Failed to fetch dynamic skills data:", error);
-        return {
-            skills: [],
-            categories: [],
-            certificates: [],
-        };
-    }
-};
-
-// 🆕 IMPROVED: Training data using verified skills (optimized)
-async function generateTrainingData() {
-    const cacheKey = "trainingData";
+// 🆕 IMPROVED: Enhanced dataset statistics with better percentile calculation
+const getDatasetStatistics = async () => {
+    const cacheKey = "datasetStatistics";
     const cached = cache.get(cacheKey);
     if (cached) return cached;
 
@@ -78,33 +32,160 @@ async function generateTrainingData() {
             })
             .lean();
 
-        const dynamicData = await getDynamicSkillsData();
-        const maxSkills = Math.max(10, dynamicData.skills.length / 2);
-        const maxCerts = Math.max(5, dynamicData.certificates.length / 2);
+        const skillCounts = [];
+        const certCounts = [];
+        const availabilityStats = {
+            "Full-time": 0,
+            "Part-time": 0,
+            "Not specified": 0,
+        };
+
+        for (const trainee of trainees) {
+            const skillSet = new Set();
+            if (trainee.certificates) {
+                trainee.certificates.forEach((cert) => {
+                    cert.verifiedSkills?.forEach((vs) => {
+                        if (vs.skill?.name) skillSet.add(vs.skill.name);
+                    });
+                });
+            }
+            skillCounts.push(skillSet.size);
+            certCounts.push(trainee.certificates?.length || 0);
+            availabilityStats[trainee.availability || "Not specified"]++;
+        }
+
+        // 🆕 IMPROVED: Better percentile calculation
+        const calculatePercentiles = (arr) => {
+            if (arr.length === 0) return [0, 0, 0, 0, 0];
+            const sorted = [...arr].sort((a, b) => a - b);
+            return [25, 50, 75, 90, 95].map(
+                (p) => sorted[Math.floor((p / 100) * (sorted.length - 1))]
+            );
+        };
+
+        const stats = {
+            skillCounts: {
+                max: Math.max(...skillCounts, 1),
+                mean:
+                    skillCounts.reduce((a, b) => a + b, 0) /
+                    Math.max(skillCounts.length, 1),
+                percentiles: calculatePercentiles(skillCounts),
+            },
+            certCounts: {
+                max: Math.max(...certCounts, 1),
+                mean:
+                    certCounts.reduce((a, b) => a + b, 0) /
+                    Math.max(certCounts.length, 1),
+                percentiles: calculatePercentiles(certCounts),
+            },
+            availability: availabilityStats,
+            totalTrainees: trainees.length,
+        };
+
+        cache.set(cacheKey, stats);
+        return stats;
+    } catch (error) {
+        console.error("Failed to calculate dataset statistics:", error);
+        return {
+            skillCounts: { max: 5, mean: 2, percentiles: [1, 2, 3, 4, 5] },
+            certCounts: { max: 3, mean: 1, percentiles: [1, 1, 2, 3, 3] },
+            availability: {
+                "Full-time": 50,
+                "Part-time": 30,
+                "Not specified": 20,
+            },
+            totalTrainees: 0,
+        };
+    }
+};
+
+// 🆕 IMPROVED: Enhanced dynamic skills data
+const getDynamicSkillsData = async () => {
+    const cacheKey = "dynamicSkillsData";
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+
+    try {
+        const skills = await Skill.find({ isActive: true }).lean();
+        const certificates = await Certificate.find({ status: "active" })
+            .populate("verifiedSkills.skill")
+            .lean();
+
+        const skillPopularity = {};
+        certificates.forEach((cert) => {
+            cert.verifiedSkills?.forEach((vs) => {
+                if (vs.skill) {
+                    skillPopularity[vs.skill.name] =
+                        (skillPopularity[vs.skill.name] || 0) + 1;
+                }
+            });
+        });
+
+        const result = {
+            skills: skills.map((s) => s.name),
+            categories: [...new Set(skills.map((s) => s.category))],
+            certificates: [
+                ...new Set(
+                    certificates.map((cert) => cert.title).filter(Boolean)
+                ),
+            ],
+            skillPopularity,
+        };
+
+        cache.set(cacheKey, result);
+        return result;
+    } catch (error) {
+        console.error("Failed to fetch dynamic skills data:", error);
+        return {
+            skills: [],
+            categories: [],
+            certificates: [],
+            skillPopularity: {},
+        };
+    }
+};
+
+// 🆕 IMPROVED: Enhanced training data with better distribution
+async function generateTrainingData() {
+    const cacheKey = "trainingData";
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+
+    try {
+        const stats = await getDatasetStatistics();
+        const trainees = await User.find({
+            role: "user",
+            profileStatus: "approved",
+        })
+            .populate({
+                path: "certificates",
+                match: { status: "active" },
+                populate: { path: "verifiedSkills.skill" },
+            })
+            .lean();
 
         let trainingData = [];
 
         for (const trainee of trainees) {
-            // Get verified skills count
             const skillSet = new Set();
-            if (trainee.certificates) {
-                trainee.certificates.forEach((cert) => {
-                    if (cert.verifiedSkills) {
-                        cert.verifiedSkills.forEach((vs) => {
-                            if (vs.skill && vs.skill.name) {
-                                skillSet.add(vs.skill.name);
-                            }
-                        });
-                    }
+            trainee.certificates?.forEach((cert) => {
+                cert.verifiedSkills?.forEach((vs) => {
+                    if (vs.skill?.name) skillSet.add(vs.skill.name);
                 });
-            }
+            });
 
             const skillCount = skillSet.size;
             const certCount = trainee.certificates?.length || 0;
 
-            // Calculate matches
-            const skillMatch = Math.min(skillCount / maxSkills, 1);
-            const certMatch = Math.min(certCount / maxCerts, 1);
+            // 🆕 IMPROVED: Better percentile calculation
+            const skillPercentile = calculatePercentile(
+                stats.skillCounts.percentiles,
+                skillCount
+            );
+            const certPercentile = calculatePercentile(
+                stats.certCounts.percentiles,
+                certCount
+            );
 
             const availability =
                 trainee.availability === "Full-time"
@@ -113,57 +194,107 @@ async function generateTrainingData() {
                     ? 0.67
                     : 0.33;
 
-            // Baseline output with enhanced factors
-            const completionBonus = certCount > 0 ? 0.1 : 0;
+            // 🆕 IMPROVED: More realistic scoring distribution
+            const baseScore = 0.25;
+            const skillContribution = 0.4 * skillPercentile;
+            const certContribution = 0.3 * certPercentile;
+            const availabilityContribution = 0.05 * availability;
+
             const output = Math.min(
-                0.15 +
-                    0.5 * skillMatch +
-                    0.25 * certMatch +
-                    0.1 * availability +
-                    completionBonus,
-                0.95
+                baseScore +
+                    skillContribution +
+                    certContribution +
+                    availabilityContribution,
+                0.9 // Lower cap to leave room for filter bonuses
             );
 
             trainingData.push({
-                input: { skillMatch, certMatch, availability },
+                input: { skillPercentile, certPercentile, availability },
                 output,
+                metadata: {
+                    skillCount,
+                    certCount,
+                    availability: trainee.availability,
+                },
             });
         }
 
-        // Add specialized training cases
-        const certificates = await Certificate.find({ status: "active" })
-            .populate("user")
-            .populate("verifiedSkills.skill")
-            .lean();
+        // 🆕 IMPROVED: Add more realistic training cases
+        const enhancedTraining = [
+            // Baseline cases
+            {
+                input: {
+                    skillPercentile: 0.0,
+                    certPercentile: 0.0,
+                    availability: 0.33,
+                },
+                output: 0.2,
+            },
+            {
+                input: {
+                    skillPercentile: 0.0,
+                    certPercentile: 0.0,
+                    availability: 0.67,
+                },
+                output: 0.25,
+            },
+            {
+                input: {
+                    skillPercentile: 0.0,
+                    certPercentile: 0.0,
+                    availability: 1.0,
+                },
+                output: 0.3,
+            },
 
-        certificates.forEach((cert) => {
-            if (
-                cert.user &&
-                cert.verifiedSkills &&
-                cert.verifiedSkills.length > 0
-            ) {
-                const skillMatch = 1.0;
-                const certMatch = 1.0;
-                const availability =
-                    cert.user.availability === "Full-time"
-                        ? 1.0
-                        : cert.user.availability === "Part-time"
-                        ? 0.67
-                        : 0.33;
+            // Typical cases (2 skills, 2 certs)
+            {
+                input: {
+                    skillPercentile: 0.5,
+                    certPercentile: 0.5,
+                    availability: 0.67,
+                },
+                output: 0.54,
+            },
+            {
+                input: {
+                    skillPercentile: 0.5,
+                    certPercentile: 0.5,
+                    availability: 1.0,
+                },
+                output: 0.56,
+            },
 
-                trainingData.push({
-                    input: { skillMatch, certMatch, availability },
-                    output: Math.min(
-                        0.9 + 0.05 * skillMatch + 0.05 * certMatch,
-                        0.98
-                    ),
-                });
-            }
-        });
+            // Single skill/cert cases
+            {
+                input: {
+                    skillPercentile: 0.3,
+                    certPercentile: 0.5,
+                    availability: 0.67,
+                },
+                output: 0.49,
+            },
+            {
+                input: {
+                    skillPercentile: 0.3,
+                    certPercentile: 0.3,
+                    availability: 1.0,
+                },
+                output: 0.46,
+            },
 
-        const result =
-            trainingData.length > 0 ? trainingData : getFallbackTrainingData();
+            // Top performers
+            {
+                input: {
+                    skillPercentile: 1.0,
+                    certPercentile: 1.0,
+                    availability: 1.0,
+                },
+                output: 0.85,
+            },
+        ];
 
+        const result = [...trainingData, ...enhancedTraining];
         cache.set(cacheKey, result);
         return result;
     } catch (error) {
@@ -172,33 +303,56 @@ async function generateTrainingData() {
     }
 }
 
-// Fallback training data if no real data exists
+// 🆕 IMPROVED: Better percentile calculation
+function calculatePercentile(percentiles, value) {
+    if (percentiles.length === 0 || value === 0) return 0;
+
+    for (let i = 0; i < percentiles.length; i++) {
+        if (value <= percentiles[i]) {
+            return (i + 1) / (percentiles.length + 1);
+        }
+    }
+    return 1.0;
+}
+
 function getFallbackTrainingData() {
     return [
         {
-            input: { skillMatch: 0.0, certMatch: 0.0, availability: 0.33 },
-            output: 0.15,
+            input: {
+                skillPercentile: 0.0,
+                certPercentile: 0.0,
+                availability: 0.33,
+            },
+            output: 0.2,
         },
         {
-            input: { skillMatch: 0.5, certMatch: 0.5, availability: 0.67 },
-            output: 0.55,
+            input: {
+                skillPercentile: 0.5,
+                certPercentile: 0.5,
+                availability: 0.67,
+            },
+            output: 0.54,
         },
         {
-            input: { skillMatch: 1.0, certMatch: 1.0, availability: 1.0 },
-            output: 0.95,
+            input: {
+                skillPercentile: 0.5,
+                certPercentile: 0.5,
+                availability: 1.0,
+            },
+            output: 0.56,
         },
         {
-            input: { skillMatch: 0.8, certMatch: 0.6, availability: 1.0 },
-            output: 0.75,
-        },
-        {
-            input: { skillMatch: 0.3, certMatch: 0.2, availability: 0.67 },
-            output: 0.35,
+            input: {
+                skillPercentile: 1.0,
+                certPercentile: 1.0,
+                availability: 1.0,
+            },
+            output: 0.85,
         },
     ];
 }
 
-// 🆕 IMPROVED: Train TensorFlow model with singleton pattern
+// Train TensorFlow model
 async function getTrainedModel() {
     if (trainedModel) return trainedModel;
     if (isTraining) return trainingPromise;
@@ -215,8 +369,8 @@ async function trainModelInternal() {
     const trainingData = await generateTrainingData();
 
     const inputs = trainingData.map((d) => [
-        d.input.skillMatch,
-        d.input.certMatch,
+        d.input.skillPercentile,
+        d.input.certPercentile,
         d.input.availability,
     ]);
     const outputs = trainingData.map((d) => [d.output]);
@@ -226,18 +380,23 @@ async function trainModelInternal() {
 
     const model = tf.sequential({
         layers: [
-            tf.layers.dense({ inputShape: [3], units: 8, activation: "relu" }),
+            tf.layers.dense({ inputShape: [3], units: 12, activation: "relu" }),
+            tf.layers.dense({ units: 8, activation: "relu" }),
             tf.layers.dense({ units: 4, activation: "relu" }),
             tf.layers.dense({ units: 1, activation: "sigmoid" }),
         ],
     });
 
-    model.compile({ optimizer: "adam", loss: "meanSquaredError" });
+    model.compile({
+        optimizer: tf.train.adam(0.001),
+        loss: "meanSquaredError",
+    });
 
     await model.fit(inputTensor, outputTensor, {
-        epochs: 50,
+        epochs: 100,
         verbose: 0,
-        batchSize: 32,
+        batchSize: 16,
+        validationSplit: 0.2,
     });
 
     inputTensor.dispose();
@@ -247,20 +406,23 @@ async function trainModelInternal() {
     return model;
 }
 
-// 🆕 IMPROVED: Enhanced matching algorithm using Skills taxonomy
+// 🆕 COMPLETELY REWRITTEN: Enhanced matching algorithm with proper filter stacking
 const calculateJobMatch = async (
     trainee,
     filterSkills = [],
-    filterCerts = []
+    filterCerts = [],
+    filterAvailability = []
 ) => {
     let recommendedCategory = "General Labor";
 
     try {
-        // 🆕 Get verified skills using new method
+        if (!datasetStats) {
+            datasetStats = await getDatasetStatistics();
+        }
+
+        // Get verified skills and certificates
         const userSkillsData = await trainee.getSkills();
         const userSkills = userSkillsData.map((us) => us.skill.name);
-
-        // Get certificates for matching
         const certificates = await Certificate.find({
             user: trainee._id,
             status: "active",
@@ -268,8 +430,47 @@ const calculateJobMatch = async (
             .populate("verifiedSkills.skill")
             .lean();
 
-        // Calculate skill match
-        let skillMatch = 0;
+        const skillCount = userSkills.length;
+        const certCount = certificates.length;
+
+        // Calculate base percentiles
+        const baseSkillPercentile = calculatePercentile(
+            datasetStats.skillCounts.percentiles,
+            skillCount
+        );
+        const baseCertPercentile = calculatePercentile(
+            datasetStats.certCounts.percentiles,
+            certCount
+        );
+
+        // 🆕 IMPROVED: Availability scoring with filter consideration
+        const traineeAvailability = trainee.availability || "Not specified";
+        let availabilityScore =
+            traineeAvailability === "Full-time"
+                ? 1.0
+                : traineeAvailability === "Part-time"
+                ? 0.67
+                : 0.33;
+
+        // 🆕 NEW: Availability filter bonus/penalty
+        let availabilityBonus = 0;
+        let availabilityPenalty = 0;
+
+        if (filterAvailability.length > 0) {
+            if (filterAvailability.includes(traineeAvailability)) {
+                // Bonus for matching availability
+                availabilityBonus = 0.08; // 8% bonus for matching availability
+            } else {
+                // Penalty for mismatched availability
+                availabilityPenalty = 0.1; // 10% penalty for availability mismatch
+            }
+        }
+
+        // 🆕 IMPROVED: Enhanced filter matching with stacking bonuses
+        let skillFilterBonus = 0;
+        let certFilterBonus = 0;
+
+        // Skill filter matching (STACKING - each match adds more)
         if (filterSkills.length > 0) {
             const matchedSkills = userSkills.filter((s) =>
                 filterSkills.some(
@@ -277,61 +478,81 @@ const calculateJobMatch = async (
                         s.toLowerCase().includes(fs.toLowerCase()) ||
                         fs.toLowerCase().includes(s.toLowerCase())
                 )
-            ).length;
-            skillMatch = matchedSkills / filterSkills.length;
-        } else {
-            const maxSkills = 5;
-            skillMatch = Math.min(userSkills.length / maxSkills, 1);
+            );
+
+            const matchRatio = matchedSkills.length / filterSkills.length;
+
+            // Base bonus for any match
+            skillFilterBonus += matchRatio * 0.1; // 10% base bonus
+
+            // 🆕 ADDITIONAL bonus for multiple matches (STACKING)
+            if (matchedSkills.length > 1) {
+                skillFilterBonus += (matchedSkills.length - 1) * 0.05; // 5% extra per additional match
+            }
+
+            // Extra bonus for perfect match
+            if (matchRatio === 1.0) {
+                skillFilterBonus += 0.05; // 5% perfect match bonus
+            }
         }
 
-        // Calculate certificate match
-        let certMatch = 0;
+        // Certificate filter matching (STACKING - each match adds more)
         if (filterCerts.length > 0) {
             const matchedCerts = certificates.filter((cert) =>
                 filterCerts.some((fc) =>
                     cert.title.toLowerCase().includes(fc.toLowerCase())
                 )
-            ).length;
-            certMatch = matchedCerts / filterCerts.length;
-        } else {
-            const maxCerts = 3;
-            certMatch = Math.min(certificates.length / maxCerts, 1);
+            );
+
+            const matchRatio = matchedCerts.length / filterCerts.length;
+
+            // Base bonus for any match
+            certFilterBonus += matchRatio * 0.08; // 8% base bonus
+
+            // 🆕 ADDITIONAL bonus for multiple matches (STACKING)
+            if (matchedCerts.length > 1) {
+                certFilterBonus += (matchedCerts.length - 1) * 0.04; // 4% extra per additional match
+            }
+
+            // Extra bonus for perfect match
+            if (matchRatio === 1.0) {
+                certFilterBonus += 0.04; // 4% perfect match bonus
+            }
         }
 
-        // Calculate availability score
-        const availability =
-            trainee.availability === "Full-time"
-                ? 1.0
-                : trainee.availability === "Part-time"
-                ? 0.67
-                : 0.33;
-
-        // Predict match score using TensorFlow (with pre-trained model)
+        // Calculate base score using TensorFlow
         const model = await getTrainedModel();
-        const inputTensor = tf.tensor2d(
-            [[skillMatch, certMatch, availability]],
-            [1, 3]
-        );
+        const inputTensor = tf.tensor2d([
+            [baseSkillPercentile, baseCertPercentile, availabilityScore],
+        ]);
         const prediction = model.predict(inputTensor);
-        const score = (await prediction.data())[0] * 100;
-        const matchPercentage = Math.min(Math.round(score), 100);
+        let baseScore = (await prediction.data())[0] * 100;
 
         inputTensor.dispose();
         prediction.dispose();
 
-        // 🆕 Enhanced category determination using Skills taxonomy
-        const categorySkillMap = {};
+        // 🆕 IMPROVED: Apply all bonuses and penalties
+        let finalScore = baseScore;
 
-        // Build category map from user's verified skills
+        // Apply filter bonuses (can stack)
+        finalScore += skillFilterBonus * 100;
+        finalScore += certFilterBonus * 100;
+
+        // Apply availability bonus/penalty
+        finalScore += availabilityBonus * 100;
+        finalScore -= availabilityPenalty * 100;
+
+        // Ensure score stays within bounds
+        finalScore = Math.max(0, Math.min(finalScore, 100));
+        finalScore = Math.round(finalScore);
+
+        // Enhanced category determination
+        const categorySkillMap = {};
         userSkillsData.forEach((us) => {
             const category = us.skill.category;
-            if (!categorySkillMap[category]) {
-                categorySkillMap[category] = 0;
-            }
-            categorySkillMap[category]++;
+            categorySkillMap[category] = (categorySkillMap[category] || 0) + 1;
         });
 
-        // Find category with most skills
         let maxCount = 0;
         for (const [category, count] of Object.entries(categorySkillMap)) {
             if (count > maxCount) {
@@ -340,24 +561,25 @@ const calculateJobMatch = async (
             }
         }
 
-        // Fallback to General Labor if no skills found
-        if (maxCount === 0) {
-            recommendedCategory = "General Labor";
-        }
+        // Determine match level
+        let matchLevel = "weak";
+        if (finalScore >= 70) matchLevel = "strong";
+        else if (finalScore >= 45) matchLevel = "medium";
 
         return {
-            score: matchPercentage,
+            score: finalScore,
             category: recommendedCategory,
-            matchLevel:
-                matchPercentage >= 80
-                    ? "strong"
-                    : matchPercentage >= 60
-                    ? "medium"
-                    : "weak",
+            matchLevel,
             factors: {
-                verifiedSkills: userSkills.length,
-                certificates: certificates.length,
-                availability: availability,
+                verifiedSkills: skillCount,
+                certificates: certCount,
+                availability: availabilityScore,
+                skillMatch: skillFilterBonus * 100,
+                certMatch: certFilterBonus * 100,
+                availabilityBonus: availabilityBonus * 100,
+                availabilityPenalty: availabilityPenalty * 100,
+                filterBonus: (skillFilterBonus + certFilterBonus) * 100,
+                baseScore: Math.round(baseScore),
                 skillDetails: userSkillsData.map((us) => ({
                     name: us.skill.name,
                     category: us.skill.category,
@@ -369,26 +591,31 @@ const calculateJobMatch = async (
     } catch (error) {
         console.error("Error calculating job match:", error);
         return {
-            score: 0,
+            score: 25,
             category: "General Labor",
             matchLevel: "weak",
             factors: {
                 verifiedSkills: 0,
                 certificates: 0,
                 availability: 0.33,
+                skillMatch: 0,
+                certMatch: 0,
+                availabilityBonus: 0,
+                availabilityPenalty: 0,
+                filterBonus: 0,
+                baseScore: 25,
                 skillDetails: [],
             },
         };
     }
 };
 
-// 🆕 IMPROVED: Enhanced job matching with Skills taxonomy and caching
+// 🆕 IMPROVED: Main job matching function
 exports.getJobMatches = async (req, res, next) => {
     try {
         const { skills, certifications, availability, issuer, category } =
             req.query;
 
-        // Create cache key based on query parameters
         const cacheKey = `jobMatches_${JSON.stringify(req.query)}`;
         const cached = cache.get(cacheKey);
         if (cached) {
@@ -396,26 +623,17 @@ exports.getJobMatches = async (req, res, next) => {
             return res.status(statusCodes.OK).json(cached);
         }
 
-        // Build query for approved trainees
+        // Build query
         let query = { role: "user", profileStatus: "approved" };
-
-        // Apply filters
-        let filterSkills = [];
-        if (skills) {
-            filterSkills = skills.split(",");
-        }
-
-        let filterCerts = [];
-        if (certifications) {
-            filterCerts = certifications.split(",");
-        }
+        let filterSkills = skills ? skills.split(",") : [];
+        let filterCerts = certifications ? certifications.split(",") : [];
+        let filterAvailability = availability ? availability.split(",") : [];
 
         if (availability) {
-            const availArray = availability.split(",");
-            query.availability = { $in: availArray };
+            query.availability = { $in: filterAvailability };
         }
 
-        // 🆕 OPTIMIZED: Fetch only necessary fields
+        // Optimized query
         const trainees = await User.find(query)
             .populate({
                 path: "certificates",
@@ -430,28 +648,30 @@ exports.getJobMatches = async (req, res, next) => {
             .select("name email contactNumber availability profileStatus")
             .lean();
 
-        // 🆕 OPTIMIZED: Calculate matches in parallel with limit
-        const traineesWithMatches = await Promise.all(
-            trainees.map(async (trainee) => {
-                // Convert lean object to User instance for method access
+        // Process trainees
+        const batchSize = 5;
+        const traineesWithMatches = [];
+
+        for (let i = 0; i < trainees.length; i += batchSize) {
+            const batch = trainees.slice(i, i + batchSize);
+            const batchPromises = batch.map(async (trainee) => {
                 const userInstance = new User(trainee);
                 const match = await calculateJobMatch(
                     userInstance,
                     filterSkills,
-                    filterCerts
+                    filterCerts,
+                    filterAvailability // 🆕 NEW: Pass availability filters
                 );
+                return { ...trainee, match };
+            });
 
-                return {
-                    ...trainee,
-                    match,
-                };
-            })
-        );
+            const batchResults = await Promise.all(batchPromises);
+            traineesWithMatches.push(...batchResults);
+        }
 
-        // Apply additional filters based on match results
+        // Apply additional filters
         let filteredTrainees = traineesWithMatches;
 
-        // Filter by category if specified
         if (category) {
             const categoryArray = category.split(",");
             filteredTrainees = filteredTrainees.filter((t) =>
@@ -459,7 +679,6 @@ exports.getJobMatches = async (req, res, next) => {
             );
         }
 
-        // Filter by issuer if specified
         if (issuer) {
             const issuerArray = issuer.split(",");
             filteredTrainees = filteredTrainees.filter((t) =>
@@ -469,7 +688,7 @@ exports.getJobMatches = async (req, res, next) => {
             );
         }
 
-        // Get dynamic filter options
+        // Get dynamic data
         const dynamicData = await getDynamicSkillsData();
 
         const response = {
@@ -481,11 +700,14 @@ exports.getJobMatches = async (req, res, next) => {
                 issuer: ["FAST-C", "TESDA", "Other"],
                 availability: ["Full-time", "Part-time"],
             },
+            datasetStats: {
+                totalTrainees: datasetStats?.totalTrainees || 0,
+                maxSkills: datasetStats?.skillCounts.max || 5,
+                maxCerts: datasetStats?.certCounts.max || 3,
+            },
         };
 
-        // Cache the response
         cache.set(cacheKey, response);
-
         res.status(statusCodes.OK).json(response);
     } catch (error) {
         console.error("Job matching error:", error);
@@ -536,69 +758,23 @@ exports.getMatchingStats = async (req, res, next) => {
     try {
         const cacheKey = "matchingStats";
         const cached = cache.get(cacheKey);
-        if (cached) {
-            return res.status(statusCodes.OK).json(cached);
-        }
+        if (cached) return res.status(statusCodes.OK).json(cached);
 
-        const totalTrainees = await User.countDocuments({
-            role: "user",
-            profileStatus: "approved",
-        });
-
-        // Get trainees with active certificates
-        const traineesWithCertificates = await Certificate.distinct("user", {
-            status: "active",
-        });
-
-        const fullTimeTrainees = await User.countDocuments({
-            role: "user",
-            profileStatus: "approved",
-            availability: "Full-time",
-        });
-
-        const partTimeTrainees = await User.countDocuments({
-            role: "user",
-            profileStatus: "approved",
-            availability: "Part-time",
-        });
-
-        // Get top skills from Skills taxonomy
-        const topSkills = await Skill.aggregate([
-            {
-                $lookup: {
-                    from: "certificates",
-                    localField: "_id",
-                    foreignField: "verifiedSkills.skill",
-                    as: "certificates",
-                },
-            },
-            {
-                $match: {
-                    "certificates.status": "active",
-                },
-            },
-            {
-                $project: {
-                    name: 1,
-                    category: 1,
-                    count: { $size: "$certificates" },
-                },
-            },
-            {
-                $sort: { count: -1 },
-            },
-            {
-                $limit: 10,
-            },
-        ]);
+        const stats = await getDatasetStatistics();
+        const dynamicData = await getDynamicSkillsData();
 
         const response = {
             stats: {
-                totalTrainees,
-                traineesWithCertificates: traineesWithCertificates.length,
-                fullTimeTrainees,
-                partTimeTrainees,
-                topSkills,
+                totalTrainees: stats.totalTrainees,
+                traineesWithCertificates: await Certificate.distinct("user", {
+                    status: "active",
+                }).then((users) => users.length),
+                fullTimeTrainees: stats.availability["Full-time"] || 0,
+                partTimeTrainees: stats.availability["Part-time"] || 0,
+                topSkills: Object.entries(dynamicData.skillPopularity || {})
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10)
+                    .map(([name, count]) => ({ name, count })),
             },
         };
 
@@ -610,13 +786,14 @@ exports.getMatchingStats = async (req, res, next) => {
     }
 };
 
-// 🆕 NEW: Clear cache endpoint (for development)
+// Clear cache endpoint
 exports.clearCache = async (req, res, next) => {
     try {
         cache.flushAll();
         trainedModel = null;
         isTraining = false;
         trainingPromise = null;
+        datasetStats = null;
 
         res.status(statusCodes.OK).json({
             message: "Cache cleared successfully",

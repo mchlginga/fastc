@@ -168,16 +168,6 @@ exports.generateCertificate = async (req, res, next) => {
             expirationDate
         );
 
-        // Add skill to user if mapped
-        /* const skillToAdd = certificateToSkillMap[enrollment.course.title];
-        if (skillToAdd) {
-            const user = await User.findById(userId);
-            if (user && !user.skills.includes(skillToAdd)) {
-                user.skills.push(skillToAdd);
-                await user.save();
-            }
-        } */
-
         // Create certificate record
         const certificate = await Certificate.create({
             user: userId,

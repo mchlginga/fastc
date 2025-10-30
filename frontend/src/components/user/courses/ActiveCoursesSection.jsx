@@ -11,6 +11,12 @@ function ActiveCoursesSection({
 }) {
     const navigate = useNavigate();
 
+    // 🆕 FIXED: Proper navigation to course detail
+    const handleContinueLearning = (enrollment) => {
+        console.log("🎯 Navigating to course:", enrollment.course.id);
+        navigate(`/user/courses/${enrollment.course.id}`);
+    };
+
     return (
         <section className="mb-8">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
@@ -71,9 +77,7 @@ function ActiveCoursesSection({
                             cancellingEnrollment={cancellingEnrollment}
                             onCancelEnrollment={onCancelEnrollment}
                             onContinueLearning={() =>
-                                navigate(
-                                    `/user/courses/${enrollment.course.id}`
-                                )
+                                handleContinueLearning(enrollment)
                             }
                         />
                     ))}

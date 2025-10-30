@@ -215,6 +215,13 @@ const AdminJobMatching = () => {
         });
     }, []);
 
+    const handleRemoveFilter = useCallback((category, value) => {
+        setFilters((prev) => ({
+            ...prev,
+            [category]: prev[category].filter((v) => v !== value),
+        }));
+    }, []);
+
     const toggleSection = useCallback((section) => {
         setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
     }, []);
@@ -373,6 +380,7 @@ const AdminJobMatching = () => {
                             onExport={exportToCSV}
                             onClearFilters={clearFilters}
                             filters={filters}
+                            onRemoveFilter={handleRemoveFilter}
                         />
                     </div>
                 </div>
