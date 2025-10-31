@@ -81,7 +81,7 @@ function CourseCard({
         >
             <img
                 src={course?.image || "/default-course.jpg"}
-                alt={getCourseTitle()}
+                alt={course?.title || ""}
                 className="h-64 w-full md:h-full object-cover"
                 onError={(e) => {
                     e.target.src = "/default-course.jpg";
