@@ -82,7 +82,7 @@ function CourseCard({
             <img
                 src={course?.image || "/default-course.jpg"}
                 alt={course?.title || ""}
-                className="h-64 w-full md:h-full object-cover"
+                className="w-full h-48 object-cover rounded-t-2xl"
                 onError={(e) => {
                     e.target.src = "/default-course.jpg";
                 }}
