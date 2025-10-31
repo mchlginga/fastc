@@ -3,23 +3,10 @@ const Enrollment = require("../models/enrollment");
 const Course = require("../models/course");
 const User = require("../models/user");
 const PDFDocument = require("pdfkit");
-const fs = require("fs");
-const path = require("path");
-const { statusCodes, PATHS } = require("../utils/constant");
-const ensureDirExist = require("../utils/ensureDirExist");
+const { statusCodes } = require("../utils/constant");
+const { cloudinary } = require("../config/cloudinary");
 
-// Map certificate names to skills
-/* const certificateToSkillMap = {
-    "Welding I": "Welding",
-    "Welding II": "Welding",
-    "Beauty Care I": "Beauty Care",
-    "Massage Therapy I": "Massage Therapy",
-    "Housekeeping I": "Housekeeping",
-    "Carpentry I": "Carpentry",
-    "Masonry I": "Masonry",
-}; */
-
-// generate cert
+// generate cert - UPDATED FOR CLOUDINARY
 const generateCertificatePDF = (
     user,
     course,
@@ -32,17 +19,44 @@ const generateCertificatePDF = (
             layout: "landscape",
             margin: 50,
         });
-        const fileName = `certificate_${user._id}_${
-            course._id
-        }_${Date.now()}.pdf`;
-        const filePath = path.join(PATHS.certDir, fileName);
 
-        console.log(`Generating certificate at: ${filePath}`);
-        ensureDirExist(PATHS.certDir);
+        // Create buffers instead of file system
+        const buffers = [];
+        doc.on("data", buffers.push.bind(buffers));
+        doc.on("end", () => {
+            const pdfData = Buffer.concat(buffers);
 
-        const stream = fs.createWriteStream(filePath);
-        doc.pipe(stream);
+            // Upload to Cloudinary
+            cloudinary.uploader
+                .upload_stream(
+                    {
+                        resource_type: "raw",
+                        folder: "fastc/certificates",
+                        public_id: `certificate_${user._id}_${
+                            course._id
+                        }_${Date.now()}`,
+                        format: "pdf",
+                    },
+                    (error, result) => {
+                        if (error) {
+                            console.error(
+                                "Error uploading certificate to Cloudinary:",
+                                error
+                            );
+                            reject(error);
+                        } else {
+                            console.log(
+                                "Certificate uploaded to Cloudinary:",
+                                result.secure_url
+                            );
+                            resolve(result.secure_url);
+                        }
+                    }
+                )
+                .end(pdfData);
+        });
 
+        // Your existing PDF generation code
         function centerText(text, y, options = {}) {
             doc.text(text, 50, y, {
                 width: doc.page.width - 100,
@@ -51,7 +65,7 @@ const generateCertificatePDF = (
             });
         }
 
-        // Certificate design (your existing code is good)
+        // Certificate design (your existing code)
         doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40)
             .lineWidth(4)
             .strokeColor("#3B82F6")
@@ -110,15 +124,6 @@ const generateCertificatePDF = (
             doc.page.height - 60
         );
         doc.end();
-
-        stream.on("finish", () => {
-            console.log(`Certificate generated successfully at: ${filePath}`);
-            resolve(`/uploads/certificates/${fileName}`);
-        });
-        stream.on("error", (err) => {
-            console.error(`Error generating certificate: ${err.message}`);
-            reject(err);
-        });
     });
 };
 
@@ -319,57 +324,29 @@ exports.downloadCertificate = async (req, res, next) => {
 
         console.log(`📄 Certificate URL: ${certificate.certificateUrl}`);
 
-        // 🆕 QUICK FIX: Handle different path formats
-        let filePath;
+        // Cloudinary URL - redirect to Cloudinary download
+        if (certificate.certificateUrl) {
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename="FAST-C_Certificate_${certificate.title.replace(
+                    /\s+/g,
+                    "_"
+                )}.pdf"`
+            );
 
-        if (certificate.certificateUrl.startsWith("/uploads/certificates/")) {
-            // Remove '/uploads/certificates/' and join with certDir
-            const relativePath = certificate.certificateUrl.replace(
-                "/uploads/certificates/",
-                ""
+            // Redirect to Cloudinary download URL
+            const downloadUrl = certificate.certificateUrl.replace(
+                "/upload/",
+                "/upload/fl_attachment/"
             );
-            filePath = path.join(PATHS.certDir, relativePath);
-        } else if (certificate.certificateUrl.startsWith("/uploads/")) {
-            // Remove '/uploads/' and join with upload base directory
-            const relativePath = certificate.certificateUrl.replace(
-                "/uploads/",
-                ""
-            );
-            filePath = path.join(
-                __dirname,
-                "..",
-                "data",
-                "upload",
-                relativePath
-            );
+            res.redirect(downloadUrl);
         } else {
-            // Assume it's just a filename in the certificates directory
-            filePath = path.join(PATHS.certDir, certificate.certificateUrl);
-        }
-
-        console.log(`🔍 Looking for file at: ${filePath}`);
-
-        if (!fs.existsSync(filePath)) {
-            console.log(`❌ File not found at: ${filePath}`);
             return res.status(statusCodes.NOT_FOUND).json({
                 success: false,
                 message: "Certificate file not found",
             });
         }
-
-        console.log(`✅ File found, streaming...`);
-
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader(
-            "Content-Disposition",
-            `attachment; filename="FAST-C_Certificate_${certificate.title.replace(
-                /\s+/g,
-                "_"
-            )}.pdf"`
-        );
-
-        const fileStream = fs.createReadStream(filePath);
-        fileStream.pipe(res);
     } catch (error) {
         console.error(`❌ Download error: ${error.message}`);
         next(error);

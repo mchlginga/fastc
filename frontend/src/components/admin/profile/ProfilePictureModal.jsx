@@ -1,11 +1,10 @@
 import { X } from "react-feather";
-import { getProfilePicUrl } from "../../../utils/userUtils";
 
 function ProfilePictureModal({ isOpen, onClose, profilePicUrl, imageError }) {
     if (!isOpen) return null;
 
-    const fullProfilePicUrl =
-        profilePicUrl && !imageError ? getProfilePicUrl(profilePicUrl) : null;
+    // ✅ DIRECT CLOUDINARY URL - NO FUNCTION NEEDED
+    const displayUrl = profilePicUrl && !imageError ? profilePicUrl : null;
 
     return (
         <div
@@ -13,11 +12,18 @@ function ProfilePictureModal({ isOpen, onClose, profilePicUrl, imageError }) {
             onClick={onClose}
         >
             <div className="relative max-w-4xl w-full max-h-[90vh] flex items-center justify-center">
-                {fullProfilePicUrl ? (
+                {displayUrl ? (
                     <img
-                        src={fullProfilePicUrl}
+                        src={displayUrl} // ✅ DIRECT CLOUDINARY URL
                         alt="Admin Profile"
                         className="max-w-full max-h-full object-contain rounded-lg"
+                        onError={(e) => {
+                            // Fallback if image fails to load
+                            console.warn(
+                                "Failed to load profile picture:",
+                                displayUrl
+                            );
+                        }}
                     />
                 ) : (
                     <div className="text-white text-lg">

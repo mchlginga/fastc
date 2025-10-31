@@ -219,12 +219,13 @@ function CourseDetail() {
                     <div className="md:flex">
                         <div className="md:flex-shrink-0 md:w-1/3">
                             <img
-                                src={getImageUrl(getCourseImage())}
+                                src={course?.image || "/default-course.jpg"}
                                 alt={getCourseTitle()}
                                 className="h-64 w-full md:h-full object-cover"
                                 onError={(e) => {
                                     e.target.src = "/default-course.jpg";
                                 }}
+                                loading="lazy"
                             />
                         </div>
                         <div className="p-8 md:w-2/3">

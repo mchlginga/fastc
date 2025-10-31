@@ -35,50 +35,21 @@ const UserDetailModal = ({ isOpen, onClose, user, onStatusUpdate, onEdit }) => {
 
     if (!isOpen || !user) return null;
 
-    const getFileUrl = (filePath) => {
-        if (!filePath) return null;
-        if (filePath.startsWith("http")) return filePath;
-        const backendUrl =
-            import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-
-        // Use the exact same logic as UserTableRow
-        if (filePath.startsWith("/uploads/")) {
-            return `${backendUrl}${filePath}`;
-        } else {
-            return `${backendUrl}/uploads/profiles/${filePath}`;
-        }
-    };
-
-    const getProfilePicUrl = () => {
-        if (!user?.profilePic) return null;
-
-        // Use the EXACT same logic as UserTableRow
-        if (user.profilePic.startsWith("http")) return user.profilePic;
-
-        const backendUrl =
-            import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-
-        if (user.profilePic.startsWith("/uploads/")) {
-            return `${backendUrl}${user.profilePic}`;
-        } else {
-            return `${backendUrl}/uploads/profiles/${user.profilePic}`;
-        }
-    };
+    // ✅ DIRECT CLOUDINARY URL
+    const profilePicUrl = user?.profilePic || null;
 
     // NEW: Open file in new tab instead of modal
     const handleViewFile = (filePath, fileName) => {
-        const fileUrl = getFileUrl(filePath);
         console.log("Opening file in new tab:", {
             filePath,
-            fileUrl,
             fileName,
         });
 
-        if (fileUrl) {
-            // Open in new tab
-            window.open(fileUrl, "_blank", "noopener,noreferrer");
+        if (filePath) {
+            // Open in new tab - filePath is already Cloudinary URL
+            window.open(filePath, "_blank", "noopener,noreferrer");
         } else {
-            console.error("No file URL generated for:", filePath);
+            console.error("No file URL available for:", filePath);
             alert("File not found or unavailable.");
         }
     };
@@ -156,13 +127,11 @@ const UserDetailModal = ({ isOpen, onClose, user, onStatusUpdate, onEdit }) => {
 
     const statusConfig = getStatusConfig(user.profileStatus);
     const roleConfig = getRoleConfig(user.role);
-    const profilePicUrl = getProfilePicUrl();
 
     console.log("Profile Pic Debug:", {
         hasProfilePic: !!user?.profilePic,
         profilePic: user?.profilePic,
         constructedUrl: profilePicUrl,
-        backendUrl: import.meta.env.VITE_BACKEND_URL,
     });
 
     return (
@@ -178,7 +147,7 @@ const UserDetailModal = ({ isOpen, onClose, user, onStatusUpdate, onEdit }) => {
                         <div className="relative">
                             {profilePicUrl ? (
                                 <img
-                                    src={profilePicUrl}
+                                    src={profilePicUrl} // ✅ DIRECT CLOUDINARY URL
                                     alt="Profile"
                                     className="w-12 h-12 rounded-full object-cover border border-gray-300"
                                     onError={(e) => {
@@ -448,7 +417,7 @@ const UserDetailModal = ({ isOpen, onClose, user, onStatusUpdate, onEdit }) => {
                                                     <button
                                                         onClick={() =>
                                                             handleViewFile(
-                                                                edu.proof,
+                                                                edu.proof, // ✅ DIRECT CLOUDINARY URL
                                                                 `Education Proof - ${edu.educationLevel}`
                                                             )
                                                         }
@@ -500,7 +469,7 @@ const UserDetailModal = ({ isOpen, onClose, user, onStatusUpdate, onEdit }) => {
                                                     <button
                                                         onClick={() =>
                                                             handleViewFile(
-                                                                cert.proof,
+                                                                cert.proof, // ✅ DIRECT CLOUDINARY URL
                                                                 `Certificate - ${cert.name}`
                                                             )
                                                         }

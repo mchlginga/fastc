@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const { statusCodes } = require("../utils/constant");
+const { cloudinary } = require("../config/cloudinary");
 
 const parseAndAttachProofs = (data, files, startIndex = 0) => {
     if (!data) return { parsed: null, used: 0 };
@@ -15,9 +16,8 @@ const parseAndAttachProofs = (data, files, startIndex = 0) => {
         let used = 0;
         const parsed = arr.map((item) => {
             if (item.proof === "new" && files[startIndex + used]) {
-                const proofPath = `/uploads/profiles/${
-                    files[startIndex + used].filename
-                }`;
+                // Cloudinary URL is automatically available in req.file.path
+                const proofPath = files[startIndex + used].path; // Cloudinary URL
                 used++;
                 return { ...item, proof: proofPath };
             }
@@ -78,7 +78,7 @@ exports.updateProfile = async (req, res, next) => {
         if (user.role === "company") {
             const totalUsed = educationResult.used + certificateResult.used;
             if (files[totalUsed]) {
-                businessPermitFile = `/uploads/profiles/${files[totalUsed].filename}`;
+                businessPermitFile = files[totalUsed].path; // Cloudinary URL
             }
         }
 

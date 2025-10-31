@@ -13,30 +13,12 @@ import {
 } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 
-// Helper function to get full profile picture URL WITHOUT cache busting
-const getProfilePicUrl = (profilePicPath) => {
-    if (!profilePicPath) return null;
-
-    if (profilePicPath.startsWith("http")) return profilePicPath;
-
-    const backendUrl =
-        import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-
-    if (profilePicPath.startsWith("/uploads/")) {
-        return `${backendUrl}${profilePicPath}`;
-    }
-
-    return `${backendUrl}/uploads/profiles/${profilePicPath}`;
-};
-
 // Simple Profile Avatar Component
 const ProfileAvatar = ({ size = "md", onClick }) => {
     const { user } = useAuth();
     const [imageError, setImageError] = useState(false);
 
-    const profilePicUrl = user?.profilePic
-        ? getProfilePicUrl(user.profilePic)
-        : null;
+    const profilePicUrl = user?.profilePic || null;
 
     const sizeClasses = {
         sm: "h-6 w-6",
@@ -79,7 +61,7 @@ const ProfileAvatar = ({ size = "md", onClick }) => {
                     alt="Admin profile"
                     className="w-full h-full object-cover"
                     onError={handleImageError}
-                    crossOrigin="anonymous"
+                    loading="lazy"
                 />
             ) : (
                 <div className="flex items-center justify-center w-full h-full">

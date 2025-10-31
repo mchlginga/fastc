@@ -1,6 +1,5 @@
 import { Users, Calendar, ArrowRight } from "react-feather";
 import {
-    getImageUrl,
     getEnrollmentDeadline,
     getCourseAccessType,
 } from "../../../utils/courseUtils";
@@ -81,12 +80,13 @@ function CourseCard({
             onClick={handleContentClick}
         >
             <img
-                src={getImageUrl(course.image)}
-                alt={course.title || "Course"}
-                className="w-full h-48 object-cover rounded-t-2xl"
+                src={course?.image || "/default-course.jpg"}
+                alt={getCourseTitle()}
+                className="h-64 w-full md:h-full object-cover"
                 onError={(e) => {
                     e.target.src = "/default-course.jpg";
                 }}
+                loading="lazy"
             />
             <div className="p-6 flex-1 flex flex-col">
                 {/* Course badges */}

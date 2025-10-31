@@ -18,7 +18,7 @@ const ProfileSection = ({
     onUploadingProfilePicChange,
     onToastNotification,
     onUserUpdate,
-    getProfilePicUrl,
+
     isFiltered = false,
 }) => {
     const [saving, setSaving] = useState(false);
@@ -394,11 +394,15 @@ const ProfileSection = ({
 
                 <div className="flex items-center">
                     <div className="relative mr-6">
-                        {getProfilePicUrl(user?.profilePic) ? (
+                        {user?.profilePic ? (
                             <img
-                                src={getProfilePicUrl(user?.profilePic)}
+                                src={user.profilePic}
                                 alt="Profile"
                                 className="w-24 h-24 rounded-full object-cover shadow-sm border-2 border-gray-200"
+                                onError={(e) => {
+                                    // Fallback if Cloudinary URL fails
+                                    e.target.style.display = "none";
+                                }}
                             />
                         ) : (
                             <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center shadow-sm border-2 border-gray-200">

@@ -57,16 +57,6 @@ const CertificateDetailModal = ({
     const course = certificate.course || {};
     const enrollment = certificate.enrollment || {};
 
-    const getProfilePicUrl = (profilePicPath) => {
-        if (!profilePicPath) return null;
-        if (profilePicPath.startsWith("http")) return profilePicPath;
-        const backendUrl =
-            import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-        return profilePicPath.startsWith("/uploads/")
-            ? `${backendUrl}${profilePicPath}`
-            : `${backendUrl}/uploads/profiles/${profilePicPath}`;
-    };
-
     const getStatusConfig = (status) => {
         const configs = {
             active: {
@@ -98,7 +88,7 @@ const CertificateDetailModal = ({
         certificate.effectiveStatus || certificate.status
     );
     const isExpired = new Date() > new Date(certificate.expirationDate);
-    const profilePicUrl = getProfilePicUrl(user.profilePic);
+    const profilePicUrl = user?.profilePic || null;
 
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
@@ -162,6 +152,7 @@ const CertificateDetailModal = ({
                                     src={profilePicUrl}
                                     alt="Profile"
                                     className="w-12 h-12 rounded-full object-cover border border-gray-300"
+                                    loading="lazy"
                                     onError={(e) => {
                                         e.target.style.display = "none";
                                         e.target.nextSibling.style.display =

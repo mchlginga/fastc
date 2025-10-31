@@ -1,11 +1,9 @@
 import { X } from "react-feather";
-import { getProfilePicUrl } from "../../../utils/userUtils";
 
 function ProfilePictureModal({ isOpen, onClose, profilePicUrl, imageError }) {
     if (!isOpen) return null;
 
-    const fullProfilePicUrl =
-        profilePicUrl && !imageError ? getProfilePicUrl(profilePicUrl) : null;
+    const displayUrl = profilePicUrl && !imageError ? profilePicUrl : null;
 
     return (
         <div
@@ -13,9 +11,9 @@ function ProfilePictureModal({ isOpen, onClose, profilePicUrl, imageError }) {
             onClick={onClose}
         >
             <div className="relative max-w-4xl w-full max-h-[90vh] flex items-center justify-center">
-                {fullProfilePicUrl ? (
+                {displayUrl ? (
                     <img
-                        src={fullProfilePicUrl}
+                        src={displayUrl}
                         alt="Profile"
                         className="max-w-full max-h-full object-contain rounded-lg"
                     />

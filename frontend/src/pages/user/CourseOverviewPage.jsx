@@ -14,7 +14,6 @@ import {
     BarChart2,
 } from "react-feather";
 import {
-    getImageUrl,
     getEnrollmentDeadline,
     getCourseAccessType,
 } from "../../utils/courseUtils";
@@ -131,7 +130,6 @@ function CourseOverviewPage() {
     const getCourseTitle = () => course?.title || "Untitled Course";
     const getCourseDescription = () =>
         course?.description || "No description available";
-    const getCourseImage = () => course?.image || "";
     const getSkillLevel = () => course?.skillLevel || "All Levels";
     const getCategory = () => course?.category || "";
     const getDuration = () => course?.duration || "Self-paced";
@@ -193,12 +191,13 @@ function CourseOverviewPage() {
                     <div className="md:flex">
                         <div className="md:flex-shrink-0 md:w-1/3">
                             <img
-                                src={getImageUrl(getCourseImage())}
+                                src={course?.image || "/default-course.jpg"}
                                 alt={getCourseTitle()}
                                 className="h-64 w-full md:h-full object-cover"
                                 onError={(e) => {
                                     e.target.src = "/default-course.jpg";
                                 }}
+                                loading="lazy"
                             />
                         </div>
                         <div className="p-8 md:w-2/3">

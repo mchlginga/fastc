@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Camera, User, Shield, Activity, Settings } from "react-feather";
-import { getProfilePicUrl } from "../../../utils/userUtils";
 
 function AdminProfileHeader({
     user,
@@ -43,10 +42,7 @@ function AdminProfileHeader({
         fileInputRef.current?.click();
     };
 
-    const profilePicUrl =
-        user?.profilePic && !imageError
-            ? getProfilePicUrl(user.profilePic)
-            : null;
+    const profilePicUrl = user?.profilePic || null;
 
     const Info = ({ label, value, icon }) => (
         <div className="flex items-center space-x-3">
@@ -105,7 +101,7 @@ function AdminProfileHeader({
                                         alt="Admin Profile"
                                         className="w-full h-full object-cover"
                                         onError={onImageError}
-                                        crossOrigin="anonymous"
+                                        loading="lazy"
                                     />
                                 ) : (
                                     <div className="flex items-center justify-center w-full h-full">

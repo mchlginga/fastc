@@ -4,8 +4,7 @@ const Course = require("../models/course");
 const User = require("../models/user");
 const { statusCodes } = require("../utils/constant");
 const { generateCertificatePDF } = require("./certificate");
-const fs = require("fs");
-const path = require("path");
+const { cloudinary } = require("../config/cloudinary");
 
 // Generate verification code
 function generateVerificationCode() {
@@ -435,26 +434,22 @@ exports.deleteCertificate = async (req, res, next) => {
             });
         }
 
-        // Delete the certificate file from filesystem
+        // Delete the certificate file from Cloudinary
         if (certificate.certificateUrl) {
             try {
-                const filePath = path.join(
-                    __dirname,
-                    "..",
-                    "data",
-                    "upload",
-                    "certificates",
-                    certificate.certificateUrl.replace(
-                        "/uploads/certificates/",
-                        ""
-                    )
-                );
+                const urlParts = certificate.certificateUrl.split("/");
+                const publicIdWithExtension = urlParts[urlParts.length - 1];
+                const publicId = publicIdWithExtension.split(".")[0];
+                const fullPublicId = `fastc/certificates/${publicId}`;
 
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
-                }
+                await cloudinary.uploader.destroy(fullPublicId, {
+                    resource_type: "raw",
+                });
             } catch (fileError) {
-                console.error("Error deleting certificate file:", fileError);
+                console.error(
+                    "Error deleting certificate file from Cloudinary:",
+                    fileError
+                );
                 // Continue with database deletion even if file deletion fails
             }
         }
@@ -490,55 +485,29 @@ exports.downloadCertificate = async (req, res, next) => {
 
         console.log(`📄 Certificate URL: ${certificate.certificateUrl}`);
 
-        // Handle different path formats
-        let filePath;
-        const PATHS = require("../utils/constant").PATHS;
+        // Cloudinary URL - redirect to Cloudinary download
+        if (certificate.certificateUrl) {
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename="FAST-C_Certificate_${certificate.course.title.replace(
+                    /\s+/g,
+                    "_"
+                )}.pdf"`
+            );
 
-        if (certificate.certificateUrl.startsWith("/uploads/certificates/")) {
-            const relativePath = certificate.certificateUrl.replace(
-                "/uploads/certificates/",
-                ""
+            // Redirect to Cloudinary download URL
+            const downloadUrl = certificate.certificateUrl.replace(
+                "/upload/",
+                "/upload/fl_attachment/"
             );
-            filePath = path.join(PATHS.certDir, relativePath);
-        } else if (certificate.certificateUrl.startsWith("/uploads/")) {
-            const relativePath = certificate.certificateUrl.replace(
-                "/uploads/",
-                ""
-            );
-            filePath = path.join(
-                __dirname,
-                "..",
-                "data",
-                "upload",
-                relativePath
-            );
+            res.redirect(downloadUrl);
         } else {
-            filePath = path.join(PATHS.certDir, certificate.certificateUrl);
-        }
-
-        console.log(`🔍 Looking for file at: ${filePath}`);
-
-        if (!fs.existsSync(filePath)) {
-            console.log(`❌ File not found at: ${filePath}`);
             return res.status(statusCodes.NOT_FOUND).json({
                 success: false,
                 message: "Certificate file not found",
             });
         }
-
-        console.log(`✅ File found, streaming...`);
-
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader(
-            "Content-Disposition",
-            `attachment; filename="FAST-C_Certificate_${certificate.course.title.replace(
-                /\s+/g,
-                "_"
-            )}.pdf"`
-        );
-
-        const fileStream = fs.createReadStream(filePath);
-        fileStream.pipe(res);
     } catch (error) {
         console.error(`❌ Download error: ${error.message}`);
         next(error);

@@ -228,10 +228,10 @@ exports.createCourse = async (req, res, next) => {
                 lesson.isRequired !== undefined ? lesson.isRequired : true,
         }));
 
-        // Handle image path - FIXED PATH
+        // Handle image path - CLOUDINARY URL
         let imagePath = null;
         if (req.file) {
-            imagePath = `/uploads/courses/${req.file.filename}`; // Correct path
+            imagePath = req.file.path; // Cloudinary URL
         }
 
         // Create course
@@ -387,12 +387,47 @@ exports.updateCourse = async (req, res, next) => {
         if (endDate !== undefined)
             updateData.endDate = endDate ? new Date(endDate) : null;
 
-        // 🆕 IMPROVED: Handle image upload/removal
+        // 🆕 IMPROVED: Handle image upload/removal with Cloudinary
         if (req.file) {
             console.log("🖼️ New image uploaded for course update");
-            updateData.image = `/uploads/courses/${req.file.filename}`;
+
+            // Delete old image from Cloudinary if exists
+            const course = await Course.findById(req.params.id);
+            if (course && course.image) {
+                try {
+                    const urlParts = course.image.split("/");
+                    const publicIdWithExtension = urlParts[urlParts.length - 1];
+                    const publicId = publicIdWithExtension.split(".")[0];
+                    const fullPublicId = `fastc/courses/${publicId}`;
+
+                    await cloudinary.uploader.destroy(fullPublicId);
+                } catch (deleteError) {
+                    console.error(
+                        "Error deleting old course image:",
+                        deleteError
+                    );
+                }
+            }
+
+            updateData.image = req.file.path; // Cloudinary URL
         } else if (removeImage) {
             console.log("🗑️ Removing course image");
+
+            // Delete image from Cloudinary
+            const course = await Course.findById(req.params.id);
+            if (course && course.image) {
+                try {
+                    const urlParts = course.image.split("/");
+                    const publicIdWithExtension = urlParts[urlParts.length - 1];
+                    const publicId = publicIdWithExtension.split(".")[0];
+                    const fullPublicId = `fastc/courses/${publicId}`;
+
+                    await cloudinary.uploader.destroy(fullPublicId);
+                } catch (deleteError) {
+                    console.error("Error deleting course image:", deleteError);
+                }
+            }
+
             updateData.image = null;
         }
         // If neither, the image field won't be updated (keeps existing image)
@@ -469,7 +504,7 @@ exports.deleteCourse = async (req, res, next) => {
             });
         }
 
-        const course = await Course.findByIdAndDelete(courseId);
+        const course = await Course.findById(courseId);
 
         if (!course) {
             return res.status(statusCodes.NOT_FOUND).json({
@@ -477,6 +512,26 @@ exports.deleteCourse = async (req, res, next) => {
                 message: "Course not found",
             });
         }
+
+        // Delete course image from Cloudinary if exists
+        if (course.image) {
+            try {
+                const urlParts = course.image.split("/");
+                const publicIdWithExtension = urlParts[urlParts.length - 1];
+                const publicId = publicIdWithExtension.split(".")[0];
+                const fullPublicId = `fastc/courses/${publicId}`;
+
+                await cloudinary.uploader.destroy(fullPublicId);
+            } catch (deleteError) {
+                console.error(
+                    "Error deleting course image from Cloudinary:",
+                    deleteError
+                );
+            }
+        }
+
+        // Delete the course from database
+        await Course.findByIdAndDelete(courseId);
 
         // Delete related enrollments (cancelled and completed ones)
         await Enrollment.deleteMany({ course: courseId });
@@ -530,11 +585,7 @@ exports.uploadCourseImage = async (req, res, next) => {
 // Remove course image
 exports.removeCourseImage = async (req, res, next) => {
     try {
-        const course = await Course.findByIdAndUpdate(
-            req.params.id,
-            { image: null },
-            { new: true, runValidators: true }
-        );
+        const course = await Course.findById(req.params.id);
 
         if (!course) {
             return res.status(statusCodes.NOT_FOUND).json({
@@ -543,10 +594,34 @@ exports.removeCourseImage = async (req, res, next) => {
             });
         }
 
+        // Delete image from Cloudinary if exists
+        if (course.image) {
+            try {
+                const urlParts = course.image.split("/");
+                const publicIdWithExtension = urlParts[urlParts.length - 1];
+                const publicId = publicIdWithExtension.split(".")[0];
+                const fullPublicId = `fastc/courses/${publicId}`;
+
+                await cloudinary.uploader.destroy(fullPublicId);
+            } catch (deleteError) {
+                console.error(
+                    "Error deleting course image from Cloudinary:",
+                    deleteError
+                );
+            }
+        }
+
+        // Update course to remove image reference
+        const updatedCourse = await Course.findByIdAndUpdate(
+            req.params.id,
+            { image: null },
+            { new: true, runValidators: true }
+        );
+
         res.status(statusCodes.OK).json({
             success: true,
             message: "Course image removed successfully",
-            course,
+            course: updatedCourse,
         });
     } catch (error) {
         next(error);

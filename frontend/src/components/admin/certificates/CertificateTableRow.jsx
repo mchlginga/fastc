@@ -22,7 +22,7 @@ const CertificateTableRow = ({
     onRevoke,
     onRegenerate,
     onDelete,
-    onDownload, // NEW: Add download handler prop
+    onDownload,
     rowIndex,
 }) => {
     const [showActions, setShowActions] = useState(false);
@@ -43,16 +43,6 @@ const CertificateTableRow = ({
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
-
-    const getProfilePicUrl = (profilePicPath) => {
-        if (!profilePicPath) return null;
-        if (profilePicPath.startsWith("http")) return profilePicPath;
-        const backendUrl =
-            import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-        return profilePicPath.startsWith("/uploads/")
-            ? `${backendUrl}${profilePicPath}`
-            : `${backendUrl}/uploads/profiles/${profilePicPath}`;
-    };
 
     const getStatusConfig = (status) => {
         const configs = {
@@ -172,13 +162,15 @@ const CertificateTableRow = ({
             <td className="px-4 py-3 whitespace-nowrap">
                 <div className="flex items-center">
                     <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-200">
-                        {getProfilePicUrl(certificate.user?.profilePic) ? (
+                        {certificate.user?.profilePic ? (
                             <img
-                                src={getProfilePicUrl(
-                                    certificate.user?.profilePic
-                                )}
+                                src={certificate.user.profilePic} // ✅ DIRECT CLOUDINARY URL
                                 alt="Profile"
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    // Fallback if image fails to load
+                                    e.target.style.display = "none";
+                                }}
                             />
                         ) : (
                             <User size={18} className="text-gray-400" />

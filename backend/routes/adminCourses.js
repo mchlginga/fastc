@@ -43,7 +43,11 @@ router.patch("/courses/:id/status", updateCourseStatus);
 router.delete("/courses/:id", deleteCourse);
 
 // Upload course image
-router.post("/courses/:id/image", uploadCourseImage);
+router.post(
+    "/courses/:id/image",
+    uploadCourse.single("image"),
+    uploadCourseImage
+);
 
 // Remove course image
 router.delete("/courses/:id/image", removeCourseImage);

@@ -1,5 +1,4 @@
 import { Clock, X, CheckCircle } from "react-feather";
-import { getImageUrl } from "../../../utils/courseUtils";
 import { getStatusConfig } from "../../../utils/enrollmentUtils";
 
 function EnrollmentCard({
@@ -19,12 +18,13 @@ function EnrollmentCard({
     return (
         <div className="bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col">
             <img
-                src={getImageUrl(enrollment.course.image)}
-                alt={enrollment.course.title || "Course"}
-                className="w-full h-48 object-cover rounded-t-2xl"
+                src={course?.image || "/default-course.jpg"}
+                alt={getCourseTitle()}
+                className="h-64 w-full md:h-full object-cover"
                 onError={(e) => {
                     e.target.src = "/default-course.jpg";
                 }}
+                loading="lazy"
             />
             <div className="p-6 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-3">

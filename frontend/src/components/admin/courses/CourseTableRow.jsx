@@ -40,16 +40,6 @@ const CourseTableRow = ({
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const getImageUrl = (imagePath) => {
-        if (!imagePath) return "/default-course.jpg";
-        if (imagePath.startsWith("http")) return imagePath;
-        const backendUrl =
-            import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-        return imagePath.startsWith("/uploads/")
-            ? `${backendUrl}${imagePath}`
-            : `${backendUrl}/uploads/courses/${imagePath}`;
-    };
-
     const getStatusConfig = (isActive) => {
         const configs = {
             true: {
@@ -115,9 +105,13 @@ const CourseTableRow = ({
                     <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200">
                         {course.image ? (
                             <img
-                                src={getImageUrl(course.image)}
+                                src={course.image} // ✅ DIRECT CLOUDINARY URL
                                 alt="Course"
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    // Fallback if image fails to load
+                                    e.target.style.display = "none";
+                                }}
                             />
                         ) : (
                             <Book size={18} className="text-gray-400" />

@@ -46,10 +46,7 @@ function ProfileHeader({
         fileInputRef.current?.click();
     };
 
-    const profilePicUrl =
-        user?.profilePic && !imageError
-            ? getProfilePicUrl(user.profilePic)
-            : null;
+    const profilePicUrl = user?.profilePic || null;
 
     const Info = ({ label, value }) => (
         <div>
@@ -78,7 +75,7 @@ function ProfileHeader({
                                         alt="Profile"
                                         className="w-full h-full object-cover"
                                         onError={onImageError}
-                                        crossOrigin="anonymous"
+                                        loading="lazy"
                                     />
                                 ) : (
                                     <div className="flex items-center justify-center w-full h-full">

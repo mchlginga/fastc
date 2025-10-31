@@ -1,27 +1,5 @@
 const multer = require("multer");
-const ensureDirExist = require("../utils/ensureDirExist");
-const { PATHS } = require("../utils/constant");
-
-ensureDirExist(PATHS.profileDir);
-ensureDirExist(PATHS.courseDir);
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, PATHS.profileDir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    },
-});
-
-const courseStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, PATHS.courseDir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    },
-});
+const { profileStorage, courseStorage } = require("../config/cloudinary");
 
 const fileFilter = (req, file, cb) => {
     const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
@@ -33,15 +11,15 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({
-    storage,
+    storage: profileStorage, // For profile pictures
     fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 const uploadCourse = multer({
-    storage: courseStorage,
+    storage: courseStorage, // For course files
     fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 module.exports = { upload, uploadCourse };

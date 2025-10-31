@@ -18,10 +18,22 @@ const TraineeCard = ({ trainee, getMatchBadgeClass, hasFilters }) => {
             {/* Header */}
             <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-600 font-medium text-sm">
-                            {trainee.name?.charAt(0).toUpperCase()}
-                        </span>
+                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                        {trainee.profilePic ? (
+                            <img
+                                src={trainee.profilePic} // ✅ DIRECT CLOUDINARY URL
+                                alt={`${trainee.name}'s profile`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    // Fallback if image fails to load
+                                    e.target.style.display = "none";
+                                }}
+                            />
+                        ) : (
+                            <span className="text-blue-600 font-medium text-sm">
+                                {trainee.name?.charAt(0).toUpperCase()}
+                            </span>
+                        )}
                     </div>
                     <div>
                         <h3 className="font-semibold text-gray-900">
