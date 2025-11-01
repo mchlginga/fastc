@@ -71,6 +71,13 @@ function CertificateCard({
     const daysUntilExpiry = getDaysUntilExpiry(certificate.expirationDate);
     const isExpiringSoon = daysUntilExpiry > 0 && daysUntilExpiry <= 30;
 
+    // 🆕 ADD: Handle direct view click
+    const handleViewClick = () => {
+        if (certificate.status === "active" && !viewing) {
+            onView(certificate.id, certificate.title);
+        }
+    };
+
     return (
         <div className="bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col">
             {/* Certificate Header */}
@@ -81,11 +88,6 @@ function CertificateCard({
                     </h3>
                     {getStatusBadge(certificate.status)}
                 </div>
-                {certificate.course && (
-                    <p className="text-blue-100 text-sm">
-                        {certificate.course.title}
-                    </p>
-                )}
             </div>
 
             {/* Certificate Body */}
@@ -93,11 +95,8 @@ function CertificateCard({
                 {/* Course Info */}
                 {certificate.course && (
                     <div className="mb-4">
-                        <p className="text-gray-800 font-medium text-sm mb-1">
-                            {certificate.course.title}
-                        </p>
                         {certificate.course.description && (
-                            <p className="text-gray-600 text-xs line-clamp-2">
+                            <p className="text-gray-600 text-xs">
                                 {certificate.course.description}
                             </p>
                         )}
@@ -181,9 +180,7 @@ function CertificateCard({
                     </button>
 
                     <button
-                        onClick={() =>
-                            onView(certificate.id, certificate.title)
-                        }
+                        onClick={handleViewClick}
                         disabled={certificate.status !== "active" || viewing}
                         className={`min-h-[44px] px-4 rounded-lg text-sm font-medium transition flex items-center justify-center ${
                             certificate.status === "active" && !viewing
