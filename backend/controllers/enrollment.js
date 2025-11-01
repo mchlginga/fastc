@@ -412,12 +412,13 @@ exports.completeLesson = async (req, res, next) => {
             `🔄 [Backend] Completing lesson ${lessonId} for enrollment ${enrollmentId}, user ${userId}`
         );
 
-        // Verify enrollment belongs to user and is active
         const enrollment = await Enrollment.findOne({
             _id: enrollmentId,
             user: userId,
             status: "active",
-        }).populate("course", "lessons");
+        })
+            .populate("course")
+            .populate("user");
 
         if (!enrollment) {
             console.log(
@@ -487,65 +488,61 @@ exports.completeLesson = async (req, res, next) => {
 
         await enrollment.save();
 
-        // AUTOMATICALLY GENERATE CERTIFICATE IF COURSE COMPLETED
+        // 🆕 FIXED: AUTOMATICALLY GENERATE CERTIFICATE IF COURSE COMPLETED
         if (isCourseCompleted) {
             try {
                 const Certificate = require("../models/certificate");
-                const User = require("../models/user");
+                const { generateCertificatePDF } = require("./certificate");
 
                 // Check if certificate already exists
                 const existingCertificate = await Certificate.findOne({
                     enrollment: enrollmentId,
                 });
 
+                console.log(
+                    `🔍 [Backend] Certificate check - existing:`,
+                    existingCertificate ? existingCertificate._id : "none"
+                );
+
                 if (!existingCertificate) {
                     console.log(
-                        `📜 [Backend] Generating certificate for completed course`
+                        `📜 [Backend] Generating certificate for completed course: ${enrollment.course.title}`
+                    ); // 🆕 FIXED: Use enrollment.course.title
+                    console.log(
+                        `👤 [Backend] User: ${enrollment.user.name}, Course: ${enrollment.course.title}`
                     );
 
-                    // Import certificate generation function
-                    const { generateCertificatePDF } = require("./certificate");
-
-                    const user = await User.findById(userId);
-                    const completionDate = enrollment.completedAt;
+                    const completionDate = enrollment.completedAt || new Date();
                     const expirationDate = new Date(completionDate);
                     expirationDate.setFullYear(
                         completionDate.getFullYear() + 1
                     );
 
+                    console.log(
+                        `📄 [Backend] Creating certificate PDF for: ${enrollment.user.name} - ${enrollment.course.title}`
+                    );
+
+                    // 🆕 FIXED: Use EXACT same pattern as certificate controller
                     const certificateUrl = await generateCertificatePDF(
-                        user,
-                        course,
+                        enrollment.user, // 🆕 Use populated user from enrollment
+                        enrollment.course, // 🆕 Use populated course from enrollment
                         completionDate,
                         expirationDate
                     );
 
-                    // Map certificate to skill
-                    const certificateToSkillMap = {
-                        "Welding I": "Welding",
-                        "Welding II": "Welding",
-                        "Beauty Care I": "Beauty Care",
-                        "Massage Therapy I": "Massage Therapy",
-                        "Housekeeping I": "Housekeeping",
-                        "Carpentry I": "Carpentry",
-                        "Masonry I": "Masonry",
-                    };
+                    console.log(
+                        `✅ [Backend] PDF generated, URL: ${certificateUrl}`
+                    );
 
-                    // Add skill to user
-                    const skillToAdd = certificateToSkillMap[course.title];
-                    if (skillToAdd) {
-                        if (!user.skills.includes(skillToAdd)) {
-                            user.skills.push(skillToAdd);
-                            await user.save();
-                        }
-                    }
+                    // 🆕 FIXED: Use EXACT same title format as certificate controller
+                    const certificateTitle = `${enrollment.course.title}`; // 🆕 SAME as certificate controller
 
-                    // Create certificate record
-                    await Certificate.create({
+                    // Create certificate record - EXACT same structure as certificate controller
+                    const newCertificate = await Certificate.create({
                         user: userId,
-                        course: course._id,
+                        course: enrollment.course._id,
                         enrollment: enrollmentId,
-                        title: course.title,
+                        title: certificateTitle,
                         completionDate,
                         expirationDate,
                         certificateUrl,
@@ -555,7 +552,18 @@ exports.completeLesson = async (req, res, next) => {
                     });
 
                     console.log(
-                        `✅ [Backend] Certificate generated successfully`
+                        `🎉 [Backend] Certificate created successfully:`,
+                        {
+                            id: newCertificate._id,
+                            title: newCertificate.title,
+                            course: newCertificate.course,
+                            user: newCertificate.user,
+                        }
+                    );
+                } else {
+                    console.log(
+                        `ℹ️ [Backend] Certificate already exists:`,
+                        existingCertificate._id
                     );
                 }
             } catch (certError) {

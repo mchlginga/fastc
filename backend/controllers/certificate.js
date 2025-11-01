@@ -5,6 +5,7 @@ const User = require("../models/user");
 const PDFDocument = require("pdfkit");
 const { statusCodes } = require("../utils/constant");
 const { cloudinary } = require("../config/cloudinary");
+const config = require("../config/index");
 
 // generate cert - UPDATED FOR CLOUDINARY
 const generateCertificatePDF = (
@@ -20,40 +21,48 @@ const generateCertificatePDF = (
             margin: 50,
         });
 
-        // Create buffers instead of file system
+        // 🆕 Create buffers instead of file system
         const buffers = [];
         doc.on("data", buffers.push.bind(buffers));
-        doc.on("end", () => {
+        doc.on("end", async () => {
             const pdfData = Buffer.concat(buffers);
 
-            // Upload to Cloudinary
-            cloudinary.uploader
-                .upload_stream(
-                    {
-                        resource_type: "raw",
-                        folder: "fastc/certificates",
-                        public_id: `certificate_${user._id}_${
-                            course._id
-                        }_${Date.now()}`,
-                        format: "pdf",
-                    },
-                    (error, result) => {
-                        if (error) {
-                            console.error(
-                                "Error uploading certificate to Cloudinary:",
-                                error
-                            );
-                            reject(error);
-                        } else {
-                            console.log(
-                                "Certificate uploaded to Cloudinary:",
-                                result.secure_url
-                            );
-                            resolve(result.secure_url);
-                        }
-                    }
-                )
-                .end(pdfData);
+            try {
+                // 🆕 Upload to Cloudinary as RAW file
+                const result = await new Promise((resolve, reject) => {
+                    cloudinary.uploader
+                        .upload_stream(
+                            {
+                                resource_type: "raw",
+                                folder: "fastc/certificates",
+                                public_id: `certificate_${user._id}_${
+                                    course._id
+                                }_${Date.now()}`,
+                                format: "pdf",
+                            },
+                            (error, result) => {
+                                if (error) {
+                                    console.error(
+                                        "Error uploading certificate to Cloudinary:",
+                                        error
+                                    );
+                                    reject(error);
+                                } else {
+                                    console.log(
+                                        "Certificate uploaded to Cloudinary:",
+                                        result.secure_url
+                                    );
+                                    resolve(result);
+                                }
+                            }
+                        )
+                        .end(pdfData);
+                });
+
+                resolve(result.secure_url);
+            } catch (uploadError) {
+                reject(uploadError);
+            }
         });
 
         // Your existing PDF generation code
@@ -161,6 +170,18 @@ exports.generateCertificate = async (req, res, next) => {
             });
         }
 
+        // 🆕 ADD: Validate course data
+        if (!enrollment.course || !enrollment.course.title) {
+            console.error(
+                `❌ [Certificate] Invalid course data:`,
+                enrollment.course
+            );
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Course data is invalid",
+            });
+        }
+
         // Generate certificate
         const completionDate = enrollment.completedAt || new Date();
         const expirationDate = new Date(completionDate);
@@ -173,12 +194,18 @@ exports.generateCertificate = async (req, res, next) => {
             expirationDate
         );
 
+        // 🆕 FIX: Use consistent title format
+        const certificateTitle = `${enrollment.course.title}`;
+        console.log(
+            `📝 [Certificate] Creating certificate with title: "${certificateTitle}"`
+        );
+
         // Create certificate record
         const certificate = await Certificate.create({
             user: userId,
             course: enrollment.course._id,
             enrollment: enrollmentId,
-            title: enrollment.course.title,
+            title: certificateTitle,
             completionDate,
             expirationDate,
             certificateUrl,
@@ -200,6 +227,234 @@ exports.generateCertificate = async (req, res, next) => {
             },
         });
     } catch (error) {
+        next(error);
+    }
+};
+
+// Download certificate - UPDATED FOR CLOUDINARY
+exports.downloadCertificate = async (req, res, next) => {
+    const { certificateId } = req.params;
+    const userId = req.user.id;
+
+    try {
+        console.log(`📥 Download request for certificate: ${certificateId}`);
+
+        const certificate = await Certificate.findOne({
+            _id: certificateId,
+            user: userId,
+        });
+
+        if (!certificate) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Certificate not found",
+            });
+        }
+
+        console.log(`📄 Certificate URL: ${certificate.certificateUrl}`);
+
+        // 🆕 FIX: Handle Cloudinary URLs with proper streaming
+        if (
+            certificate.certificateUrl &&
+            certificate.certificateUrl.includes("cloudinary")
+        ) {
+            const https = require("https");
+
+            // 🆕 FIX: Use fl_attachment for forced download
+            const cloudinaryUrl = certificate.certificateUrl.replace(
+                "/upload/",
+                "/upload/fl_attachment:FAST-C_Certificate/"
+            );
+
+            console.log(`🔗 Cloudinary download URL: ${cloudinaryUrl}`);
+
+            // 🆕 FIX: Set proper headers for PDF download
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename="FAST-C_Certificate_${certificate.title.replace(
+                    /\s+/g,
+                    "_"
+                )}.pdf"`
+            );
+            res.setHeader("Cache-Control", "no-cache");
+            res.setHeader(
+                "Access-Control-Expose-Headers",
+                "Content-Disposition"
+            );
+
+            // 🆕 FIX: Better error handling for Cloudinary stream
+            return new Promise((resolve, reject) => {
+                https
+                    .get(cloudinaryUrl, (cloudinaryResponse) => {
+                        if (cloudinaryResponse.statusCode !== 200) {
+                            console.error(
+                                `❌ Cloudinary response error: ${cloudinaryResponse.statusCode}`
+                            );
+                            reject(
+                                new Error(
+                                    `Cloudinary returned status ${cloudinaryResponse.statusCode}`
+                                )
+                            );
+                            return;
+                        }
+
+                        // Pipe the Cloudinary response to our response
+                        cloudinaryResponse.pipe(res);
+
+                        cloudinaryResponse.on("end", () => {
+                            console.log("✅ Certificate download completed");
+                            resolve();
+                        });
+
+                        cloudinaryResponse.on("error", (error) => {
+                            console.error("❌ Cloudinary stream error:", error);
+                            reject(error);
+                        });
+                    })
+                    .on("error", (error) => {
+                        console.error("❌ HTTPS request error:", error);
+                        reject(error);
+                    });
+            }).catch((error) => {
+                console.error("❌ Download promise error:", error);
+                return res.status(statusCodes.INTERNAL_SERVER_ERROR).json({
+                    success: false,
+                    message: "Failed to download certificate file from storage",
+                });
+            });
+        } else {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Certificate file not found in storage",
+            });
+        }
+    } catch (error) {
+        console.error(`❌ Download error: ${error.message}`);
+
+        // 🆕 FIX: Only send JSON if headers haven't been sent
+        if (!res.headersSent) {
+            return res.status(statusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "Failed to download certificate",
+                error: error.message,
+            });
+        }
+    }
+};
+
+exports.directDownloadCertificate = async (req, res, next) => {
+    const { certificateId } = req.params;
+    const userId = req.user.id;
+
+    try {
+        const certificate = await Certificate.findOne({
+            _id: certificateId,
+            user: userId,
+        });
+
+        if (!certificate) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Certificate not found",
+            });
+        }
+
+        if (
+            !certificate.certificateUrl ||
+            !certificate.certificateUrl.includes("cloudinary")
+        ) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Certificate file not available",
+            });
+        }
+
+        // 🆕 FIX: Redirect to Cloudinary with download flag
+        const downloadUrl = certificate.certificateUrl.replace(
+            "/upload/",
+            "/upload/fl_attachment:FAST-C_Certificate/"
+        );
+
+        console.log(`🔗 Redirecting to: ${downloadUrl}`);
+        res.redirect(downloadUrl);
+    } catch (error) {
+        console.error(`❌ Direct download error: ${error.message}`);
+        next(error);
+    }
+};
+
+exports.getCertificateUrl = async (req, res, next) => {
+    const { certificateId } = req.params;
+    const userId = req.user.id;
+
+    try {
+        const certificate = await Certificate.findOne({
+            _id: certificateId,
+            user: userId,
+        });
+
+        if (!certificate) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Certificate not found",
+            });
+        }
+
+        // Return the Cloudinary URL for direct download
+        res.status(statusCodes.OK).json({
+            success: true,
+            certificate: {
+                id: certificate._id,
+                title: certificate.title,
+                downloadUrl: certificate.certificateUrl?.includes("cloudinary")
+                    ? certificate.certificateUrl.replace(
+                          "/upload/",
+                          "/upload/fl_attachment/"
+                      )
+                    : certificate.certificateUrl,
+                directDownload:
+                    certificate.certificateUrl?.includes("cloudinary"),
+            },
+        });
+    } catch (error) {
+        console.error(`❌ Get certificate URL error: ${error.message}`);
+        next(error);
+    }
+};
+
+// 🆕 ADD: View certificate (opens in browser instead of download)
+exports.viewCertificate = async (req, res, next) => {
+    const { certificateId } = req.params;
+    const userId = req.user.id;
+
+    try {
+        const certificate = await Certificate.findOne({
+            _id: certificateId,
+            user: userId,
+        });
+
+        if (!certificate) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Certificate not found",
+            });
+        }
+
+        // 🆕 CLOUDINARY: Redirect to view URL (no download flag)
+        if (
+            certificate.certificateUrl &&
+            certificate.certificateUrl.includes("cloudinary")
+        ) {
+            res.redirect(certificate.certificateUrl);
+        } else {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Certificate file not found",
+            });
+        }
+    } catch (error) {
+        console.error(`❌ View error: ${error.message}`);
         next(error);
     }
 };
@@ -298,57 +553,6 @@ exports.getUserCertificates = async (req, res, next) => {
             certificates: formattedCertificates,
         });
     } catch (error) {
-        next(error);
-    }
-};
-
-// ownload certificate
-exports.downloadCertificate = async (req, res, next) => {
-    const { certificateId } = req.params;
-    const userId = req.user.id;
-
-    try {
-        console.log(`📥 Download request for certificate: ${certificateId}`);
-
-        const certificate = await Certificate.findOne({
-            _id: certificateId,
-            user: userId,
-        });
-
-        if (!certificate) {
-            return res.status(statusCodes.NOT_FOUND).json({
-                success: false,
-                message: "Certificate not found",
-            });
-        }
-
-        console.log(`📄 Certificate URL: ${certificate.certificateUrl}`);
-
-        // Cloudinary URL - redirect to Cloudinary download
-        if (certificate.certificateUrl) {
-            res.setHeader("Content-Type", "application/pdf");
-            res.setHeader(
-                "Content-Disposition",
-                `attachment; filename="FAST-C_Certificate_${certificate.title.replace(
-                    /\s+/g,
-                    "_"
-                )}.pdf"`
-            );
-
-            // Redirect to Cloudinary download URL
-            const downloadUrl = certificate.certificateUrl.replace(
-                "/upload/",
-                "/upload/fl_attachment/"
-            );
-            res.redirect(downloadUrl);
-        } else {
-            return res.status(statusCodes.NOT_FOUND).json({
-                success: false,
-                message: "Certificate file not found",
-            });
-        }
-    } catch (error) {
-        console.error(`❌ Download error: ${error.message}`);
         next(error);
     }
 };

@@ -22,7 +22,7 @@ import {
     completeLesson,
     getUserEnrollments,
 } from "../../services/enrollmentService";
-import { generateCertificate } from "../../services/certificateService";
+import { getUserCertificates } from "../../services/certificateService";
 import ToastNotification from "../../components/common/ToastNotification";
 import LoadingState from "../../components/common/LoadingState";
 import ErrorState from "../../components/common/ErrorState";
@@ -195,44 +195,144 @@ function Lesson() {
         }
     }, [user, courseId, lessonId, fetchLessonData]);
 
-    // 🆕 Enhanced certificate generation handler
-    const handleCertificateGeneration = async (enrollmentId) => {
+    const handleCourseCompletion = async () => {
         try {
-            console.log("🎉 Course completed! Generating certificate...");
+            console.log("🎉 Course completed! Checking for certificate...");
 
-            const certificateResponse = await generateCertificate(enrollmentId);
+            // Wait a moment for backend to generate certificate
+            await new Promise((resolve) => setTimeout(resolve, 2000));
 
-            if (certificateResponse.success) {
-                setNewlyGeneratedCertificate(certificateResponse.certificate);
-                setShowCertificateModal(true);
-
-                // Show success toast
-                setToastNotification({
-                    message: "Certificate generated successfully!",
-                    type: "success",
-                });
-
-                console.log("✅ Certificate generated successfully!");
-            }
-        } catch (certError) {
-            console.warn(
-                "⚠️ Certificate generation warning:",
-                certError.message
+            // Refresh enrollment data
+            const enrollmentsResponse = await getUserEnrollments();
+            const courseEnrollment = enrollmentsResponse.enrollments.find(
+                (enroll) => enroll.course.id === courseId
             );
 
-            // Show warning toast but don't block user flow
+            if (courseEnrollment) {
+                // Check if certificate was generated
+                const certificatesResponse = await getUserCertificates();
+                console.log("📜 Certificates response:", certificatesResponse);
+                console.log("🔍 Looking for certificate for course:", courseId);
+
+                // 🆕 FIXED: Better certificate detection logic
+                const newCertificate = certificatesResponse.certificates?.find(
+                    (cert) => {
+                        console.log("🔍 Checking certificate:", {
+                            certCourseId: cert.course?._id || cert.course,
+                            targetCourseId: courseId,
+                            match:
+                                (cert.course?._id || cert.course) === courseId,
+                        });
+                        return (cert.course?._id || cert.course) === courseId;
+                    }
+                );
+
+                if (newCertificate) {
+                    console.log("✅ Certificate found:", newCertificate);
+                    setNewlyGeneratedCertificate(newCertificate);
+                    setShowCertificateModal(true);
+
+                    setToastNotification({
+                        message:
+                            "Course completed! Certificate generated successfully!",
+                        type: "success",
+                    });
+                } else {
+                    console.log(
+                        "⏳ Certificate not found yet, might be generating..."
+                    );
+                    console.log(
+                        "📋 Available certificates:",
+                        certificatesResponse.certificates
+                    );
+
+                    // 🆕 IMPROVED: Try alternative detection methods
+                    const alternativeCert =
+                        certificatesResponse.certificates?.find((cert) =>
+                            cert.title?.includes(course?.title)
+                        );
+
+                    if (alternativeCert) {
+                        console.log(
+                            "✅ Found certificate via title match:",
+                            alternativeCert
+                        );
+                        setNewlyGeneratedCertificate(alternativeCert);
+                        setShowCertificateModal(true);
+                    } else {
+                        // Show success message anyway
+                        setToastNotification({
+                            message:
+                                "Course completed! Your certificate is being generated and will be available shortly.",
+                            type: "success",
+                        });
+
+                        // 🆕 IMPROVED: Check again with more detailed logging
+                        setTimeout(async () => {
+                            try {
+                                console.log("🔄 Retrying certificate check...");
+                                const certResponse =
+                                    await getUserCertificates();
+                                const cert = certResponse.certificates?.find(
+                                    (c) => {
+                                        const certCourseId =
+                                            c.course?._id || c.course;
+                                        console.log("🔄 Retry check:", {
+                                            certCourseId,
+                                            targetCourseId: courseId,
+                                        });
+                                        return certCourseId === courseId;
+                                    }
+                                );
+                                if (cert) {
+                                    console.log(
+                                        "✅ Certificate found on retry:",
+                                        cert
+                                    );
+                                    setNewlyGeneratedCertificate(cert);
+                                    setShowCertificateModal(true);
+                                } else {
+                                    console.log(
+                                        "❌ Still no certificate found on retry"
+                                    );
+                                    console.log(
+                                        "📋 Available certificates on retry:",
+                                        certResponse.certificates
+                                    );
+                                }
+                            } catch (error) {
+                                console.log(
+                                    "Certificate retry check failed:",
+                                    error
+                                );
+                            }
+                        }, 3000);
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn("Certificate check warning:", error);
+            // Still show success for course completion
             setToastNotification({
-                message:
-                    "Course completed! Certificate may take a moment to generate.",
-                type: "success", // Still show as success since course completion is main event
+                message: "Course completed successfully!",
+                type: "success",
             });
         }
     };
 
-    // 🆕 Certificate modal handlers
     const handleViewCertificate = () => {
         if (newlyGeneratedCertificate) {
-            navigate("/user/certificates");
+            try {
+                const backendUrl =
+                    import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+                const viewUrl = `${backendUrl}/api/certificate/${newlyGeneratedCertificate.id}/view`;
+                console.log(`🔗 Opening certificate URL: ${viewUrl}`);
+                window.open(viewUrl, "_blank", "noopener,noreferrer");
+            } catch (error) {
+                console.error("Error viewing certificate:", error);
+
+                navigate("/user/certificates");
+            }
         } else {
             navigate("/user/certificates");
         }
@@ -242,39 +342,67 @@ function Lesson() {
     const handleDownloadCertificate = async () => {
         if (newlyGeneratedCertificate) {
             try {
-                const { downloadCertificate } = await import(
+                const { downloadCertificateEnhanced } = await import(
                     "../../services/certificateService"
                 );
-                const blob = await downloadCertificate(
-                    newlyGeneratedCertificate.id
+
+                console.log("📥 Starting certificate download...");
+
+                const blob = await downloadCertificateEnhanced(
+                    newlyGeneratedCertificate.id,
+                    course?.title
                 );
 
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.setAttribute(
-                    "download",
-                    `FAST-C_Certificate_${course?.title.replace(
-                        /\s+/g,
-                        "_"
-                    )}.pdf`
-                );
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                window.URL.revokeObjectURL(url);
+                // 🆕 FIX: Only create download link if we have a valid blob
+                if (blob && blob.size > 0) {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.setAttribute(
+                        "download",
+                        `FAST-C_Certificate_${course?.title.replace(
+                            /\s+/g,
+                            "_"
+                        )}.pdf`
+                    );
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
 
-                setToastNotification({
-                    message: "Certificate downloaded successfully!",
-                    type: "success",
-                });
+                    setToastNotification({
+                        message: "Certificate downloaded successfully!",
+                        type: "success",
+                    });
+                } else {
+                    // If blob is empty, try direct download method
+                    const { downloadCertificateDirect } = await import(
+                        "../../services/certificateService"
+                    );
+                    await downloadCertificateDirect(
+                        newlyGeneratedCertificate.id,
+                        course?.title
+                    );
+
+                    setToastNotification({
+                        message: "Certificate download initiated!",
+                        type: "success",
+                    });
+                }
             } catch (err) {
+                console.error("❌ Download error in component:", err);
                 setToastNotification({
                     message:
+                        err.message ||
                         "Failed to download certificate. Please try from certificates page.",
                     type: "error",
                 });
             }
+        } else {
+            setToastNotification({
+                message: "Certificate not available for download yet.",
+                type: "warning",
+            });
         }
         setShowCertificateModal(false);
     };
@@ -318,7 +446,7 @@ function Lesson() {
 
                 // 🆕 ENHANCED: Check if course is completed and handle certificate
                 if (updatedEnrollment.status === "completed") {
-                    await handleCertificateGeneration(updatedEnrollment.id);
+                    await handleCourseCompletion();
                 } else {
                     // Show lesson completion success
                     setToastNotification({
@@ -395,7 +523,7 @@ function Lesson() {
             const currentIndex =
                 course.lessons?.findIndex((l) => l._id === lessonId) ?? -1;
             const lessonIndex =
-                course.lessons?.findIndex((l) => l._id === lesson._id) ?? -1;
+                course.lessons?.findIndex((l) => l._d === lesson._id) ?? -1;
 
             if (lessonIndex <= currentIndex) {
                 return "available";

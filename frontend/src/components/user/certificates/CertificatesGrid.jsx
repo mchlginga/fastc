@@ -51,12 +51,16 @@ function CertificatesGrid({
     const handleView = async (certificateId, title) => {
         try {
             setViewingId(certificateId);
-            const blob = await onViewCertificate(certificateId, title);
-            const url = window.URL.createObjectURL(blob);
-            window.open(url, "_blank", "noopener,noreferrer");
-            setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+
+            // 🆕 FIXED: Use Vite environment variables
+            const backendUrl =
+                import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+            const viewUrl = `${backendUrl}/api/certificate/${certificateId}/view`;
+            console.log(`🔗 Opening certificate URL: ${viewUrl}`);
+            window.open(viewUrl, "_blank", "noopener,noreferrer");
         } catch (err) {
             console.error(`View error: ${err.message}`);
+            alert(`Failed to view certificate: ${err.message}`);
         } finally {
             setViewingId(null);
         }
