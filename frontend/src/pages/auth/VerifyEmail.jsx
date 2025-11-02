@@ -274,10 +274,10 @@ const VerifyEmail = () => {
                     <p className="text-center text-sm text-gray-600 cursor-default">
                         Return to{" "}
                         <Link
-                            to="/login"
+                            to="/register"
                             className="font-medium text-blue-600 hover:text-blue-800 transition duration-200 cursor-pointer"
                         >
-                            Login
+                            Register
                         </Link>
                     </p>
                 </div>

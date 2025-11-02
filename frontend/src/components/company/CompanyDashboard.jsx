@@ -23,6 +23,9 @@ import {
 // Skeleton Component
 import AdminJobMatchingSkeleton from "../../components/admin/job-matching/AdminJobMatchingSkeleton";
 
+// 🆕 NEW: Company Profile Alert
+import CompanyProfileAlert from "../../components/company/CompanyProfileAlert";
+
 const CompanyDashboard = () => {
     const { user } = useAuth();
     const [trainees, setTrainees] = useState([]);
@@ -65,9 +68,10 @@ const CompanyDashboard = () => {
     });
     const [toastNotification, setToastNotification] = useState(null);
 
-    // Check if user has access to this dashboard
-    const hasAccess =
-        user && (user.role === "company" || user.role === "superAdmin");
+    // 🆕 UPDATED: Check access based on role AND profile status
+    const hasAccess = user && (user.role === "company" || user.role === "superAdmin");
+    const isPendingCompany = user?.role === "company" && user?.profileStatus === "pending";
+    const canExportCSV = !isPendingCompany; // 🆕 NEW: Block CSV export for pending companies
 
     useEffect(() => {
         const fetchTraineesAndData = async () => {
@@ -162,6 +166,14 @@ const CompanyDashboard = () => {
         });
     };
 
+    // 🆕 NEW: Handle individual filter removal
+    const handleRemoveFilter = (category, value) => {
+        setFilters((prev) => ({
+            ...prev,
+            [category]: prev[category].filter((v) => v !== value),
+        }));
+    };
+
     const toggleSection = (section) => {
         setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
     };
@@ -180,6 +192,15 @@ const CompanyDashboard = () => {
     };
 
     const exportToCSV = async () => {
+        // 🆕 NEW: Block CSV export for pending companies
+        if (isPendingCompany) {
+            setToastNotification({
+                message: "CSV export is disabled while your profile is under review",
+                type: "warning",
+            });
+            return;
+        }
+
         try {
             setExporting(true);
 
@@ -234,7 +255,7 @@ const CompanyDashboard = () => {
                 filters: filters,
                 matchCriteria: {
                     sortBy,
-                    hasFilters: hasFilters,
+                    hasFilters,
                 },
             });
 
@@ -266,6 +287,9 @@ const CompanyDashboard = () => {
     const getHeaderDescription = () => {
         if (user?.role === "superAdmin") {
             return "Manage and explore the talent pool as a system administrator";
+        }
+        if (isPendingCompany) {
+            return "Explore potential matches while your profile is under review (limited access)";
         }
         return "Find qualified trainees that match your company's needs using AI-powered matching";
     };
@@ -322,6 +346,9 @@ const CompanyDashboard = () => {
     return (
         <div className="min-h-screen bg-gray-50 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* 🆕 NEW: Company Profile Alert */}
+                <CompanyProfileAlert user={user} />
+
                 {/* Header - Dynamic based on role */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between">
@@ -336,6 +363,11 @@ const CompanyDashboard = () => {
                         {user?.role === "superAdmin" && (
                             <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
                                 Admin Mode
+                            </div>
+                        )}
+                        {isPendingCompany && (
+                            <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                                Pending Approval
                             </div>
                         )}
                     </div>
@@ -379,6 +411,9 @@ const CompanyDashboard = () => {
                             onSortChange={setSortBy}
                             onExport={exportToCSV}
                             onClearFilters={clearFilters}
+                            filters={filters} // 🆕 NEW: Pass filters for active filter display
+                            onRemoveFilter={handleRemoveFilter} // 🆕 NEW: Pass remove filter function
+                            isPendingCompany={isPendingCompany} // 🆕 NEW: Pass pending status
                         />
                     </div>
                 </div>

@@ -8,13 +8,26 @@ const tf = require("@tensorflow/tfjs");
 const NodeCache = require("node-cache");
 const cache = new NodeCache({ stdTTL: 300 });
 
+const filterTraineeDataForCompany = (trainees, companyProfileStatus) => {
+    if (companyProfileStatus !== "pending") {
+        return trainees; // Return full data for approved companies
+    }
+
+    // For pending companies, remove sensitive contact information
+    return trainees.map((trainee) => ({
+        ...trainee,
+        email: "Contact details available after company approval", // 🆕 HIDE email
+        contactNumber: undefined, // 🆕 REMOVE contact number
+        // Keep all other data intact for job matching exploration
+    }));
+};
+
 // Model and stats
 let trainedModel = null;
 let isTraining = false;
 let trainingPromise = null;
 let datasetStats = null;
 
-// 🆕 IMPROVED: Enhanced dataset statistics with better percentile calculation
 const getDatasetStatistics = async () => {
     const cacheKey = "datasetStatistics";
     const cached = cache.get(cacheKey);
@@ -610,7 +623,6 @@ const calculateJobMatch = async (
     }
 };
 
-// 🆕 IMPROVED: Main job matching function
 exports.getJobMatches = async (req, res, next) => {
     try {
         const { skills, certifications, availability, issuer, category } =
@@ -688,11 +700,18 @@ exports.getJobMatches = async (req, res, next) => {
             );
         }
 
+        // 🆕 NEW: Filter contact details for pending companies
+        const companyProfileStatus = req.user?.profileStatus;
+        const finalTrainees = filterTraineeDataForCompany(
+            filteredTrainees,
+            companyProfileStatus
+        );
+
         // Get dynamic data
         const dynamicData = await getDynamicSkillsData();
 
         const response = {
-            trainees: filteredTrainees,
+            trainees: finalTrainees, // 🆕 UPDATED: Use filtered trainees
             filterOptions: {
                 skills: dynamicData.skills,
                 certifications: dynamicData.certificates,

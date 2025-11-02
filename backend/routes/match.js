@@ -11,9 +11,21 @@ const {
 router.use(protect);
 
 // Admin and superAdmin routes
-router.get("/matches", checkRoles(["superAdmin", "admin"]), getJobMatches);
-router.get("/stats", checkRoles(["superAdmin", "admin"]), getMatchingStats);
-router.post("/log-export", checkRoles(["superAdmin", "admin"]), logCsvExport);
+router.get(
+    "/matches",
+    checkRoles(["superAdmin", "admin", "company"]),
+    getJobMatches
+);
+router.get(
+    "/stats",
+    checkRoles(["superAdmin", "admin", "company"]),
+    getMatchingStats
+);
+router.post(
+    "/log-export",
+    checkRoles(["superAdmin", "admin", "company"]),
+    logCsvExport
+);
 
 // Company routes (similar functionality but for company perspective)
 router.get("/company/matches", checkRoles(["company"]), getJobMatches);

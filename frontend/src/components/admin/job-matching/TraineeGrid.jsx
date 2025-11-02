@@ -1,4 +1,3 @@
-// C:\Users\y\OneDrive\Desktop\fastc\frontend\src\components\admin\job-matching\TraineeGrid.jsx
 import { Download, Filter, X } from "react-feather";
 import { memo } from "react";
 import TraineeCard from "./TraineeCard";
@@ -61,6 +60,7 @@ const TraineeGrid = memo(
         onClearFilters,
         filters = {},
         onRemoveFilter, // 🆕 NEW: Add this prop
+        isPendingCompany = false, // 🆕 NEW: Add pending company status
     }) => {
         const getMatchBadgeClass = (matchLevel) => {
             switch (matchLevel) {
@@ -110,6 +110,13 @@ const TraineeGrid = memo(
                                     certificates, and availability
                                 </p>
                             )}
+                            {/* 🆕 NEW: Pending company notice */}
+                            {isPendingCompany && (
+                                <p className="text-xs text-yellow-600 mt-1">
+                                    🔒 Limited view - Contact details hidden
+                                    during approval process
+                                </p>
+                            )}
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3">
                             <select
@@ -128,11 +135,21 @@ const TraineeGrid = memo(
                             </select>
                             <button
                                 onClick={onExport}
-                                disabled={exporting || trainees.length === 0}
+                                disabled={
+                                    exporting ||
+                                    trainees.length === 0 ||
+                                    isPendingCompany
+                                } // 🆕 UPDATED: Disable for pending companies
                                 className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={
+                                    isPendingCompany
+                                        ? "Export available after profile approval"
+                                        : "Export to CSV"
+                                }
                             >
                                 <Download size={16} className="mr-2" />
                                 {exporting ? "Exporting..." : "Export to CSV"}
+                                {isPendingCompany && " 🔒"}
                             </button>
                         </div>
                     </div>
@@ -174,6 +191,7 @@ const TraineeGrid = memo(
                                 trainee={trainee}
                                 getMatchBadgeClass={getMatchBadgeClass}
                                 hasFilters={hasFilters}
+                                isPendingCompany={isPendingCompany} // 🆕 NEW: Pass pending status
                             />
                         ))
                     )}

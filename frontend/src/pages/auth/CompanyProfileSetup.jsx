@@ -26,7 +26,7 @@ const CompanyProfileSetup = () => {
             name: "",
             email: "",
             contactNumber: "",
-        }
+        },
     });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -45,8 +45,8 @@ const CompanyProfileSetup = () => {
             ...prev,
             representative: {
                 ...prev.representative,
-                [name]: value
-            }
+                [name]: value,
+            },
         }));
         setError("");
     };
@@ -71,7 +71,8 @@ const CompanyProfileSetup = () => {
         } else if (step === 2) {
             if (!form.representative.name) errors.push("Representative Name");
             if (!form.representative.email) errors.push("Representative Email");
-            if (!form.representative.contactNumber) errors.push("Representative Contact Number");
+            if (!form.representative.contactNumber)
+                errors.push("Representative Contact Number");
         }
 
         return errors;
@@ -94,7 +95,7 @@ const CompanyProfileSetup = () => {
 
     // Skip profile setup - redirect to dashboard
     const handleSkip = () => {
-        navigate("/company", { replace: true });
+        navigate("/pending-approval", { replace: true });
     };
 
     // Submit handler - ALIGNED WITH BACKEND
@@ -122,7 +123,7 @@ const CompanyProfileSetup = () => {
             setUser(updatedUser);
 
             // Redirect to company dashboard
-            navigate("/company", { replace: true });
+            navigate("/pending-approval", { replace: true });
         } catch (error) {
             setError(
                 error.message || "Failed to save profile. Please try again."
@@ -255,7 +256,8 @@ const CompanyProfileSetup = () => {
                                 </div>
                                 {form.businessPermit && (
                                     <p className="text-sm text-green-600 mt-1">
-                                        File selected: {form.businessPermit.name}
+                                        File selected:{" "}
+                                        {form.businessPermit.name}
                                     </p>
                                 )}
                             </div>
@@ -336,7 +338,9 @@ const CompanyProfileSetup = () => {
                                     <input
                                         type="tel"
                                         name="contactNumber"
-                                        value={form.representative.contactNumber}
+                                        value={
+                                            form.representative.contactNumber
+                                        }
                                         onChange={handleRepresentativeChange}
                                         required
                                         placeholder="+63 987 654 3210"

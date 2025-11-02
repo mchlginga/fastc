@@ -1,6 +1,11 @@
 import React from "react";
 
-const TraineeCard = ({ trainee, getMatchBadgeClass, hasFilters }) => {
+const TraineeCard = ({
+    trainee,
+    getMatchBadgeClass,
+    hasFilters,
+    isPendingCompany = false,
+}) => {
     const skills = trainee.match.factors?.skillDetails || [];
     const certs = trainee.certificates || [];
 
@@ -39,7 +44,16 @@ const TraineeCard = ({ trainee, getMatchBadgeClass, hasFilters }) => {
                         <h3 className="font-semibold text-gray-900">
                             {trainee.name}
                         </h3>
-                        <p className="text-sm text-gray-500">{trainee.email}</p>
+                        {/* 🆕 UPDATED: Hide email for pending companies */}
+                        {!isPendingCompany ? (
+                            <p className="text-sm text-gray-500">
+                                {trainee.email}
+                            </p>
+                        ) : (
+                            <p className="text-sm text-gray-400 italic">
+                                Contact details available after approval
+                            </p>
+                        )}
                     </div>
                 </div>
                 <div
@@ -109,6 +123,15 @@ const TraineeCard = ({ trainee, getMatchBadgeClass, hasFilters }) => {
                     </span>
                 )}
             </div>
+
+            {/* 🆕 NEW: Info message for pending companies */}
+            {isPendingCompany && (
+                <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-700 text-center">
+                        🔒 Full profile access after approval
+                    </p>
+                </div>
+            )}
         </div>
     );
 };
