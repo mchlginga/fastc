@@ -1,6 +1,5 @@
 const Course = require("../models/course");
 const Enrollment = require("../models/enrollment");
-const Completion = require("../models/completion");
 const { statusCodes } = require("../utils/constant");
 
 exports.getCourses = async (req, res, next) => {

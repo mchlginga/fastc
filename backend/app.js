@@ -20,9 +20,11 @@ const config = require("./config/index");
 // models
 require("./models/user");
 require("./models/course");
-require("./models/completion");
+require("./models/enrollment");
+require("./models/certificate");
 require("./models/exportLog");
 require("./models/attendance");
+require("./models/skill");
 
 const {
     auth,
@@ -30,7 +32,6 @@ const {
     courses,
     enrollment,
     certificate,
-    progress,
     attendance,
     adminUsers,
     adminCourses,
@@ -81,7 +82,6 @@ app.use("/api/user", user);
 app.use("/api/courses", courses);
 app.use("/api/enrollment", enrollment);
 app.use("/api/certificate", certificate);
-app.use("/api/progress", progress);
 app.use("/api/attendance", attendance);
 app.use("/api/admin", adminUsers);
 app.use("/api/admin", adminCourses);

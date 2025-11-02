@@ -52,16 +52,38 @@ function CertificatesGrid({
         try {
             setViewingId(certificateId);
 
-            // 🆕 FIXED: Use Vite environment variables
+            // 🆕 FIXED: Get token from localStorage and pass it in URL
+            const token = localStorage.getItem("token");
+            if (!token) {
+                throw new Error(
+                    "Authentication token not found. Please log in again."
+                );
+            }
+
+            // 🆕 FIXED: Use Vite environment variables with token parameter
             const backendUrl =
                 import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-            const viewUrl = `${backendUrl}/api/certificate/${certificateId}/view`;
+            const viewUrl = `${backendUrl}/api/certificate/${certificateId}/view?token=${encodeURIComponent(
+                token
+            )}`;
+
             console.log(`🔗 Opening certificate URL: ${viewUrl}`);
-            window.open(viewUrl, "_blank", "noopener,noreferrer");
+
+            // Open in new tab
+            const newWindow = window.open(
+                viewUrl,
+                "_blank",
+                "noopener,noreferrer"
+            );
+
+            if (!newWindow) {
+                throw new Error(
+                    "Popup blocked. Please allow popups for this site."
+                );
+            }
         } catch (err) {
             console.error(`View error: ${err.message}`);
             alert(`Failed to view certificate: ${err.message}`);
-        } finally {
             setViewingId(null);
         }
     };

@@ -3,7 +3,6 @@ const user = require("./user");
 const courses = require("./course");
 const enrollment = require("./enrollment");
 const certificate = require("./certificate");
-const progress = require("./progress");
 const attendance = require("./attendance");
 const adminUsers = require("./adminUsers");
 const adminCourses = require("./adminCourses");
@@ -22,7 +21,6 @@ module.exports = {
     courses,
     enrollment,
     certificate,
-    progress,
     attendance,
     adminUsers,
     adminCourses,
