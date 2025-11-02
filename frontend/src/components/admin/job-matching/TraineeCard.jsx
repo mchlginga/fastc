@@ -128,7 +128,7 @@ const TraineeCard = ({
             {isPendingCompany && (
                 <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-xs text-blue-700 text-center">
-                        🔒 Full profile access after approval
+                        Full profile access after approval
                     </p>
                 </div>
             )}

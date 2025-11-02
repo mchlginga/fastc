@@ -110,13 +110,6 @@ const TraineeGrid = memo(
                                     certificates, and availability
                                 </p>
                             )}
-                            {/* 🆕 NEW: Pending company notice */}
-                            {isPendingCompany && (
-                                <p className="text-xs text-yellow-600 mt-1">
-                                    🔒 Limited view - Contact details hidden
-                                    during approval process
-                                </p>
-                            )}
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3">
                             <select
@@ -149,7 +142,7 @@ const TraineeGrid = memo(
                             >
                                 <Download size={16} className="mr-2" />
                                 {exporting ? "Exporting..." : "Export to CSV"}
-                                {isPendingCompany && " 🔒"}
+                                {isPendingCompany && " "}
                             </button>
                         </div>
                     </div>
@@ -191,7 +184,7 @@ const TraineeGrid = memo(
                                 trainee={trainee}
                                 getMatchBadgeClass={getMatchBadgeClass}
                                 hasFilters={hasFilters}
-                                isPendingCompany={isPendingCompany} // 🆕 NEW: Pass pending status
+                                isPendingCompany={isPendingCompany}
                             />
                         ))
                     )}

@@ -95,7 +95,7 @@ const CompanyProfileSetup = () => {
 
     // Skip profile setup - redirect to dashboard
     const handleSkip = () => {
-        navigate("/pending-approval", { replace: true });
+        navigate("/company", { replace: true }); // 🆕 UPDATED: Go to dashboard
     };
 
     // Submit handler - ALIGNED WITH BACKEND
@@ -122,8 +122,8 @@ const CompanyProfileSetup = () => {
             // Update auth context
             setUser(updatedUser);
 
-            // Redirect to company dashboard
-            navigate("/pending-approval", { replace: true });
+            // 🆕 UPDATED: Redirect to COMPANY DASHBOARD (not pending-approval)
+            navigate("/company", { replace: true });
         } catch (error) {
             setError(
                 error.message || "Failed to save profile. Please try again."
@@ -262,6 +262,16 @@ const CompanyProfileSetup = () => {
                                 )}
                             </div>
 
+                            {/* 🆕 NEW: Info message about limited access */}
+                            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p className="text-xs text-blue-700 text-center">
+                                    <strong>Note:</strong> You'll have access to
+                                    job matching features immediately, but with
+                                    limited data visibility until admin
+                                    approval.
+                                </p>
+                            </div>
+
                             <button
                                 type="button"
                                 onClick={handleNext}
@@ -386,7 +396,7 @@ const CompanyProfileSetup = () => {
                                             Saving...
                                         </span>
                                     ) : (
-                                        "Complete Profile"
+                                        "Complete Profile & Go to Dashboard"
                                     )}
                                 </button>
                             </div>
