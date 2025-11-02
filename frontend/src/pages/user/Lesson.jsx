@@ -323,14 +323,31 @@ function Lesson() {
     const handleViewCertificate = () => {
         if (newlyGeneratedCertificate) {
             try {
+                // 🆕 FIXED: Get token from localStorage and pass it in URL
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    throw new Error(
+                        "Authentication token not found. Please log in again."
+                    );
+                }
+
                 const backendUrl =
                     import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-                const viewUrl = `${backendUrl}/api/certificate/${newlyGeneratedCertificate.id}/view`;
+                const viewUrl = `${backendUrl}/api/certificate/${
+                    newlyGeneratedCertificate.id
+                }/view?token=${encodeURIComponent(token)}`;
+
                 console.log(`🔗 Opening certificate URL: ${viewUrl}`);
                 window.open(viewUrl, "_blank", "noopener,noreferrer");
             } catch (error) {
                 console.error("Error viewing certificate:", error);
 
+                // Fallback to certificates page
+                setToastNotification({
+                    message:
+                        "Failed to open certificate. Redirecting to certificates page.",
+                    type: "error",
+                });
                 navigate("/user/certificates");
             }
         } else {
@@ -375,13 +392,20 @@ function Lesson() {
                         type: "success",
                     });
                 } else {
-                    // If blob is empty, try direct download method
-                    const { downloadCertificateDirect } = await import(
-                        "../../services/certificateService"
-                    );
-                    await downloadCertificateDirect(
-                        newlyGeneratedCertificate.id,
-                        course?.title
+                    // If blob is empty, try direct download method with token
+                    const token = localStorage.getItem("token");
+                    const backendUrl =
+                        import.meta.env.VITE_BACKEND_URL ||
+                        "http://localhost:5000";
+                    const directDownloadUrl = `${backendUrl}/api/certificate/${
+                        newlyGeneratedCertificate.id
+                    }/direct-download?token=${encodeURIComponent(token)}`;
+
+                    // Open direct download in new tab
+                    window.open(
+                        directDownloadUrl,
+                        "_blank",
+                        "noopener,noreferrer"
                     );
 
                     setToastNotification({
