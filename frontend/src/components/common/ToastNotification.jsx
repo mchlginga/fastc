@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { X, Check, Clock } from "react-feather";
+import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "react-feather";
 
 const ToastNotification = ({ message, type = "success", onClose }) => {
     useEffect(() => {
@@ -12,45 +12,61 @@ const ToastNotification = ({ message, type = "success", onClose }) => {
     const getToastStyles = () => {
         switch (type) {
             case "success":
-                return "bg-green-50 border-green-200 text-green-800";
+                return {
+                    bg: "bg-emerald-50",
+                    border: "border-emerald-200",
+                    text: "text-emerald-800",
+                    icon: <CheckCircle size={20} className="text-emerald-600" />
+                };
             case "error":
-                return "bg-red-50 border-red-200 text-red-800";
+                return {
+                    bg: "bg-red-50",
+                    border: "border-red-200",
+                    text: "text-red-800",
+                    icon: <AlertCircle size={20} className="text-red-600" />
+                };
             case "warning":
-                return "bg-yellow-50 border-yellow-200 text-yellow-800";
+                return {
+                    bg: "bg-amber-50",
+                    border: "border-amber-200",
+                    text: "text-amber-800",
+                    icon: <AlertTriangle size={20} className="text-amber-600" />
+                };
             case "info":
-                return "bg-blue-50 border-blue-200 text-blue-800";
+                return {
+                    bg: "bg-blue-50",
+                    border: "border-blue-200",
+                    text: "text-blue-800",
+                    icon: <Info size={20} className="text-blue-600" />
+                };
             default:
-                return "bg-blue-50 border-blue-200 text-blue-800";
+                return {
+                    bg: "bg-blue-50",
+                    border: "border-blue-200",
+                    text: "text-blue-800",
+                    icon: <Info size={20} className="text-blue-600" />
+                };
         }
     };
 
-    const getIcon = () => {
-        switch (type) {
-            case "success":
-                return <Check size={20} className="text-green-600 mr-3" />;
-            case "error":
-                return <X size={20} className="text-red-600 mr-3" />;
-            case "warning":
-                return <Clock size={20} className="text-yellow-600 mr-3" />;
-            case "info":
-                return <Clock size={20} className="text-blue-600 mr-3" />;
-            default:
-                return <Clock size={20} className="text-blue-600 mr-3" />;
-        }
-    };
+    const styles = getToastStyles();
 
     return (
-        <div className="fixed top-4 right-4 z-[102] transform transition-transform duration-300 animate-in slide-in-from-right">
+        <div className="fixed top-4 right-4 z-50 transform transition-all duration-300 animate-in slide-in-from-right-full">
             <div
-                className={`flex items-center p-4 rounded-lg shadow-lg border ${getToastStyles()}`}
+                className={`flex items-center gap-3 p-4 rounded-xl border shadow-lg ${styles.bg} ${styles.border} ${styles.text}`}
             >
-                <div className="flex items-center">
-                    {getIcon()}
-                    <span className="text-sm font-medium">{message}</span>
+                <div className="flex-shrink-0">
+                    {styles.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium leading-relaxed">
+                        {message}
+                    </p>
                 </div>
                 <button
                     onClick={onClose}
-                    className="ml-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+                    className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer"
                 >
                     <X size={16} />
                 </button>

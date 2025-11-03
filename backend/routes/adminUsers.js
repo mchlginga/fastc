@@ -4,36 +4,49 @@ const { protect, checkRoles } = require("../middlewares/index");
 const {
     getUsers,
     getUserById,
+    createUser,
     updateUserStatus,
     bulkUpdateUserStatus,
-    createUser,
     updateUser,
     deleteUser,
 } = require("../controllers/adminUsers");
 
-// All routes are protected and require admin role
-router.use(protect);
-router.use(checkRoles(["admin", "superAdmin"]));
+// User management routes - SPECIFIC ROUTES FIRST
+router.get("/users", protect, checkRoles(["superAdmin", "admin"]), getUsers);
+router.post("/users", protect, checkRoles(["superAdmin", "admin"]), createUser);
 
-// Get all users with filters
-router.get("/users", getUsers);
+// BULK ROUTES - MUST COME BEFORE PARAMETERIZED ROUTES
+router.patch(
+    "/users/bulk/status",
+    protect,
+    checkRoles(["superAdmin", "admin"]),
+    bulkUpdateUserStatus
+);
 
-// Get specific user
-router.get("/users/:id", getUserById);
-
-// Create new user
-router.post("/users", createUser);
-
-// Update user status
-router.patch("/users/:id/status", updateUserStatus);
-
-// Bulk update user status
-router.patch("/users/bulk/status", bulkUpdateUserStatus);
-
-// Update user details
-router.put("/users/:id", updateUser);
-
-// Delete user
-router.delete("/users/:id", deleteUser);
+// PARAMETERIZED ROUTES - MUST COME AFTER SPECIFIC ROUTES
+router.get(
+    "/users/:id",
+    protect,
+    checkRoles(["superAdmin", "admin"]),
+    getUserById
+);
+router.patch(
+    "/users/:id/status",
+    protect,
+    checkRoles(["superAdmin", "admin"]),
+    updateUserStatus
+);
+router.put(
+    "/users/:id",
+    protect,
+    checkRoles(["superAdmin", "admin"]),
+    updateUser
+);
+router.delete(
+    "/users/:id",
+    protect,
+    checkRoles(["superAdmin", "admin"]),
+    deleteUser
+);
 
 module.exports = router;

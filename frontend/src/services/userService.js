@@ -183,13 +183,26 @@ export const adminUserService = {
         }
     },
 
-    // Bulk update user status
+    // Bulk update user status - FIXED
     bulkUpdateUserStatus: async (userIds, status) => {
         try {
+            console.log("Sending bulk update request:", { userIds, status });
+
+            // Ensure userIds is a proper array of valid MongoDB ObjectIds
+            const validUserIds = userIds.filter(
+                (id) => id && id.length === 24 && /^[0-9a-fA-F]{24}$/.test(id)
+            );
+
+            if (validUserIds.length === 0) {
+                throw new Error("No valid user IDs provided for bulk update");
+            }
+
             const response = await api.patch("/admin/users/bulk/status", {
-                userIds,
+                userIds: validUserIds,
                 status,
             });
+
+            console.log("Bulk update response:", response.data);
             return response.data;
         } catch (error) {
             console.error("Error bulk updating user status:", error);

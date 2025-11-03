@@ -48,6 +48,14 @@ function AdminUsers() {
     );
     const [showFilters, setShowFilters] = useState(false);
 
+    // Pagination
+    const [pagination, setPagination] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        totalUsers: 0,
+        usersPerPage: 10,
+    });
+
     // Selected users for bulk actions
     const [selectedUsers, setSelectedUsers] = useState(new Set());
     const [selectAll, setSelectAll] = useState(false);
@@ -60,55 +68,33 @@ function AdminUsers() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
     const [bulkDelete, setBulkDelete] = useState(false);
-    const [deleteLoading, setDeleteLoading] = useState(false); // NEW: Loading state for delete
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
-    // Fetch users
+    // Fetch users - UPDATED: Remove filtered dependencies
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [pagination.currentPage, pagination.usersPerPage]); // Only depend on pagination
 
     // Update URL when filters change
     useEffect(() => {
         const params = new URLSearchParams();
         if (statusFilter !== "all") params.set("status", statusFilter);
         if (roleFilter !== "all") params.set("role", roleFilter);
+        if (pagination.currentPage > 1)
+            params.set("page", pagination.currentPage);
         setSearchParams(params);
-    }, [statusFilter, roleFilter, setSearchParams]);
+    }, [statusFilter, roleFilter, pagination.currentPage, setSearchParams]);
 
-    // Filter users when search or filters change
+    // Filter users when search or filters change - UPDATED: Reset to page 1 when filters change
     useEffect(() => {
-        let filtered = users;
-
-        if (searchTerm) {
-            filtered = filtered.filter(
-                (user) =>
-                    user.email
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    user.firstName
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    user.surname
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    user.companyName
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase())
-            );
+        // Reset to first page when filters change
+        if (pagination.currentPage !== 1) {
+            setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        } else {
+            // If already on page 1, trigger fetch
+            fetchUsers();
         }
-
-        if (statusFilter !== "all") {
-            filtered = filtered.filter(
-                (user) => user.profileStatus === statusFilter
-            );
-        }
-
-        if (roleFilter !== "all") {
-            filtered = filtered.filter((user) => user.role === roleFilter);
-        }
-
-        setFilteredUsers(filtered);
-    }, [users, searchTerm, statusFilter, roleFilter]);
+    }, [searchTerm, statusFilter, roleFilter]);
 
     const fetchUsers = async () => {
         try {
@@ -117,10 +103,17 @@ function AdminUsers() {
                 search: searchTerm,
                 status: statusFilter !== "all" ? statusFilter : "",
                 role: roleFilter !== "all" ? roleFilter : "",
-                page: 1,
-                limit: 50,
+                page: pagination.currentPage,
+                limit: pagination.usersPerPage,
             });
             setUsers(response.users);
+            setFilteredUsers(response.users); // Set filteredUsers to the API response
+            setPagination((prev) => ({
+                ...prev,
+                currentPage: response.pagination.currentPage,
+                totalPages: response.pagination.totalPages,
+                totalUsers: response.pagination.totalUsers,
+            }));
         } catch (err) {
             setError(err.message || "Failed to load users");
             console.error("Error fetching users:", err);
@@ -134,6 +127,14 @@ function AdminUsers() {
             await adminUserService.updateUserStatus(userId, newStatus);
 
             setUsers((prev) =>
+                prev.map((user) =>
+                    user._id === userId
+                        ? { ...user, profileStatus: newStatus }
+                        : user
+                )
+            );
+
+            setFilteredUsers((prev) =>
                 prev.map((user) =>
                     user._id === userId
                         ? { ...user, profileStatus: newStatus }
@@ -155,12 +156,37 @@ function AdminUsers() {
 
     const handleBulkStatusUpdate = async (newStatus) => {
         try {
-            await adminUserService.bulkUpdateUserStatus(
-                Array.from(selectedUsers),
+            // Convert Set to Array and ensure we have valid user IDs
+            const userIds = Array.from(selectedUsers).filter(
+                (id) => id && id.length > 0
+            );
+
+            if (userIds.length === 0) {
+                setToastNotification({
+                    message: "No valid users selected",
+                    type: "error",
+                });
+                return;
+            }
+
+            console.log(
+                "Bulk updating users:",
+                userIds,
+                "to status:",
                 newStatus
             );
 
+            await adminUserService.bulkUpdateUserStatus(userIds, newStatus);
+
             setUsers((prev) =>
+                prev.map((user) =>
+                    selectedUsers.has(user._id)
+                        ? { ...user, profileStatus: newStatus }
+                        : user
+                )
+            );
+
+            setFilteredUsers((prev) =>
                 prev.map((user) =>
                     selectedUsers.has(user._id)
                         ? { ...user, profileStatus: newStatus }
@@ -176,6 +202,7 @@ function AdminUsers() {
                 type: "success",
             });
         } catch (err) {
+            console.error("Bulk status update error:", err);
             setToastNotification({
                 message: err.message || "Failed to update users",
                 type: "error",
@@ -183,16 +210,18 @@ function AdminUsers() {
         }
     };
 
-    // UPDATED: Handle delete user with proper modal closing
     const handleDeleteUser = async (userId) => {
         try {
             await adminUserService.deleteUser(userId);
             setUsers((prev) => prev.filter((user) => user._id !== userId));
+            setFilteredUsers((prev) =>
+                prev.filter((user) => user._id !== userId)
+            );
             setToastNotification({
                 message: "User deleted successfully",
                 type: "success",
             });
-            return true; // Return success
+            return true;
         } catch (err) {
             setToastNotification({
                 message: err.message || "Failed to delete user",
@@ -202,15 +231,30 @@ function AdminUsers() {
         }
     };
 
-    // UPDATED: Handle bulk delete with proper modal closing
     const handleBulkDelete = async () => {
         try {
-            const deletePromises = Array.from(selectedUsers).map((userId) =>
+            const userIds = Array.from(selectedUsers).filter(
+                (id) => id && id.length > 0
+            );
+
+            if (userIds.length === 0) {
+                setToastNotification({
+                    message: "No valid users selected",
+                    type: "error",
+                });
+                return false;
+            }
+
+            // Use bulk delete if available, otherwise delete individually
+            const deletePromises = userIds.map((userId) =>
                 adminUserService.deleteUser(userId)
             );
 
             await Promise.all(deletePromises);
             setUsers((prev) =>
+                prev.filter((user) => !selectedUsers.has(user._id))
+            );
+            setFilteredUsers((prev) =>
                 prev.filter((user) => !selectedUsers.has(user._id))
             );
             setSelectedUsers(new Set());
@@ -220,7 +264,7 @@ function AdminUsers() {
                 message: `Deleted ${selectedUsers.size} users successfully`,
                 type: "success",
             });
-            return true; // Return success
+            return true;
         } catch (err) {
             setToastNotification({
                 message: err.message || "Failed to delete users",
@@ -230,7 +274,6 @@ function AdminUsers() {
         }
     };
 
-    // UPDATED: Handle delete confirmation with loading state
     const handleDeleteConfirm = async () => {
         setDeleteLoading(true);
         try {
@@ -242,13 +285,11 @@ function AdminUsers() {
             }
 
             if (success) {
-                // Close modal only on success
                 setShowDeleteModal(false);
                 setUserToDelete(null);
                 setBulkDelete(false);
             }
         } catch (error) {
-            // Error is already handled in the delete functions, just keep modal open
             console.error("Delete error:", error);
         } finally {
             setDeleteLoading(false);
@@ -268,7 +309,6 @@ function AdminUsers() {
         });
     };
 
-    // Handle user added with toast notification
     const handleUserAdded = () => {
         fetchUsers();
         setToastNotification({
@@ -311,8 +351,25 @@ function AdminUsers() {
         setSelectAll(newSelected.size === filteredUsers.length);
     };
 
+    // Pagination handlers
+    const handlePageChange = (newPage) => {
+        setPagination((prev) => ({ ...prev, currentPage: newPage }));
+        setSelectedUsers(new Set());
+        setSelectAll(false);
+    };
+
+    const handleUsersPerPageChange = (newPerPage) => {
+        setPagination((prev) => ({
+            ...prev,
+            usersPerPage: newPerPage,
+            currentPage: 1,
+        }));
+        setSelectedUsers(new Set());
+        setSelectAll(false);
+    };
+
     const getStats = () => {
-        const total = users.length;
+        const total = pagination.totalUsers;
         const pending = users.filter(
             (u) => u.profileStatus === "pending"
         ).length;
@@ -350,20 +407,21 @@ function AdminUsers() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6 ">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center mb-3">
-                        <Users size={28} className="text-blue-600 mr-3" />
-                        <h1 className="text-3xl font-bold text-gray-900">
-                            User Management
-                        </h1>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900">
+                                User Management
+                            </h1>
+                            <p className="text-gray-600 text-sm mt-1">
+                                Manage system users, review profiles, and handle
+                                approvals
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-gray-600">
-                        Manage system users, review profiles, and handle
-                        approvals
-                    </p>
                 </div>
 
                 {/* Stats Cards */}
@@ -371,10 +429,10 @@ function AdminUsers() {
                     <UserStats stats={stats} />
                 </div>
 
-                {/* Unified Container for Filters and Table */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                {/* Main Content Card */}
+                <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
                     {/* Filters Section */}
-                    <div className="p-6 border-b border-gray-100 bg-white">
+                    <div className="p-6 border-b border-gray-100">
                         <UserFilters
                             searchTerm={searchTerm}
                             setSearchTerm={setSearchTerm}
@@ -412,6 +470,17 @@ function AdminUsers() {
                             stats={stats}
                         />
                     </div>
+
+                    {/* Pagination */}
+                    {pagination.totalPages > 1 && (
+                        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                            <Pagination
+                                pagination={pagination}
+                                onPageChange={handlePageChange}
+                                onUsersPerPageChange={handleUsersPerPageChange}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* Modals */}
@@ -442,7 +511,6 @@ function AdminUsers() {
                     onEdit={handleEditUser}
                 />
 
-                {/* UPDATED: ConfirmationModal with proper loading and onConfirm */}
                 <ConfirmationModal
                     isOpen={showDeleteModal}
                     onClose={() => {
@@ -488,5 +556,114 @@ function AdminUsers() {
         </div>
     );
 }
+
+// Pagination Component
+const Pagination = ({ pagination, onPageChange, onUsersPerPageChange }) => {
+    const { currentPage, totalPages, totalUsers, usersPerPage } = pagination;
+
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisiblePages = 5;
+
+        let startPage = Math.max(
+            1,
+            currentPage - Math.floor(maxVisiblePages / 2)
+        );
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+        }
+
+        return pages;
+    };
+
+    return (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Users per page selector */}
+            <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-700">Show</span>
+                <select
+                    value={usersPerPage}
+                    onChange={(e) =>
+                        onUsersPerPageChange(Number(e.target.value))
+                    }
+                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                </select>
+                <span className="text-sm text-gray-700">users per page</span>
+            </div>
+
+            {/* Page info */}
+            <div className="text-sm text-gray-700">
+                Showing {(currentPage - 1) * usersPerPage + 1} to{" "}
+                {Math.min(currentPage * usersPerPage, totalUsers)} of{" "}
+                {totalUsers} users
+            </div>
+
+            {/* Page navigation */}
+            <div className="flex items-center gap-1">
+                {/* First Page */}
+                <button
+                    onClick={() => onPageChange(1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                    «
+                </button>
+
+                {/* Previous Page */}
+                <button
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                    ‹
+                </button>
+
+                {/* Page Numbers */}
+                {getPageNumbers().map((page) => (
+                    <button
+                        key={page}
+                        onClick={() => onPageChange(page)}
+                        className={`px-3 py-1 text-sm font-medium border rounded transition-colors cursor-pointer ${
+                            currentPage === page
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        }`}
+                    >
+                        {page}
+                    </button>
+                ))}
+
+                {/* Next Page */}
+                <button
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                    ›
+                </button>
+
+                {/* Last Page */}
+                <button
+                    onClick={() => onPageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                    »
+                </button>
+            </div>
+        </div>
+    );
+};
 
 export default AdminUsers;

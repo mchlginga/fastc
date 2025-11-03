@@ -1,0 +1,628 @@
+[{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43b4"
+  },
+  "name": "Welding",
+  "category": "Construction & Trades",
+  "aliases": [
+    "Arc Welding",
+    "SMAW",
+    "GMAW",
+    "Welding I",
+    "Welding II",
+    "Shielded Metal Arc Welding"
+  ],
+  "level": "beginner",
+  "description": "Metal joining and fabrication using various welding techniques",
+  "relatedCourses": [
+    {
+      "$oid": "65f2a1b1c2d3e4f5a6b7c8d5"
+    },
+    {
+      "$oid": "65f2a1b1c2d3e4f5a6b7c8d6"
+    }
+  ],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.146Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T23:47:52.382Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43b5"
+  },
+  "name": "Masonry",
+  "category": "Construction & Trades",
+  "aliases": [
+    "Masonry I",
+    "Masonry II",
+    "Bricklaying",
+    "Stone Work"
+  ],
+  "level": "beginner",
+  "description": "Building structures using brick, stone, and concrete blocks",
+  "relatedCourses": [
+    {
+      "$oid": "65f2a1b1c2d3e4f5a6b7c8db"
+    }
+  ],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.151Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T23:47:53.035Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43b6"
+  },
+  "name": "Carpentry",
+  "category": "Construction & Trades",
+  "aliases": [
+    "Carpentry I",
+    "Carpentry II",
+    "Woodworking",
+    "Finishing Carpentry"
+  ],
+  "level": "beginner",
+  "description": "Cutting, shaping, and installing building materials",
+  "relatedCourses": [
+    {
+      "$oid": "65f2a1b1c2d3e4f5a6b7c8da"
+    }
+  ],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.151Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T23:47:52.908Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43b7"
+  },
+  "name": "Electrical Installation",
+  "category": "Construction & Trades",
+  "aliases": [
+    "Electrical",
+    "Electrical Work",
+    "Wiring",
+    "Electrical Systems"
+  ],
+  "level": "beginner",
+  "description": "Installing and maintaining electrical systems and equipment",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.151Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.151Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43b8"
+  },
+  "name": "Plumbing",
+  "category": "Construction & Trades",
+  "aliases": [
+    "Plumbing I",
+    "Plumbing II",
+    "Pipefitting"
+  ],
+  "level": "beginner",
+  "description": "Installing and repairing pipes, fixtures, and drainage systems",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.152Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.152Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43b9"
+  },
+  "name": "Beauty Care",
+  "category": "Beauty & Wellness",
+  "aliases": [
+    "Beauty Care I",
+    "Beauty Care II",
+    "Cosmetology",
+    "Beauty Therapy",
+    "Facial Care"
+  ],
+  "level": "beginner",
+  "description": "Providing beauty treatments and cosmetic services",
+  "relatedCourses": [
+    {
+      "$oid": "65f2a1b1c2d3e4f5a6b7c8d7"
+    }
+  ],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.152Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T23:47:52.514Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43ba"
+  },
+  "name": "Hairdressing",
+  "category": "Beauty & Wellness",
+  "aliases": [
+    "Hairdressing I",
+    "Hairdressing II",
+    "Hair Styling",
+    "Barbering",
+    "Hair Care"
+  ],
+  "level": "beginner",
+  "description": "Cutting, styling, coloring, and treating hair",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.152Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.152Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43bb"
+  },
+  "name": "Massage Therapy",
+  "category": "Beauty & Wellness",
+  "aliases": [
+    "Massage Therapy I",
+    "Massage Therapy II",
+    "Therapeutic Massage",
+    "Wellness Massage"
+  ],
+  "level": "beginner",
+  "description": "Providing therapeutic massage and body treatments",
+  "relatedCourses": [
+    {
+      "$oid": "65f2a1b1c2d3e4f5a6b7c8d8"
+    }
+  ],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.152Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T23:47:52.644Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43bc"
+  },
+  "name": "Nail Care",
+  "category": "Beauty & Wellness",
+  "aliases": [
+    "Nail Care I",
+    "Manicure",
+    "Pedicure",
+    "Nail Art"
+  ],
+  "level": "beginner",
+  "description": "Providing nail care services and nail art",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.153Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.153Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43bd"
+  },
+  "name": "Housekeeping",
+  "category": "Hospitality & Food Service",
+  "aliases": [
+    "Housekeeping I",
+    "Housekeeping II",
+    "Room Attendant",
+    "Cleaning Services"
+  ],
+  "level": "beginner",
+  "description": "Maintaining cleanliness and order in establishments",
+  "relatedCourses": [
+    {
+      "$oid": "65f2a1b1c2d3e4f5a6b7c8d9"
+    }
+  ],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.154Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T23:47:52.779Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43be"
+  },
+  "name": "Food Service",
+  "category": "Hospitality & Food Service",
+  "aliases": [
+    "Food Service I",
+    "Food Service II",
+    "Restaurant Service",
+    "Waitering"
+  ],
+  "level": "beginner",
+  "description": "Serving food and beverages in restaurants and establishments",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.154Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.154Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43bf"
+  },
+  "name": "Cookery",
+  "category": "Hospitality & Food Service",
+  "aliases": [
+    "Cooking",
+    "Cookery I",
+    "Cookery II",
+    "Culinary Arts",
+    "Food Preparation"
+  ],
+  "level": "beginner",
+  "description": "Preparing and cooking food in commercial kitchens",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.154Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.154Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43c0"
+  },
+  "name": "Bread and Pastry Production",
+  "category": "Hospitality & Food Service",
+  "aliases": [
+    "Bread and Pastry",
+    "Baking",
+    "Pastry Making",
+    "Bakery Production"
+  ],
+  "level": "beginner",
+  "description": "Baking bread, pastries, and other baked goods",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.154Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.154Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43c1"
+  },
+  "name": "Bartending",
+  "category": "Hospitality & Food Service",
+  "aliases": [
+    "Bartending I",
+    "Mixology",
+    "Beverage Service"
+  ],
+  "level": "beginner",
+  "description": "Mixing and serving alcoholic and non-alcoholic beverages",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.155Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.155Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43c2"
+  },
+  "name": "Computer Systems Servicing",
+  "category": "Technology & IT",
+  "aliases": [
+    "Computer Repair",
+    "IT Support",
+    "Computer Hardware",
+    "PC Maintenance"
+  ],
+  "level": "beginner",
+  "description": "Installing, maintaining, and repairing computer systems",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.155Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.155Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43c3"
+  },
+  "name": "Web Development",
+  "category": "Technology & IT",
+  "aliases": [
+    "Web Development I",
+    "Web Programming",
+    "Website Creation",
+    "Front-end Development"
+  ],
+  "level": "beginner",
+  "description": "Creating and maintaining websites and web applications",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.155Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.155Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43c4"
+  },
+  "name": "Graphic Design",
+  "category": "Technology & IT",
+  "aliases": [
+    "Graphic Design I",
+    "Digital Design",
+    "Visual Communication",
+    "Desktop Publishing"
+  ],
+  "level": "beginner",
+  "description": "Creating visual content for digital and print media",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.155Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.155Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43c5"
+  },
+  "name": "Dressmaking",
+  "category": "Arts & Crafts",
+  "aliases": [
+    "Dress-making",
+    "Dressmaking I",
+    "Garment Making",
+    "Sewing",
+    "Tailoring"
+  ],
+  "level": "beginner",
+  "description": "Designing and creating garments and clothing",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.155Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.155Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43c6"
+  },
+  "name": "Handicraft",
+  "category": "Arts & Crafts",
+  "aliases": [
+    "Handicraft I",
+    "Arts and Crafts",
+    "Handmade Crafts",
+    "Artisan Work"
+  ],
+  "level": "beginner",
+  "description": "Creating handmade decorative or functional items",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43c7"
+  },
+  "name": "Lantern Making",
+  "category": "Arts & Crafts",
+  "aliases": [
+    "Lantern Making I",
+    "Parol Making",
+    "Decorative Lanterns"
+  ],
+  "level": "beginner",
+  "description": "Creating decorative lanterns and light fixtures",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43c8"
+  },
+  "name": "Automotive Servicing",
+  "category": "Automotive",
+  "aliases": [
+    "Automotive Servicing I",
+    "Auto Repair",
+    "Vehicle Maintenance",
+    "Automotive Mechanics"
+  ],
+  "level": "beginner",
+  "description": "Servicing and repairing automotive vehicles",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43c9"
+  },
+  "name": "Motorcycle Repair",
+  "category": "Automotive",
+  "aliases": [
+    "Motorcycle Servicing",
+    "Motorcycle Mechanics",
+    "Two-Wheeler Repair"
+  ],
+  "level": "beginner",
+  "description": "Maintaining and repairing motorcycles and two-wheelers",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43ca"
+  },
+  "name": "Organic Agriculture",
+  "category": "Agriculture",
+  "aliases": [
+    "Organic Agriculture I",
+    "Organic Farming",
+    "Sustainable Agriculture"
+  ],
+  "level": "beginner",
+  "description": "Growing crops using organic and sustainable methods",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43cb"
+  },
+  "name": "Landscape Installation",
+  "category": "Agriculture",
+  "aliases": [
+    "Landscaping",
+    "Garden Design",
+    "Horticulture",
+    "Landscape Maintenance"
+  ],
+  "level": "beginner",
+  "description": "Designing and maintaining landscapes and gardens",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.156Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901318ce2de6f2c37ad43cc"
+  },
+  "name": "Events Management",
+  "category": "Events & Management",
+  "aliases": [
+    "Events Management I",
+    "Event Planning",
+    "Event Coordination",
+    "Program Management"
+  ],
+  "level": "beginner",
+  "description": "Planning, organizing, and managing events and programs",
+  "relatedCourses": [],
+  "isActive": true,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-28T21:11:40.157Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-28T21:11:40.157Z"
+  }
+}]

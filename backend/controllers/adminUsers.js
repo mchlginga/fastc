@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const { statusCodes } = require("../utils/constant");
 const bcrypt = require("bcrypt");
+const mongoose = require("mongoose");
 
 // Get all users with filtering and pagination
 exports.getUsers = async (req, res, next) => {
@@ -166,7 +167,6 @@ exports.createUser = async (req, res, next) => {
     }
 };
 
-// Update user status
 exports.updateUserStatus = async (req, res, next) => {
     try {
         const { status } = req.body;
@@ -201,10 +201,12 @@ exports.updateUserStatus = async (req, res, next) => {
     }
 };
 
-// Bulk update user status
+// Bulk update user status - FIXED
 exports.bulkUpdateUserStatus = async (req, res, next) => {
     try {
         const { userIds, status } = req.body;
+
+        console.log("Received bulk update request:", { userIds, status });
 
         if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
             return res.status(statusCodes.BAD_REQUEST).json({
@@ -220,10 +222,37 @@ exports.bulkUpdateUserStatus = async (req, res, next) => {
             });
         }
 
+        // Validate and convert user IDs to ObjectId
+        const validUserIds = userIds
+            .filter((id) => {
+                if (!id || id.length !== 24) {
+                    console.log(`Invalid user ID length: ${id}`);
+                    return false;
+                }
+                if (!mongoose.Types.ObjectId.isValid(id)) {
+                    console.log(`Invalid user ID format: ${id}`);
+                    return false;
+                }
+                return true;
+            })
+            .map((id) => new mongoose.Types.ObjectId(id));
+
+        if (validUserIds.length === 0) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "No valid user IDs provided",
+            });
+        }
+
+        console.log("Valid user IDs for bulk update:", validUserIds);
+
+        // Update users
         const result = await User.updateMany(
-            { _id: { $in: userIds } },
+            { _id: { $in: validUserIds } },
             { profileStatus: status }
         );
+
+        console.log("Bulk update result:", result);
 
         res.status(statusCodes.OK).json({
             success: true,
@@ -231,6 +260,7 @@ exports.bulkUpdateUserStatus = async (req, res, next) => {
             modifiedCount: result.modifiedCount,
         });
     } catch (error) {
+        console.error("Bulk update error:", error);
         next(error);
     }
 };
