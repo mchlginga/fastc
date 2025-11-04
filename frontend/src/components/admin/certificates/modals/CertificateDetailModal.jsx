@@ -14,6 +14,7 @@ import {
     AlertCircle,
 } from "react-feather";
 import InfoField from "./InfoField";
+import { verifyCertificate } from "../../../../services/certificateService";
 
 const CertificateDetailModal = ({
     isOpen,
@@ -134,6 +135,7 @@ const CertificateDetailModal = ({
             return;
         }
 
+        // Use the public verification service instead of admin service
         const verifyUrl = `${window.location.origin}/verify?code=${certificate.verificationCode}`;
         window.open(verifyUrl, "_blank");
     };

@@ -8,7 +8,7 @@ import {
     Download,
     Copy,
 } from "react-feather";
-import { adminCertificateService } from "../../services/userService";
+import { verifyCertificate } from "../../services/certificateService";
 
 const VerifyCertificate = () => {
     const [searchParams] = useSearchParams();
@@ -20,7 +20,7 @@ const VerifyCertificate = () => {
     const verificationCode = searchParams.get("code");
 
     useEffect(() => {
-        const verifyCertificate = async () => {
+        const verifyCert = async () => {
             if (!verificationCode) {
                 setError("No verification code provided");
                 setLoading(false);
@@ -28,19 +28,22 @@ const VerifyCertificate = () => {
             }
 
             try {
-                const response =
-                    await adminCertificateService.verifyCertificate(
-                        verificationCode
-                    );
+                console.log(
+                    "Verifying certificate with code:",
+                    verificationCode
+                );
+                const response = await verifyCertificate(verificationCode);
+                console.log("Verification response:", response);
                 setCertificate(response.certificate);
             } catch (err) {
+                console.error("Verification error:", err);
                 setError(err.message || "Failed to verify certificate");
             } finally {
                 setLoading(false);
             }
         };
 
-        verifyCertificate();
+        verifyCert();
     }, [verificationCode]);
 
     const copyVerificationLink = () => {

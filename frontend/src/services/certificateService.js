@@ -24,9 +24,13 @@ export const generateCertificate = async (enrollmentId) => {
 
 export const verifyCertificate = async (verificationCode) => {
     try {
+        console.log("Verifying certificate with code:", verificationCode);
+
         const response = await api.get("/certificate/verify", {
             params: { verificationCode },
         });
+
+        console.log("Verification successful:", response.data);
         return response.data;
     } catch (error) {
         console.error(
@@ -42,7 +46,9 @@ export const verifyCertificate = async (verificationCode) => {
             );
         }
 
-        throw error;
+        throw new Error(
+            error.response?.data?.message || "Failed to verify certificate"
+        );
     }
 };
 

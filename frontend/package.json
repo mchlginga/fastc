@@ -10,8 +10,15 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@mediapipe/face_detection": "^0.4.1646425229",
+        "@mediapipe/tasks-vision": "^0.10.22-rc.20250304",
+        "@tensorflow-models/blazeface": "^0.1.0",
+        "@tensorflow-models/face-detection": "^1.0.3",
+        "@tensorflow-models/face-landmarks-detection": "^1.0.6",
+        "@tensorflow/tfjs": "^4.22.0",
         "aos": "^2.3.4",
         "axios": "^1.11.0",
+        "face-api.js": "^0.22.2",
         "feather-icons": "^4.29.2",
         "framer-motion": "^12.23.22",
         "lodash": "^4.17.21",

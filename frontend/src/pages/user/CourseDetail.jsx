@@ -12,10 +12,13 @@ import {
     BarChart2,
     CheckCircle,
     Calendar,
+    Camera,
 } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import { getCourseById } from "../../services/courseService";
 import { getUserEnrollments } from "../../services/enrollmentService";
+import { getFaceStatus } from "../../services/attendanceService";
+import { api } from "../../services/api";
 import {
     getImageUrl,
     getEnrollmentDeadline,
@@ -24,6 +27,7 @@ import {
 import LoadingState from "../../components/common/LoadingState";
 import ErrorState from "../../components/common/ErrorState";
 import CourseDetailSkeleton from "../../components/user/courses/CourseDetailSkeleton";
+import FacialRecognitionModal from "../../components/user/FacialRecognitionModal";
 
 function CourseDetail() {
     const { courseId } = useParams();
@@ -33,8 +37,49 @@ function CourseDetail() {
     const [enrollment, setEnrollment] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [hasEnrolledFace, setHasEnrolledFace] = useState(false);
+    const [showFaceModal, setShowFaceModal] = useState(false);
+    const [showAttendanceModal, setShowAttendanceModal] = useState(false);
 
     console.log("📋 CourseDetail - courseId:", courseId);
+
+    // Add this function to check if attendance was already marked today
+    const checkTodayAttendance = async () => {
+        try {
+            // You might need to add this API endpoint to your backend
+            const response = await api.get(`/attendance/today/${courseId}`);
+            return response.data.hasAttendanceToday;
+        } catch (error) {
+            console.log("Could not check today's attendance:", error);
+            return false;
+        }
+    };
+
+    // Update handleContinueLearning to skip face verification if already marked today
+    const handleContinueLearning = async () => {
+        if (!hasEnrolledFace) {
+            // Show face enrollment modal first
+            setShowFaceModal(true);
+            return;
+        }
+
+        // Check if attendance already marked today
+        const alreadyMarked = await checkTodayAttendance();
+
+        if (alreadyMarked) {
+            console.log(
+                "✅ Attendance already marked today, proceeding directly to lesson"
+            );
+            // Navigate directly to lesson without face verification
+            const nextLesson = getNextAvailableLesson();
+            if (nextLesson) {
+                navigate(`/user/courses/${courseId}/lesson/${nextLesson._id}`);
+            }
+        } else {
+            // Show attendance verification modal
+            setShowAttendanceModal(true);
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -78,6 +123,15 @@ function CourseDetail() {
                 } else {
                     throw new Error("Failed to load enrollment data");
                 }
+
+                // Check if user has enrolled face
+                try {
+                    const faceStatus = await getFaceStatus();
+                    setHasEnrolledFace(faceStatus.hasEnrolledFace);
+                } catch (faceError) {
+                    console.warn("Face status check failed:", faceError);
+                    setHasEnrolledFace(false);
+                }
             } catch (err) {
                 console.error("❌ Fetch error:", err);
                 setError(err.message || "Failed to load course details.");
@@ -106,6 +160,31 @@ function CourseDetail() {
             });
         }
     }, [enrollment, course]);
+
+    const handleFaceEnrollmentSuccess = () => {
+        setShowFaceModal(false);
+        setHasEnrolledFace(true);
+        // After enrollment, show attendance modal
+        setTimeout(() => {
+            setShowAttendanceModal(true);
+        }, 500);
+    };
+
+    const handleAttendanceSuccess = () => {
+        setShowAttendanceModal(false);
+        // Navigate to the next lesson immediately after successful verification
+        const nextLesson = getNextAvailableLesson();
+        if (nextLesson) {
+            console.log(
+                `✅ Attendance verified! Navigating to lesson: ${nextLesson._id}`
+            );
+            navigate(`/user/courses/${courseId}/lesson/${nextLesson._id}`);
+        } else {
+            console.log(
+                "❌ No next lesson found after attendance verification"
+            );
+        }
+    };
 
     // SIMPLE LESSON START HANDLER - DIRECT NAVIGATION
     const handleStartLesson = (lessonId) => {
@@ -261,6 +340,12 @@ function CourseDetail() {
                                     {enrollment.status.charAt(0).toUpperCase() +
                                         enrollment.status.slice(1)}
                                 </span>
+                                {hasEnrolledFace && (
+                                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 flex items-center">
+                                        <Camera size={12} className="mr-1" />
+                                        Face Enrolled
+                                    </span>
+                                )}
                             </div>
 
                             <h1 className="text-3xl font-bold text-gray-800 mb-4">
@@ -333,10 +418,7 @@ function CourseDetail() {
                             {/* Continue Learning Button */}
                             <div className="flex gap-4">
                                 <button
-                                    onClick={() =>
-                                        nextLesson &&
-                                        handleStartLesson(nextLesson._id)
-                                    }
+                                    onClick={handleContinueLearning}
                                     disabled={
                                         !nextLesson ||
                                         enrollment.status !== "active"
@@ -353,6 +435,18 @@ function CourseDetail() {
                                         : "Course Completed"}
                                 </button>
                             </div>
+
+                            {!hasEnrolledFace && (
+                                <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <div className="flex items-center text-yellow-800">
+                                        <Camera size={16} className="mr-2" />
+                                        <span className="text-sm font-medium">
+                                            Face enrollment required for
+                                            attendance tracking
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -633,6 +727,22 @@ function CourseDetail() {
                                         </span>
                                     </div>
                                 )}
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">
+                                        Face Recognition
+                                    </span>
+                                    <span
+                                        className={`font-medium ${
+                                            hasEnrolledFace
+                                                ? "text-green-600"
+                                                : "text-yellow-600"
+                                        }`}
+                                    >
+                                        {hasEnrolledFace
+                                            ? "Enrolled"
+                                            : "Not Enrolled"}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -699,6 +809,30 @@ function CourseDetail() {
                     </div>
                 </div>
             </div>
+
+            {/* Face Enrollment Modal */}
+            <FacialRecognitionModal
+                isOpen={showFaceModal}
+                onClose={() => setShowFaceModal(false)}
+                onSuccess={handleFaceEnrollmentSuccess}
+                courseId={courseId}
+                lessonId={nextLesson?._id}
+                courseTitle={getCourseTitle()}
+                lessonTitle={nextLesson?.title || "Next Lesson"}
+                isEnrollment={true}
+            />
+
+            {/* Attendance Verification Modal */}
+            <FacialRecognitionModal
+                isOpen={showAttendanceModal}
+                onClose={() => setShowAttendanceModal(false)}
+                onSuccess={handleAttendanceSuccess}
+                courseId={courseId}
+                lessonId={nextLesson?._id}
+                courseTitle={getCourseTitle()}
+                lessonTitle={nextLesson?.title || "Next Lesson"}
+                isEnrollment={false}
+            />
         </div>
     );
 }

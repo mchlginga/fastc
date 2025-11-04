@@ -27,6 +27,7 @@ import ToastNotification from "../../components/common/ToastNotification";
 import LoadingState from "../../components/common/LoadingState";
 import ErrorState from "../../components/common/ErrorState";
 import LessonSkeleton from "../../components/user/courses/LessonSkeleton";
+import { markAttendance } from "../../services/attendanceService";
 
 // Certificate Celebration Modal
 const CertificateCelebrationModal = ({
@@ -194,6 +195,28 @@ function Lesson() {
             setLoading(false);
         }
     }, [user, courseId, lessonId, fetchLessonData]);
+
+    const handleMarkAttendance = async () => {
+        try {
+            await markAttendance(courseId, lessonId);
+            setToastNotification({
+                message: "Attendance marked successfully!",
+                type: "success",
+            });
+        } catch (error) {
+            // Don't show error for already marked attendance
+            if (error.response?.status === 409) {
+                console.log("Attendance already marked for today");
+                // Don't show error toast for this case
+                return;
+            }
+            console.error("Error marking attendance:", error);
+            setToastNotification({
+                message: "Failed to mark attendance. Please try again.",
+                type: "error",
+            });
+        }
+    };
 
     const handleCourseCompletion = async () => {
         try {
@@ -447,6 +470,10 @@ function Lesson() {
             // Call API to complete lesson
             await completeLesson(enrollment.id, lessonId);
 
+            // Mark attendance for this lesson
+            await handleMarkAttendance();
+
+            // Rest of the function remains the same...
             // Refresh data from backend
             const enrollmentsResponse = await getUserEnrollments();
             const courseEnrollment = enrollmentsResponse.enrollments.find(

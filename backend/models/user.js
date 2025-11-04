@@ -123,8 +123,21 @@ const userSchema = new mongoose.Schema(
             },
         ],
 
-        // ❌ REMOVED: Manual certificates array
-        // certificates: [{ name, issuer, date, expiration, proof }]
+        // facial recognitoin
+        faceData: {
+            faceToken: {
+                type: String,
+                default: null,
+            },
+            enrolledAt: {
+                type: Date,
+                default: null,
+            },
+            lastVerified: {
+                type: Date,
+                default: null,
+            },
+        },
 
         representative: {
             name: {
