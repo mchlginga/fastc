@@ -34,6 +34,23 @@ const UserTable = ({
                                     ))}
                                 </tr>
                             </thead>
+                            <tbody className="bg-white divide-y divide-gray-100">
+                                {[...Array(8)].map((_, rowIndex) => (
+                                    <tr
+                                        key={rowIndex}
+                                        className="border-b border-gray-100"
+                                    >
+                                        {[...Array(7)].map((_, cellIndex) => (
+                                            <td
+                                                key={cellIndex}
+                                                className="px-6 py-4 whitespace-nowrap"
+                                            >
+                                                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -114,8 +131,11 @@ const UserTable = ({
                                     No users found
                                 </p>
                                 <p className="text-sm text-gray-400 max-w-sm">
-                                    Try adjusting your search criteria or
-                                    filters to find what you're looking for
+                                    {statusFilter !== "all" ||
+                                    roleFilter !== "all" ||
+                                    searchTerm
+                                        ? "Try adjusting your search criteria or filters to find what you're looking for"
+                                        : "No users registered in the system yet"}
                                 </p>
                             </div>
                         </div>

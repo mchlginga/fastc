@@ -465,50 +465,59 @@ exports.verifyCertificate = async (req, res, next) => {
 
     try {
         if (!verificationCode) {
-            return res.status(statusCodes.BAD_REQUEST).json({
+            return res.status(400).json({
                 success: false,
                 message: "Verification code is required",
             });
         }
 
         const certificate = await Certificate.findOne({ verificationCode })
-            .populate("user", "name email")
-            .populate("course", "title description duration");
+            .populate("user", "firstName surname email companyName role")
+            .populate("course", "title description duration category");
 
         if (!certificate) {
-            return res.status(statusCodes.NOT_FOUND).json({
+            return res.status(404).json({
                 success: false,
                 message: "Certificate not found or invalid verification code",
             });
         }
 
-        // Check if certificate is expired
+        // Check certificate status
         const isExpired = new Date() > new Date(certificate.expirationDate);
         const isRevoked = certificate.status === "revoked";
+        const effectiveStatus = isRevoked
+            ? "revoked"
+            : isExpired
+            ? "expired"
+            : "active";
 
-        res.status(statusCodes.OK).json({
+        res.status(200).json({
             success: true,
             certificate: {
                 id: certificate._id,
                 title: certificate.title,
                 recipient: {
-                    name: certificate.user.name,
+                    name:
+                        certificate.user.role === "company"
+                            ? certificate.user.companyName
+                            : `${certificate.user.firstName} ${certificate.user.surname}`,
                     email: certificate.user.email,
+                    role: certificate.user.role,
                 },
                 course: {
                     title: certificate.course.title,
                     description: certificate.course.description,
                     duration: certificate.course.duration,
+                    category: certificate.course.category,
                 },
                 completionDate: certificate.completionDate,
                 expirationDate: certificate.expirationDate,
-                status: isRevoked
-                    ? "revoked"
-                    : isExpired
-                    ? "expired"
-                    : "active",
+                status: effectiveStatus,
                 issuedBy: certificate.issuedBy,
+                verificationCode: certificate.verificationCode,
                 verifiedAt: new Date(),
+                isExpired,
+                isRevoked,
             },
         });
     } catch (error) {

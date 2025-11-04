@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, Plus } from "react-feather";
+import { useState, useEffect, useCallback } from "react";
+import { X } from "react-feather";
 import { adminUserService } from "../../../../services/userService";
 
 const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
@@ -11,7 +11,6 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
         role: "user",
         contactNumber: "",
         address: "",
-        skills: [],
         availability: "N/A",
         profileStatus: "pending",
         representative: {
@@ -23,8 +22,8 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
     });
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
-    const [newSkill, setNewSkill] = useState("");
 
+    // Reset form when user changes
     useEffect(() => {
         if (user) {
             setFormData({
@@ -35,7 +34,6 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                 role: user.role || "user",
                 contactNumber: user.contactNumber || "",
                 address: user.address || "",
-                skills: user.skills || [],
                 availability: user.availability || "N/A",
                 profileStatus: user.profileStatus || "pending",
                 representative: user.representative || {
@@ -45,68 +43,65 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                 },
                 businessPermit: user.businessPermit || "",
             });
+            setErrors({});
         }
     }, [user]);
 
-    const handleClose = () => {
+    // Handle body scroll
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "unset";
+        }
+
+        return () => {
+            document.body.style.overflow = "unset";
+        };
+    }, [isOpen]);
+
+    const handleClose = useCallback(() => {
         if (loading) return;
         setErrors({});
         onClose();
-    };
+    }, [loading, onClose]);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
+    const handleChange = useCallback(
+        (e) => {
+            const { name, value } = e.target;
 
-        // Handle nested representative fields
-        if (name.startsWith("representative.")) {
-            const field = name.split(".")[1];
-            setFormData((prev) => ({
-                ...prev,
-                representative: {
-                    ...prev.representative,
-                    [field]: value,
-                },
-            }));
-        } else {
-            setFormData((prev) => ({
-                ...prev,
-                [name]: value,
-            }));
-        }
+            // Handle nested representative fields
+            if (name.startsWith("representative.")) {
+                const field = name.split(".")[1];
+                setFormData((prev) => ({
+                    ...prev,
+                    representative: {
+                        ...prev.representative,
+                        [field]: value,
+                    },
+                }));
+            } else {
+                setFormData((prev) => ({
+                    ...prev,
+                    [name]: value,
+                }));
+            }
 
-        if (errors[name]) {
-            setErrors((prev) => ({
-                ...prev,
-                [name]: "",
-            }));
-        }
-    };
+            // Clear error when user starts typing
+            if (errors[name]) {
+                setErrors((prev) => ({
+                    ...prev,
+                    [name]: "",
+                }));
+            }
+            if (errors.submit) {
+                setErrors((prev) => ({ ...prev, submit: "" }));
+            }
+        },
+        [errors]
+    );
 
-    const handleAddSkill = () => {
-        if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
-            setFormData((prev) => ({
-                ...prev,
-                skills: [...prev.skills, newSkill.trim()],
-            }));
-            setNewSkill("");
-        }
-    };
-
-    const handleRemoveSkill = (skillToRemove) => {
-        setFormData((prev) => ({
-            ...prev,
-            skills: prev.skills.filter((skill) => skill !== skillToRemove),
-        }));
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            handleAddSkill();
-        }
-    };
-
-    const validateForm = () => {
+    const validateForm = useCallback(() => {
         const newErrors = {};
 
         if (!formData.email) {
@@ -130,7 +125,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    };
+    }, [formData]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -142,17 +137,21 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
             onUserUpdated();
             handleClose();
         } catch (error) {
-            setErrors({ submit: error.message });
+            setErrors({
+                submit:
+                    error.message || "Failed to update user. Please try again.",
+            });
         } finally {
             setLoading(false);
         }
     };
 
+    // Early return for performance
     if (!isOpen || !user) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 cursor-pointer">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col cursor-auto">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col cursor-auto transform transition-all duration-200 scale-100">
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-200">
                     <div>
@@ -165,7 +164,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                     </div>
                     <button
                         onClick={handleClose}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                         disabled={loading}
                     >
                         <X size={20} />
@@ -184,7 +183,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                 name="role"
                                 value={formData.role}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
+                                className="w-full px-3 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
                                 disabled={loading}
                             >
                                 <option value="user">Trainee</option>
@@ -206,7 +205,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         name="companyName"
                                         value={formData.companyName}
                                         onChange={handleChange}
-                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text ${
+                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
                                             errors.companyName
                                                 ? "border-red-300 bg-red-50"
                                                 : "border-gray-300"
@@ -215,7 +214,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         disabled={loading}
                                     />
                                     {errors.companyName && (
-                                        <p className="mt-2 text-sm text-red-600">
+                                        <p className="mt-2 text-sm text-red-600 animate-fadeIn">
                                             {errors.companyName}
                                         </p>
                                     )}
@@ -238,7 +237,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                                     formData.representative.name
                                                 }
                                                 onChange={handleChange}
-                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                                 placeholder="Representative full name"
                                                 disabled={loading}
                                             />
@@ -256,7 +255,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                                             .email
                                                     }
                                                     onChange={handleChange}
-                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                                     placeholder="rep@company.com"
                                                     disabled={loading}
                                                 />
@@ -273,7 +272,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                                             .contactNumber
                                                     }
                                                     onChange={handleChange}
-                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                                     placeholder="Phone number"
                                                     disabled={loading}
                                                 />
@@ -293,7 +292,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         name="firstName"
                                         value={formData.firstName}
                                         onChange={handleChange}
-                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text ${
+                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
                                             errors.firstName
                                                 ? "border-red-300 bg-red-50"
                                                 : "border-gray-300"
@@ -302,7 +301,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         disabled={loading}
                                     />
                                     {errors.firstName && (
-                                        <p className="mt-2 text-sm text-red-600">
+                                        <p className="mt-2 text-sm text-red-600 animate-fadeIn">
                                             {errors.firstName}
                                         </p>
                                     )}
@@ -316,7 +315,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         name="surname"
                                         value={formData.surname}
                                         onChange={handleChange}
-                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text ${
+                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
                                             errors.surname
                                                 ? "border-red-300 bg-red-50"
                                                 : "border-gray-300"
@@ -325,7 +324,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         disabled={loading}
                                     />
                                     {errors.surname && (
-                                        <p className="mt-2 text-sm text-red-600">
+                                        <p className="mt-2 text-sm text-red-600 animate-fadeIn">
                                             {errors.surname}
                                         </p>
                                     )}
@@ -343,7 +342,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text ${
+                                className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
                                     errors.email
                                         ? "border-red-300 bg-red-50"
                                         : "border-gray-300"
@@ -352,7 +351,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                 disabled={loading}
                             />
                             {errors.email && (
-                                <p className="mt-2 text-sm text-red-600">
+                                <p className="mt-2 text-sm text-red-600 animate-fadeIn">
                                     {errors.email}
                                 </p>
                             )}
@@ -369,7 +368,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                     name="contactNumber"
                                     value={formData.contactNumber}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
+                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                     placeholder="Phone number"
                                     disabled={loading}
                                 />
@@ -382,7 +381,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                     name="profileStatus"
                                     value={formData.profileStatus}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
+                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
                                     disabled={loading}
                                 >
                                     <option value="approved">Approved</option>
@@ -402,61 +401,11 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
+                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                 placeholder="Full address"
                                 disabled={loading}
                             />
                         </div>
-
-                        {/* Skills (for trainees only) */}
-                        {formData.role === "user" && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Skills
-                                </label>
-                                <div className="flex gap-2 mb-3">
-                                    <input
-                                        type="text"
-                                        value={newSkill}
-                                        onChange={(e) =>
-                                            setNewSkill(e.target.value)
-                                        }
-                                        onKeyPress={handleKeyPress}
-                                        className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
-                                        placeholder="Add a skill"
-                                        disabled={loading}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={handleAddSkill}
-                                        className="px-4 py-2.5 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer"
-                                        disabled={loading}
-                                    >
-                                        <Plus size={16} />
-                                    </button>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {formData.skills.map((skill, index) => (
-                                        <span
-                                            key={index}
-                                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
-                                        >
-                                            {skill}
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    handleRemoveSkill(skill)
-                                                }
-                                                className="text-blue-600 hover:text-blue-800 cursor-pointer p-0.5 rounded"
-                                                disabled={loading}
-                                            >
-                                                <X size={12} />
-                                            </button>
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
 
                         {/* Availability (for trainees only) */}
                         {formData.role === "user" && (
@@ -468,7 +417,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                     name="availability"
                                     value={formData.availability}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
+                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
                                     disabled={loading}
                                 >
                                     <option value="N/A">Not Specified</option>
@@ -478,9 +427,22 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                             </div>
                         )}
 
+                        {/* Skills Note (for trainees only) */}
+                        {formData.role === "user" && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 animate-fadeIn">
+                                <p className="text-sm text-blue-700">
+                                    <strong>Note:</strong> Skills are
+                                    automatically managed through certificates
+                                    and cannot be manually edited. User skills
+                                    are verified and updated when certificates
+                                    are issued.
+                                </p>
+                            </div>
+                        )}
+
                         {/* Submit Error */}
                         {errors.submit && (
-                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
                                 <p className="text-sm text-red-600">
                                     {errors.submit}
                                 </p>
@@ -494,7 +456,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                     <button
                         type="button"
                         onClick={handleClose}
-                        className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer"
+                        className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer disabled:opacity-50"
                         disabled={loading}
                     >
                         Cancel

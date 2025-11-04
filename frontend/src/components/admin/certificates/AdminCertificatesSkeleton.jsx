@@ -2,31 +2,32 @@ import { Award } from "react-feather";
 
 const AdminCertificatesSkeleton = () => {
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header Skeleton */}
                 <div className="mb-8">
-                    <div className="flex items-center mb-3">
-                        <Award size={28} className="text-blue-600 mr-3" />
-                        <div className="h-8 bg-gray-300 rounded w-64 animate-pulse"></div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div>
+                            <div className="h-7 bg-gray-200 rounded w-64 animate-pulse mb-2"></div>
+                            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+                        </div>
                     </div>
-                    <div className="h-4 bg-gray-300 rounded w-96 animate-pulse"></div>
                 </div>
 
                 {/* Stats Cards Skeleton */}
                 <div className="mb-6">
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                         {[...Array(4)].map((_, index) => (
                             <div
                                 key={index}
-                                className="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm"
+                                className="p-5 bg-white border border-gray-100 rounded-xl shadow-sm"
                             >
                                 <div className="flex items-center justify-between">
-                                    <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
-                                    <div className="text-right">
-                                        <div className="h-8 bg-gray-200 rounded w-16 animate-pulse mb-2"></div>
+                                    <div>
+                                        <div className="h-7 bg-gray-200 rounded w-12 animate-pulse mb-2"></div>
                                         <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
                                     </div>
+                                    <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
                                 </div>
                             </div>
                         ))}
@@ -34,7 +35,7 @@ const AdminCertificatesSkeleton = () => {
                 </div>
 
                 {/* Filters and Table Skeleton */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
                     {/* Filters Skeleton */}
                     <div className="p-6 border-b border-gray-100">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -44,7 +45,7 @@ const AdminCertificatesSkeleton = () => {
                             </div>
                             {/* Action Buttons Skeleton */}
                             <div className="flex flex-wrap gap-2">
-                                {[...Array(2)].map((_, index) => (
+                                {[...Array(3)].map((_, index) => (
                                     <div
                                         key={index}
                                         className="h-10 bg-gray-200 rounded-lg w-24 animate-pulse"
@@ -59,9 +60,9 @@ const AdminCertificatesSkeleton = () => {
                         <div className="overflow-x-auto">
                             <div className="min-w-full">
                                 {/* Table Header Skeleton */}
-                                <div className="bg-gray-100 border-b border-gray-200">
-                                    <div className="flex px-4 py-3">
-                                        {[...Array(7)].map((_, index) => (
+                                <div className="bg-gray-50 border-b border-gray-100">
+                                    <div className="flex pl-6 pr-4 py-4">
+                                        {[...Array(8)].map((_, index) => (
                                             <div
                                                 key={index}
                                                 className="flex-1 px-4"
@@ -77,13 +78,13 @@ const AdminCertificatesSkeleton = () => {
                                     {[...Array(8)].map((_, rowIndex) => (
                                         <div
                                             key={rowIndex}
-                                            className={`flex px-4 py-3 ${
+                                            className={`flex pl-6 pr-4 py-4 ${
                                                 rowIndex % 2 === 0
                                                     ? "bg-white"
-                                                    : "bg-gray-50"
+                                                    : "bg-gray-50/50"
                                             }`}
                                         >
-                                            {[...Array(7)].map(
+                                            {[...Array(8)].map(
                                                 (_, cellIndex) => (
                                                     <div
                                                         key={cellIndex}
@@ -94,6 +95,26 @@ const AdminCertificatesSkeleton = () => {
                                                 )
                                             )}
                                         </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Pagination Skeleton */}
+                        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                                    <div className="h-8 bg-gray-200 rounded w-20 animate-pulse"></div>
+                                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                                </div>
+                                <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                                <div className="flex gap-1">
+                                    {[...Array(5)].map((_, index) => (
+                                        <div
+                                            key={index}
+                                            className="h-8 w-8 bg-gray-200 rounded animate-pulse"
+                                        ></div>
                                     ))}
                                 </div>
                             </div>

@@ -487,21 +487,16 @@ exports.downloadCertificate = async (req, res, next) => {
 
         // Cloudinary URL - redirect to Cloudinary download
         if (certificate.certificateUrl) {
-            res.setHeader("Content-Type", "application/pdf");
-            res.setHeader(
-                "Content-Disposition",
-                `attachment; filename="FAST-C_Certificate_${certificate.course.title.replace(
+            // Instead of redirecting, return the URL for frontend handling
+            res.status(statusCodes.OK).json({
+                success: true,
+                certificateUrl: certificate.certificateUrl,
+                filename: `FAST-C_Certificate_${certificate.course.title.replace(
                     /\s+/g,
                     "_"
-                )}.pdf"`
-            );
-
-            // Redirect to Cloudinary download URL
-            const downloadUrl = certificate.certificateUrl.replace(
-                "/upload/",
-                "/upload/fl_attachment/"
-            );
-            res.redirect(downloadUrl);
+                )}.pdf`,
+                message: "Certificate URL retrieved successfully",
+            });
         } else {
             return res.status(statusCodes.NOT_FOUND).json({
                 success: false,

@@ -22,7 +22,6 @@ const BulkRegenerateCertificateModal = ({
         try {
             const result = await onBulkRegenerate();
             setRegenerateResult(result);
-            // Don't close automatically, let user see the result
         } catch (error) {
             console.error("Bulk regenerate error:", error);
             setRegenerateResult({
@@ -44,27 +43,24 @@ const BulkRegenerateCertificateModal = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 cursor-pointer">
-            <div
-                className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto cursor-auto"
-                onClick={(e) => e.stopPropagation()}
-            >
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-auto cursor-auto transform transition-all duration-200 scale-100">
                 {/* Header */}
-                <div className="flex justify-between items-center p-4 border-b border-gray-300">
+                <div className="flex justify-between items-center p-6 border-b border-gray-200">
                     <div className="flex items-center">
                         <RotateCcw size={20} className="text-orange-600 mr-2" />
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">
                                 Bulk Regenerate Certificates
                             </h2>
-                            {/* <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600">
                                 Generate new certificate files for{" "}
                                 {selectedCount} certificates
-                            </p> */}
+                            </p>
                         </div>
                     </div>
                     <button
                         onClick={handleClose}
-                        className="p-1 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                         disabled={regenerating}
                     >
                         <X size={20} />
@@ -72,7 +68,7 @@ const BulkRegenerateCertificateModal = ({
                 </div>
 
                 {/* Content */}
-                <div className="p-4 space-y-4">
+                <div className="p-6 space-y-4">
                     {!regenerateResult ? (
                         <>
                             <p className="text-gray-700">
@@ -80,7 +76,7 @@ const BulkRegenerateCertificateModal = ({
                                 {selectedCount} certificates?
                             </p>
 
-                            <div className="bg-orange-50 border border-orange-200 rounded p-3">
+                            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                                 <p className="text-sm text-orange-800 font-medium mb-2">
                                     <AlertTriangle
                                         size={16}
@@ -88,32 +84,19 @@ const BulkRegenerateCertificateModal = ({
                                     />
                                     This action will:
                                 </p>
-                                <ul className="text-sm text-orange-700 space-y-1">
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
+                                <ul className="text-sm text-orange-700 space-y-1 list-disc list-inside">
+                                    <li>
                                         Create new PDF files for all selected
                                         certificates
                                     </li>
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        Generate new verification codes
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        Reset certificate status to active
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        Extend expiration dates by 1 year
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        Replace old certificate files
-                                    </li>
+                                    <li>Generate new verification codes</li>
+                                    <li>Reset certificate status to active</li>
+                                    <li>Extend expiration dates by 1 year</li>
+                                    <li>Replace old certificate files</li>
                                 </ul>
                             </div>
 
-                            <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                 <p className="text-sm text-blue-800">
                                     <strong>Note:</strong> This process may take
                                     several minutes depending on the number of
@@ -175,25 +158,25 @@ const BulkRegenerateCertificateModal = ({
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-2 p-4 border-t border-gray-300 bg-gray-50">
+                <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
                     {!regenerateResult ? (
                         <>
                             <button
                                 type="button"
                                 onClick={handleClose}
                                 disabled={regenerating}
-                                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors cursor-pointer"
+                                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleConfirm}
                                 disabled={regenerating}
-                                className="px-4 py-2 text-sm text-white bg-orange-600 rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2"
+                                className="px-4 py-2.5 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer flex items-center gap-2"
                             >
                                 {regenerating ? (
                                     <>
-                                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                         Regenerating...
                                     </>
                                 ) : (
@@ -207,7 +190,7 @@ const BulkRegenerateCertificateModal = ({
                     ) : (
                         <button
                             onClick={handleClose}
-                            className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors cursor-pointer"
+                            className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer"
                         >
                             Close
                         </button>

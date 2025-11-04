@@ -1,4 +1,4 @@
-import { Users, Clock, User, Award } from "react-feather";
+import { Users, Clock, User, Award, Briefcase } from "react-feather";
 
 const StatCard = ({
     title,
@@ -61,26 +61,26 @@ const UserStats = ({ stats, loading = false }) => {
                 title="Total Users"
                 value={stats.total}
                 icon={<Users size={20} className="text-blue-600" />}
-                bg="bg-blue-100"
+                bg="bg-blue-50"
             />
             <StatCard
                 title="Pending Approval"
                 value={stats.pending}
                 icon={<Clock size={20} className="text-amber-600" />}
-                bg="bg-amber-100"
+                bg="bg-amber-50"
                 type="warning"
             />
             <StatCard
                 title="Trainees"
                 value={stats.trainees}
                 icon={<User size={20} className="text-emerald-600" />}
-                bg="bg-emerald-100"
+                bg="bg-emerald-50"
             />
             <StatCard
                 title="Companies"
                 value={stats.companies}
-                icon={<Award size={20} className="text-purple-600" />}
-                bg="bg-purple-100"
+                icon={<Briefcase size={20} className="text-purple-600" />}
+                bg="bg-purple-50"
             />
         </section>
     );

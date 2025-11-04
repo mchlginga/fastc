@@ -1,11 +1,4 @@
-import {
-    Users,
-    Clock,
-    CheckCircle,
-    XCircle,
-    AlertCircle,
-    TrendingUp,
-} from "react-feather";
+import { Users, Clock, CheckCircle, XCircle, TrendingUp } from "react-feather";
 
 const StatCard = ({
     title,
@@ -15,30 +8,30 @@ const StatCard = ({
     type = "default",
     loading = false,
 }) => (
-    <div className="p-6 bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-lg transition transform hover:-translate-y-1 cursor-pointer">
+    <div className="p-5 bg-white border border-gray-100 rounded-xl shadow-xs hover:shadow-sm transition-all duration-200 cursor-default">
         <div className="flex items-center justify-between">
-            <div className={`${bg} p-3 rounded-xl mr-4`}>
+            <div>
+                <h3 className="text-2xl font-semibold text-gray-900">
+                    {loading ? (
+                        <div className="h-7 bg-gray-200 rounded w-12 animate-pulse"></div>
+                    ) : (
+                        value
+                    )}
+                </h3>
+                <p className="text-sm font-medium text-gray-500 mt-1">
+                    {loading ? (
+                        <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    ) : (
+                        title
+                    )}
+                </p>
+            </div>
+            <div className={`p-3 rounded-xl ${bg}`}>
                 {loading ? (
                     <div className="w-6 h-6 bg-gray-300 rounded animate-pulse"></div>
                 ) : (
                     icon
                 )}
-            </div>
-            <div className="text-right">
-                <h3 className="text-3xl font-bold text-gray-800">
-                    {loading ? (
-                        <div className="h-8 bg-gray-300 rounded w-16 animate-pulse"></div>
-                    ) : (
-                        value
-                    )}
-                </h3>
-                <p className="text-sm font-medium text-gray-500">
-                    {loading ? (
-                        <div className="h-4 bg-gray-200 rounded w-20 animate-pulse mt-2"></div>
-                    ) : (
-                        title
-                    )}
-                </p>
             </div>
         </div>
     </div>
@@ -47,14 +40,14 @@ const StatCard = ({
 const EnrollmentStats = ({ stats, loading = false }) => {
     if (loading) {
         return (
-            <section className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="grid grid-cols-1 gap-5 mb-8 sm:grid-cols-2 lg:grid-cols-4">
                 {[...Array(4)].map((_, index) => (
                     <StatCard
                         key={index}
                         title=""
                         value=""
                         icon={null}
-                        bg="bg-gray-200"
+                        bg="bg-gray-100"
                         loading={true}
                     />
                 ))}
@@ -63,30 +56,31 @@ const EnrollmentStats = ({ stats, loading = false }) => {
     }
 
     return (
-        <section className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid grid-cols-1 gap-5 mb-8 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
                 title="Total Enrollments"
                 value={stats.total}
-                icon={<Users size={24} className="text-blue-600" />}
-                bg="bg-blue-100"
+                icon={<Users size={20} className="text-blue-600" />}
+                bg="bg-blue-50"
             />
             <StatCard
                 title="Active Enrollments"
                 value={stats.active}
-                icon={<CheckCircle size={24} className="text-green-600" />}
-                bg="bg-green-100"
+                icon={<CheckCircle size={20} className="text-green-600" />}
+                bg="bg-green-50"
             />
             <StatCard
                 title="Pending Approval"
                 value={stats.pending}
-                icon={<Clock size={24} className="text-yellow-600" />}
-                bg="bg-yellow-100"
+                icon={<Clock size={20} className="text-amber-600" />}
+                bg="bg-amber-50"
+                type="warning"
             />
             <StatCard
                 title="Average Progress"
                 value={`${Math.round(stats.averageProgress)}%`}
-                icon={<TrendingUp size={24} className="text-purple-600" />}
-                bg="bg-purple-100"
+                icon={<TrendingUp size={20} className="text-purple-600" />}
+                bg="bg-purple-50"
             />
         </section>
     );

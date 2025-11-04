@@ -276,7 +276,7 @@ exports.updateUser = async (req, res, next) => {
             role,
             contactNumber,
             address,
-            skills,
+            // skills,
             availability,
         } = req.body;
 
@@ -287,7 +287,7 @@ exports.updateUser = async (req, res, next) => {
         if (role) updateData.role = role;
         if (contactNumber) updateData.contactNumber = contactNumber;
         if (address) updateData.address = address;
-        if (skills) updateData.skills = skills;
+        // if (skills) updateData.skills = skills;
         if (availability) updateData.availability = availability;
 
         // Role-specific fields
@@ -335,6 +335,37 @@ exports.deleteUser = async (req, res, next) => {
         res.status(statusCodes.OK).json({
             success: true,
             message: "User deleted successfully",
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getUserSkills = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        // Only return skills for trainee users
+        if (user.role !== "user" && user.role !== "superAdmin") {
+            return res.status(statusCodes.OK).json({
+                success: true,
+                skills: [],
+                message: "Skills are only available for trainee users",
+            });
+        }
+
+        const skills = await user.getSkills();
+
+        res.status(statusCodes.OK).json({
+            success: true,
+            skills,
         });
     } catch (error) {
         next(error);

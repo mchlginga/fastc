@@ -1,35 +1,41 @@
 import { useState } from "react";
-import { X, Clock, AlertTriangle, CheckCircle, XCircle } from "react-feather";
+import {
+    X,
+    RotateCcw,
+    AlertTriangle,
+    CheckCircle,
+    XCircle,
+} from "react-feather";
 
-const BulkExpireCertificateModal = ({
+const BulkRegenerateCertificateModal = ({
     isOpen,
     onClose,
     selectedCount,
-    onBulkExpire,
+    onBulkRegenerate,
 }) => {
-    const [expiring, setExpiring] = useState(false);
-    const [expireResult, setExpireResult] = useState(null);
+    const [regenerating, setRegenerating] = useState(false);
+    const [regenerateResult, setRegenerateResult] = useState(null);
 
     const handleConfirm = async () => {
-        setExpiring(true);
-        setExpireResult(null);
+        setRegenerating(true);
+        setRegenerateResult(null);
         try {
-            await onBulkExpire();
-            setExpireResult({ successful: selectedCount, failed: 0 });
+            const result = await onBulkRegenerate();
+            setRegenerateResult(result);
         } catch (error) {
-            console.error("Bulk expire error:", error);
-            setExpireResult({
+            console.error("Bulk regenerate error:", error);
+            setRegenerateResult({
                 successful: 0,
                 failed: selectedCount,
                 error: error.message,
             });
         } finally {
-            setExpiring(false);
+            setRegenerating(false);
         }
     };
 
     const handleClose = () => {
-        setExpireResult(null);
+        setRegenerateResult(null);
         onClose();
     };
 
@@ -37,80 +43,70 @@ const BulkExpireCertificateModal = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 cursor-pointer">
-            <div
-                className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto cursor-auto"
-                onClick={(e) => e.stopPropagation()}
-            >
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-auto cursor-auto transform transition-all duration-200 scale-100">
                 {/* Header */}
-                <div className="flex justify-between items-center p-4 border-b border-gray-300">
+                <div className="flex justify-between items-center p-6 border-b border-gray-200">
                     <div className="flex items-center">
-                        <Clock size={20} className="text-yellow-600 mr-2" />
+                        <RotateCcw size={20} className="text-orange-600 mr-2" />
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">
-                                Bulk Expire Certificates
+                                Bulk Regenerate Certificates
                             </h2>
                             <p className="text-sm text-gray-600">
-                                Mark {selectedCount} certificates as expired
+                                Generate new certificate files for{" "}
+                                {selectedCount} certificates
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={handleClose}
-                        className="p-1 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-                        disabled={expiring}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                        disabled={regenerating}
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="p-4 space-y-4">
-                    {!expireResult ? (
+                <div className="p-6 space-y-4">
+                    {!regenerateResult ? (
                         <>
                             <p className="text-gray-700">
-                                Are you sure you want to mark {selectedCount}{" "}
-                                certificates as expired?
+                                Are you sure you want to regenerate{" "}
+                                {selectedCount} certificates?
                             </p>
 
-                            <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-                                <p className="text-sm text-yellow-800 font-medium mb-2">
+                            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                <p className="text-sm text-orange-800 font-medium mb-2">
                                     <AlertTriangle
                                         size={16}
                                         className="inline mr-1"
                                     />
                                     This action will:
                                 </p>
-                                <ul className="text-sm text-yellow-700 space-y-1">
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        Mark selected certificates as "expired"
+                                <ul className="text-sm text-orange-700 space-y-1 list-disc list-inside">
+                                    <li>
+                                        Create new PDF files for all selected
+                                        certificates
                                     </li>
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        Set expiration date to current date
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        Make certificates invalid for
-                                        verification
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        Require regeneration to restore access
-                                    </li>
+                                    <li>Generate new verification codes</li>
+                                    <li>Reset certificate status to active</li>
+                                    <li>Extend expiration dates by 1 year</li>
+                                    <li>Replace old certificate files</li>
                                 </ul>
                             </div>
 
-                            <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                 <p className="text-sm text-blue-800">
-                                    <strong>Note:</strong> This action can be
-                                    reversed by regenerating the certificates.
+                                    <strong>Note:</strong> This process may take
+                                    several minutes depending on the number of
+                                    certificates.
                                 </p>
                             </div>
                         </>
                     ) : (
                         <div className="text-center py-4">
-                            {expireResult.failed === 0 ? (
+                            {regenerateResult.failed === 0 ? (
                                 <div className="text-green-600">
                                     <CheckCircle
                                         size={48}
@@ -120,11 +116,12 @@ const BulkExpireCertificateModal = ({
                                         Success!
                                     </h3>
                                     <p className="text-gray-700">
-                                        Successfully expired{" "}
-                                        {expireResult.successful} certificates.
+                                        Successfully regenerated{" "}
+                                        {regenerateResult.successful}{" "}
+                                        certificates.
                                     </p>
                                 </div>
-                            ) : expireResult.successful === 0 ? (
+                            ) : regenerateResult.successful === 0 ? (
                                 <div className="text-red-600">
                                     <XCircle
                                         size={48}
@@ -134,8 +131,8 @@ const BulkExpireCertificateModal = ({
                                         Failed
                                     </h3>
                                     <p className="text-gray-700">
-                                        Failed to expire any certificates.{" "}
-                                        {expireResult.error}
+                                        Failed to regenerate any certificates.{" "}
+                                        {regenerateResult.error}
                                     </p>
                                 </div>
                             ) : (
@@ -148,10 +145,11 @@ const BulkExpireCertificateModal = ({
                                         Partial Success
                                     </h3>
                                     <p className="text-gray-700">
-                                        Expired {expireResult.successful} out of{" "}
+                                        Regenerated{" "}
+                                        {regenerateResult.successful} out of{" "}
                                         {selectedCount} certificates.
-                                        {expireResult.failed > 0 &&
-                                            ` ${expireResult.failed} failed.`}
+                                        {regenerateResult.failed > 0 &&
+                                            ` ${regenerateResult.failed} failed.`}
                                     </p>
                                 </div>
                             )}
@@ -160,31 +158,31 @@ const BulkExpireCertificateModal = ({
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-2 p-4 border-t border-gray-300 bg-gray-50">
-                    {!expireResult ? (
+                <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                    {!regenerateResult ? (
                         <>
                             <button
                                 type="button"
                                 onClick={handleClose}
-                                disabled={expiring}
-                                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors cursor-pointer"
+                                disabled={regenerating}
+                                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleConfirm}
-                                disabled={expiring}
-                                className="px-4 py-2 text-sm text-white bg-yellow-600 rounded hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2"
+                                disabled={regenerating}
+                                className="px-4 py-2.5 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer flex items-center gap-2"
                             >
-                                {expiring ? (
+                                {regenerating ? (
                                     <>
-                                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                        Expiring...
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Regenerating...
                                     </>
                                 ) : (
                                     <>
-                                        <Clock size={14} />
-                                        Expire {selectedCount} Certificates
+                                        <RotateCcw size={14} />
+                                        Regenerate {selectedCount} Certificates
                                     </>
                                 )}
                             </button>
@@ -192,7 +190,7 @@ const BulkExpireCertificateModal = ({
                     ) : (
                         <button
                             onClick={handleClose}
-                            className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors cursor-pointer"
+                            className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer"
                         >
                             Close
                         </button>
@@ -203,4 +201,4 @@ const BulkExpireCertificateModal = ({
     );
 };
 
-export default BulkExpireCertificateModal;
+export default BulkRegenerateCertificateModal;

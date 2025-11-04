@@ -25,20 +25,19 @@ router.get("/enrollments", getEnrollments);
 // Get enrollment statistics
 router.get("/enrollments/stats", getEnrollmentStats);
 
-// Get specific enrollment
-router.get("/enrollments/:id", getEnrollmentById);
-
 // Create new enrollment (manual enrollment by admin)
 router.post("/enrollments", createEnrollment);
+
+router.patch("/enrollments/bulk/status", bulkUpdateEnrollmentStatus);
+
+// Get specific enrollment
+router.get("/enrollments/:id", getEnrollmentById);
 
 // Update enrollment status
 router.patch("/enrollments/:id/status", updateEnrollmentStatus);
 
 // Update enrollment progress
 router.patch("/enrollments/:id/progress", updateEnrollmentProgress);
-
-// Bulk update enrollment status
-router.patch("/enrollments/bulk/status", bulkUpdateEnrollmentStatus);
 
 // Update enrollment details
 router.put("/enrollments/:id", updateEnrollment);

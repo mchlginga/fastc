@@ -12,7 +12,9 @@ const EnrollmentTable = ({
     onStatusUpdate,
     onDeleteEnrollment,
     statusFilter,
-    setStatusFilter,
+    courseFilter,
+    userFilter,
+    searchTerm,
     stats,
     loading = false,
 }) => {
@@ -22,20 +24,20 @@ const EnrollmentTable = ({
                 <div className="overflow-x-auto">
                     <div className="min-w-full">
                         <table className="w-full">
-                            <thead className="bg-gray-100 border-b border-gray-200">
+                            <thead className="bg-gray-50 border-b border-gray-100">
                                 <tr>
                                     {[...Array(8)].map((_, index) => (
                                         <th
                                             key={index}
-                                            className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider text-left"
+                                            className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left"
                                         >
-                                            <div className="h-4 bg-gray-300 rounded animate-pulse"></div>
+                                            <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody>
-                                {[...Array(5)].map((_, rowIndex) => (
+                            <tbody className="bg-white divide-y divide-gray-100">
+                                {[...Array(8)].map((_, rowIndex) => (
                                     <tr
                                         key={rowIndex}
                                         className="border-b border-gray-100"
@@ -43,7 +45,7 @@ const EnrollmentTable = ({
                                         {[...Array(8)].map((_, cellIndex) => (
                                             <td
                                                 key={cellIndex}
-                                                className="px-4 py-3"
+                                                className="px-6 py-4 whitespace-nowrap"
                                             >
                                                 <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                                             </td>
@@ -64,44 +66,44 @@ const EnrollmentTable = ({
             <div className="overflow-x-auto">
                 <div className="min-w-full">
                     <table className="w-full">
-                        <thead className="bg-gray-100 border-b border-gray-200">
+                        <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 {/* Checkbox */}
-                                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider text-left w-12">
+                                <th className="pl-6 pr-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left w-12">
                                     <input
                                         type="checkbox"
                                         checked={selectAll}
                                         onChange={onSelectAll}
-                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-blue-500"
+                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-blue-500 focus:ring-2 focus:ring-offset-1"
                                     />
                                 </th>
 
                                 {/* User Info */}
-                                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider text-left min-w-[180px]">
+                                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[180px]">
                                     User
                                 </th>
 
                                 {/* Course Info */}
-                                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider text-left min-w-[200px]">
+                                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[200px]">
                                     Course
                                 </th>
 
                                 {/* Regular Columns */}
-                                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider text-left min-w-[100px]">
+                                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[100px]">
                                     Status
                                 </th>
-                                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider text-left min-w-[100px]">
+                                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[100px]">
                                     Progress
                                 </th>
-                                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider text-left min-w-[120px]">
+                                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[120px]">
                                     Enrolled Date
                                 </th>
-                                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider text-left min-w-[120px]">
+                                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[120px]">
                                     Access Until
                                 </th>
 
                                 {/* Actions */}
-                                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider text-left min-w-[100px]">
+                                <th className="pr-6 pl-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[100px]">
                                     Actions
                                 </th>
                             </tr>
@@ -132,17 +134,24 @@ const EnrollmentTable = ({
 
                     {/* Empty State */}
                     {enrollments.length === 0 && (
-                        <div className="py-12 text-center border-t border-gray-100">
-                            <Users
-                                size={48}
-                                className="mx-auto mb-4 text-gray-400"
-                            />
-                            <p className="text-gray-500 mb-2">
-                                No enrollments found
-                            </p>
-                            <p className="text-sm text-gray-400">
-                                Try adjusting your search or filters
-                            </p>
+                        <div className="py-16 text-center">
+                            <div className="flex flex-col items-center justify-center">
+                                <Users
+                                    size={48}
+                                    className="text-gray-300 mb-4"
+                                />
+                                <p className="text-gray-500 font-medium mb-1">
+                                    No enrollments found
+                                </p>
+                                <p className="text-sm text-gray-400 max-w-sm">
+                                    {statusFilter !== "all" ||
+                                    courseFilter !== "all" ||
+                                    userFilter !== "all" ||
+                                    searchTerm
+                                        ? "Try adjusting your search criteria or filters to find what you're looking for"
+                                        : "No enrollments found in the system yet"}
+                                </p>
+                            </div>
                         </div>
                     )}
                 </div>

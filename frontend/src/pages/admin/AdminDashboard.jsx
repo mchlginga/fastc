@@ -111,7 +111,7 @@ const AdminDashboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <DashboardHeader
@@ -127,7 +127,7 @@ const AdminDashboard = () => {
                 <ExportAnalytics stats={stats} />
 
                 {/* System Overview & Recent Activities */}
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* System Overview */}
                     <div className="lg:col-span-1">
                         <SystemOverview overview={overview} />

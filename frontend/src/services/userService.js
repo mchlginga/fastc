@@ -275,6 +275,18 @@ export const adminUserService = {
             );
         }
     },
+
+    getUserSkills: async (userId) => {
+        try {
+            const response = await api.get(`/admin/users/${userId}/skills`);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching user skills:", error);
+            throw new Error(
+                error.response?.data?.message || "Failed to fetch user skills"
+            );
+        }
+    },
 };
 
 export const adminCourseService = {
@@ -446,6 +458,18 @@ export const adminCourseService = {
             );
         }
     },
+
+    getAvailableSkills: async () => {
+        try {
+            const response = await api.get("/admin/skills/available");
+            return response.data;
+        } catch (error) {
+            throw new Error(
+                error.response?.data?.message ||
+                    "Failed to fetch available skills"
+            );
+        }
+    },
 };
 
 export const adminEnrollmentService = {
@@ -532,13 +556,31 @@ export const adminEnrollmentService = {
     // Bulk update enrollment status
     bulkUpdateEnrollmentStatus: async (enrollmentIds, status) => {
         try {
-            const response = await api.patch("/admin/enrollments/bulk/status", {
+            console.log("📤 Sending bulk enrollment update request:", {
                 enrollmentIds,
                 status,
             });
+
+            // Ensure enrollmentIds is a proper array of valid MongoDB ObjectIds
+            const validEnrollmentIds = enrollmentIds.filter(
+                (id) => id && id.length === 24 && /^[0-9a-fA-F]{24}$/.test(id)
+            );
+
+            if (validEnrollmentIds.length === 0) {
+                throw new Error(
+                    "No valid enrollment IDs provided for bulk update"
+                );
+            }
+
+            const response = await api.patch("/admin/enrollments/bulk/status", {
+                enrollmentIds: validEnrollmentIds,
+                status,
+            });
+
+            console.log("✅ Bulk enrollment update response:", response.data);
             return response.data;
         } catch (error) {
-            console.error("Error bulk updating enrollment status:", error);
+            console.error("❌ Error bulk updating enrollment status:", error);
             throw new Error(
                 error.response?.data?.message || "Failed to update enrollments"
             );
@@ -805,54 +847,135 @@ export const adminCertificateService = {
         }
     },
 
-    // Download certificate
+    // Download certificate - FIXED VERSION
     downloadCertificate: async (certificateId) => {
         try {
-            const response = await api.get(
-                `/admin/certificates/${certificateId}/download`,
-                {
-                    responseType: "blob", // Important for file downloads
-                }
+            console.log(
+                `📥 Starting download for certificate: ${certificateId}`
             );
 
-            // Create a blob from the PDF data
-            const blob = new Blob([response.data], { type: "application/pdf" });
+            // First, get certificate details to get the Cloudinary URL
+            const certificateResponse = await api.get(
+                `/admin/certificates/${certificateId}`
+            );
 
-            // Create a URL for the blob
-            const url = window.URL.createObjectURL(blob);
+            const certificate = certificateResponse.data.certificate;
 
-            // Create a temporary link element
-            const link = document.createElement("a");
-            link.href = url;
-
-            // Get filename from response headers or use default
-            const contentDisposition = response.headers["content-disposition"];
-            let filename = `FAST-C_Certificate_${certificateId}.pdf`;
-
-            if (contentDisposition) {
-                const filenameMatch =
-                    contentDisposition.match(/filename="(.+)"/);
-                if (filenameMatch) {
-                    filename = filenameMatch[1];
-                }
+            if (!certificate || !certificate.certificateUrl) {
+                throw new Error("Certificate file not found");
             }
 
+            console.log(`📄 Certificate URL: ${certificate.certificateUrl}`);
+
+            // Create a temporary link element for download
+            const link = document.createElement("a");
+            link.href = certificate.certificateUrl;
+
+            // Set the download attribute with a proper filename
+            const courseTitle = certificate.course?.title || "Certificate";
+            const userName = certificate.user?.firstName
+                ? `${certificate.user.firstName}_${certificate.user.surname}`
+                : certificate.user?.companyName || "User";
+
+            const filename = `FAST-C_Certificate_${courseTitle.replace(
+                /\s+/g,
+                "_"
+            )}_${userName.replace(/\s+/g, "_")}.pdf`;
             link.setAttribute("download", filename);
+            link.setAttribute("target", "_blank");
+
+            // Append to body, click, and remove
             document.body.appendChild(link);
-
-            // Trigger the download
             link.click();
+            document.body.removeChild(link);
 
-            // Clean up
-            link.remove();
-            window.URL.revokeObjectURL(url);
+            console.log(`✅ Download initiated for: ${filename}`);
 
-            return { success: true, filename };
+            return {
+                success: true,
+                filename,
+                message: "Certificate download started in new tab",
+            };
         } catch (error) {
-            console.error("Download certificate error:", error);
+            console.error("❌ Download certificate error:", error);
+
+            // If the direct approach fails, try the API download endpoint
+            try {
+                console.log("🔄 Trying API download endpoint...");
+
+                const response = await api.get(
+                    `/admin/certificates/${certificateId}/download`,
+                    {
+                        responseType: "blob",
+                    }
+                );
+
+                // Create a blob from the PDF data
+                const blob = new Blob([response.data], {
+                    type: "application/pdf",
+                });
+                const url = window.URL.createObjectURL(blob);
+
+                // Create a temporary link element
+                const link = document.createElement("a");
+                link.href = url;
+
+                // Get filename from response headers or use default
+                const contentDisposition =
+                    response.headers["content-disposition"];
+                let filename = `FAST-C_Certificate_${certificateId}.pdf`;
+
+                if (contentDisposition) {
+                    const filenameMatch =
+                        contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+
+                link.setAttribute("download", filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                console.log(`✅ API download completed: ${filename}`);
+                return { success: true, filename };
+            } catch (apiError) {
+                console.error("❌ API download also failed:", apiError);
+                throw new Error(
+                    apiError.response?.data?.message ||
+                        "Failed to download certificate. Please try again."
+                );
+            }
+        }
+    },
+
+    // Alternative download method that opens in new tab
+    viewCertificate: async (certificateId) => {
+        try {
+            // Get certificate details to get the Cloudinary URL
+            const certificateResponse = await api.get(
+                `/admin/certificates/${certificateId}`
+            );
+
+            const certificate = certificateResponse.data.certificate;
+
+            if (!certificate || !certificate.certificateUrl) {
+                throw new Error("Certificate file not found");
+            }
+
+            // Open the certificate URL in a new tab
+            window.open(certificate.certificateUrl, "_blank");
+
+            return {
+                success: true,
+                message: "Certificate opened in new tab",
+            };
+        } catch (error) {
+            console.error("Error viewing certificate:", error);
             throw new Error(
-                error.response?.data?.message ||
-                    "Failed to download certificate"
+                error.response?.data?.message || "Failed to view certificate"
             );
         }
     },
@@ -860,7 +983,8 @@ export const adminCertificateService = {
     // Verify certificate
     verifyCertificate: async (verificationCode) => {
         try {
-            const response = await api.get("/admin/certificates/verify", {
+            // Use PUBLIC endpoint, not admin endpoint
+            const response = await api.get("/certificates/verify", {
                 params: { verificationCode },
             });
             return response.data;
@@ -868,6 +992,20 @@ export const adminCertificateService = {
             console.error("Error verifying certificate:", error);
             throw new Error(
                 error.response?.data?.message || "Failed to verify certificate"
+            );
+        }
+    },
+};
+
+export const adminSkillService = {
+    getAvailableSkills: async () => {
+        try {
+            const response = await api.get("/admin/skills/available");
+            return response.data;
+        } catch (error) {
+            throw new Error(
+                error.response?.data?.message ||
+                    "Failed to fetch available skills"
             );
         }
     },

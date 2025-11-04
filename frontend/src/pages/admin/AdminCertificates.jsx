@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Award } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
@@ -31,6 +31,23 @@ import {
 // Skeleton Component
 import AdminCertificatesSkeleton from "../../components/admin/certificates/AdminCertificatesSkeleton";
 
+// Debounce hook
+const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+};
+
 function AdminCertificates() {
     const { user: adminUser } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -51,6 +68,7 @@ function AdminCertificates() {
 
     // Filters and search
     const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
     const [statusFilter, setStatusFilter] = useState(
         searchParams.get("status") || "all"
     );
@@ -61,6 +79,14 @@ function AdminCertificates() {
         searchParams.get("user") || "all"
     );
     const [showFilters, setShowFilters] = useState(false);
+
+    // Pagination
+    const [pagination, setPagination] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        totalCertificates: 0,
+        certificatesPerPage: 10,
+    });
 
     // Selected certificates for bulk actions
     const [selectedCertificates, setSelectedCertificates] = useState(new Set());
@@ -80,89 +106,45 @@ function AdminCertificates() {
     const [bulkDelete, setBulkDelete] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    // Fetch certificates and stats
-    useEffect(() => {
-        fetchCertificates();
-        fetchCertificateStats();
-    }, []);
-
-    // Update URL when filters change
-    useEffect(() => {
-        const params = new URLSearchParams();
-        if (statusFilter !== "all") params.set("status", statusFilter);
-        if (courseFilter !== "all") params.set("course", courseFilter);
-        if (userFilter !== "all") params.set("user", userFilter);
-        setSearchParams(params);
-    }, [statusFilter, courseFilter, userFilter, setSearchParams]);
-
-    // Filter certificates when search or filters change
-    useEffect(() => {
-        let filtered = certificates;
-
-        if (searchTerm) {
-            filtered = filtered.filter(
-                (certificate) =>
-                    certificate.user?.firstName
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    certificate.user?.surname
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    certificate.user?.email
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    certificate.user?.companyName
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    certificate.course?.title
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    certificate.verificationCode
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase())
-            );
-        }
-
-        if (statusFilter !== "all") {
-            filtered = filtered.filter(
-                (certificate) => certificate.status === statusFilter
-            );
-        }
-
-        if (courseFilter !== "all") {
-            filtered = filtered.filter(
-                (certificate) => certificate.course?._id === courseFilter
-            );
-        }
-
-        if (userFilter !== "all") {
-            filtered = filtered.filter(
-                (certificate) => certificate.user?._id === userFilter
-            );
-        }
-
-        setFilteredCertificates(filtered);
-    }, [certificates, searchTerm, statusFilter, courseFilter, userFilter]);
-
-    const fetchCertificates = async () => {
+    // Fetch certificates and stats with optimized dependencies
+    const fetchCertificates = useCallback(async () => {
         try {
             setLoading(true);
+            setError(null);
             const response = await adminCertificateService.getCertificates({
-                search: searchTerm,
+                search: debouncedSearchTerm,
                 status: statusFilter !== "all" ? statusFilter : "",
                 course: courseFilter !== "all" ? courseFilter : "",
                 user: userFilter !== "all" ? userFilter : "",
-                page: 1,
-                limit: 50,
+                page: pagination.currentPage,
+                limit: pagination.certificatesPerPage,
             });
             setCertificates(response.certificates);
+            setFilteredCertificates(response.certificates);
+
+            // Update pagination if available
+            if (response.pagination) {
+                setPagination((prev) => ({
+                    ...prev,
+                    currentPage: response.pagination.currentPage,
+                    totalPages: response.pagination.totalPages,
+                    totalCertificates: response.pagination.totalCertificates,
+                }));
+            }
         } catch (err) {
             setError(err.message || "Failed to load certificates");
             console.error("Error fetching certificates:", err);
         } finally {
             setLoading(false);
         }
-    };
+    }, [
+        debouncedSearchTerm,
+        statusFilter,
+        courseFilter,
+        userFilter,
+        pagination.currentPage,
+        pagination.certificatesPerPage,
+    ]);
 
     const fetchCertificateStats = async () => {
         try {
@@ -173,6 +155,36 @@ function AdminCertificates() {
             console.error("Error fetching certificate stats:", err);
         }
     };
+
+    // Initial fetch
+    useEffect(() => {
+        fetchCertificates();
+        fetchCertificateStats();
+    }, []);
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        if (pagination.currentPage !== 1) {
+            setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        }
+    }, [debouncedSearchTerm, statusFilter, courseFilter, userFilter]);
+
+    // Update URL when filters change
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (statusFilter !== "all") params.set("status", statusFilter);
+        if (courseFilter !== "all") params.set("course", courseFilter);
+        if (userFilter !== "all") params.set("user", userFilter);
+        if (pagination.currentPage > 1)
+            params.set("page", pagination.currentPage);
+        setSearchParams(params);
+    }, [
+        statusFilter,
+        courseFilter,
+        userFilter,
+        pagination.currentPage,
+        setSearchParams,
+    ]);
 
     const handleAddCertificate = () => {
         setShowAddModal(true);
@@ -290,9 +302,9 @@ function AdminCertificates() {
                 prev.map((certificate) =>
                     certificate._id === certificateId
                         ? {
-                              ...response.certificate, // Use the updated certificate from response
-                              effectiveStatus: "active", // Force active status
-                              isExpired: false, // Reset expired flag
+                              ...response.certificate,
+                              effectiveStatus: "active",
+                              isExpired: false,
                           }
                         : certificate
                 )
@@ -314,10 +326,8 @@ function AdminCertificates() {
         }
     };
 
-    // NEW: Bulk regenerate certificates
     const handleBulkRegenerateCertificates = async (certificateIds) => {
         try {
-            // Use Promise.all to regenerate all certificates in parallel
             const regeneratePromises = certificateIds.map((certificateId) =>
                 adminCertificateService.regenerateCertificate(certificateId)
             );
@@ -394,7 +404,7 @@ function AdminCertificates() {
                         ? {
                               ...certificate,
                               status: "expired",
-                              expirationDate: new Date().toISOString(), // Set to current date
+                              expirationDate: new Date().toISOString(),
                           }
                         : certificate
                 )
@@ -473,6 +483,22 @@ function AdminCertificates() {
                 type: "error",
             });
             throw err;
+        }
+    };
+
+    const handleDownloadCertificate = async (certificateId) => {
+        try {
+            await adminCertificateService.downloadCertificate(certificateId);
+            setToastNotification({
+                message: "Certificate download started",
+                type: "success",
+            });
+        } catch (err) {
+            console.error("Download error:", err);
+            setToastNotification({
+                message: err.message || "Failed to download certificate",
+                type: "error",
+            });
         }
     };
 
@@ -556,40 +582,62 @@ function AdminCertificates() {
         setSelectAll(newSelected.size === filteredCertificates.length);
     };
 
-    if (loading) {
+    // Pagination handlers
+    const handlePageChange = (newPage) => {
+        setPagination((prev) => ({ ...prev, currentPage: newPage }));
+        setSelectedCertificates(new Set());
+        setSelectAll(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleCertificatesPerPageChange = (newPerPage) => {
+        setPagination((prev) => ({
+            ...prev,
+            certificatesPerPage: newPerPage,
+            currentPage: 1,
+        }));
+        setSelectedCertificates(new Set());
+        setSelectAll(false);
+    };
+
+    if (loading && certificates.length === 0) {
         return <AdminCertificatesSkeleton />;
     }
 
-    if (error) {
+    if (error && certificates.length === 0) {
         return <ErrorState message={error} onRetry={fetchCertificates} />;
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6 rounded-xl">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center mb-3">
-                        <Award size={28} className="text-blue-600 mr-3" />
-                        <h1 className="text-3xl font-bold text-gray-900">
-                            Certificate Management
-                        </h1>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900">
+                                Certificate Management
+                            </h1>
+                            <p className="text-gray-600 text-sm mt-1">
+                                Manage certificates, verify authenticity, and
+                                handle certificate operations
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-gray-600">
-                        Manage certificates, verify authenticity, and handle
-                        certificate operations
-                    </p>
                 </div>
 
                 {/* Stats Cards */}
                 <div className="mb-6">
-                    <CertificateStats stats={stats} />
+                    <CertificateStats
+                        stats={stats}
+                        loading={loading && certificates.length > 0}
+                    />
                 </div>
 
                 {/* Unified Container for Filters and Table */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
                     {/* Filters Section */}
-                    <div className="p-6 border-b border-gray-100 bg-white">
+                    <div className="p-6 border-b border-gray-100">
                         <CertificateFilters
                             searchTerm={searchTerm}
                             setSearchTerm={setSearchTerm}
@@ -608,6 +656,7 @@ function AdminCertificates() {
                             onBulkExpire={handleBulkExpire}
                             onBulkDelete={confirmBulkDelete}
                             stats={stats}
+                            loading={loading && certificates.length > 0}
                         />
                     </div>
 
@@ -628,11 +677,27 @@ function AdminCertificates() {
                                 confirmRegenerateCertificate
                             }
                             onDeleteCertificate={confirmDeleteCertificate}
+                            onDownloadCertificate={handleDownloadCertificate}
                             statusFilter={statusFilter}
                             setStatusFilter={setStatusFilter}
                             stats={stats}
+                            loading={loading && certificates.length > 0}
                         />
                     </div>
+
+                    {/* Pagination */}
+                    {pagination.totalPages > 1 && (
+                        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                            <Pagination
+                                pagination={pagination}
+                                onPageChange={handlePageChange}
+                                onCertificatesPerPageChange={
+                                    handleCertificatesPerPageChange
+                                }
+                                loading={loading && certificates.length > 0}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* Modals */}
@@ -645,7 +710,7 @@ function AdminCertificates() {
                     certificate={selectedCertificate}
                     onRevoke={confirmRevokeCertificate}
                     onRegenerate={confirmRegenerateCertificate}
-                    onBulkExpire={confirmBulkExpire}
+                    onDownload={handleDownloadCertificate}
                 />
 
                 <RevokeCertificateModal
@@ -668,7 +733,6 @@ function AdminCertificates() {
                     onRegenerate={handleRegenerateCertificate}
                 />
 
-                {/* NEW: Bulk Regenerate Modal */}
                 <BulkRegenerateCertificateModal
                     isOpen={showBulkRegenerateModal}
                     onClose={() => setShowBulkRegenerateModal(false)}
@@ -678,6 +742,13 @@ function AdminCertificates() {
                             Array.from(selectedCertificates)
                         )
                     }
+                />
+
+                <BulkExpireCertificateModal
+                    isOpen={showBulkExpireModal}
+                    onClose={() => setShowBulkExpireModal(false)}
+                    selectedCount={selectedCertificates.size}
+                    onBulkExpire={handleBulkExpire}
                 />
 
                 <AddCertificateModal
@@ -733,5 +804,145 @@ function AdminCertificates() {
         </div>
     );
 }
+
+// Pagination Component
+const Pagination = ({
+    pagination,
+    onPageChange,
+    onCertificatesPerPageChange,
+    loading = false,
+}) => {
+    const { currentPage, totalPages, totalCertificates, certificatesPerPage } =
+        pagination;
+
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisiblePages = 5;
+
+        let startPage = Math.max(
+            1,
+            currentPage - Math.floor(maxVisiblePages / 2)
+        );
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+        }
+
+        return pages;
+    };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                </div>
+                <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                <div className="flex gap-1">
+                    {[...Array(5)].map((_, index) => (
+                        <div
+                            key={index}
+                            className="h-8 w-8 bg-gray-200 rounded animate-pulse"
+                        ></div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Certificates per page selector */}
+            <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-700">Show</span>
+                <select
+                    value={certificatesPerPage}
+                    onChange={(e) =>
+                        onCertificatesPerPageChange(Number(e.target.value))
+                    }
+                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                    disabled={loading}
+                >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                </select>
+                <span className="text-sm text-gray-700">
+                    certificates per page
+                </span>
+            </div>
+
+            {/* Page info */}
+            <div className="text-sm text-gray-700">
+                Showing {(currentPage - 1) * certificatesPerPage + 1} to{" "}
+                {Math.min(currentPage * certificatesPerPage, totalCertificates)}{" "}
+                of {totalCertificates} certificates
+            </div>
+
+            {/* Page navigation */}
+            <div className="flex items-center gap-1">
+                {/* First Page */}
+                <button
+                    onClick={() => onPageChange(1)}
+                    disabled={currentPage === 1 || loading}
+                    className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                    «
+                </button>
+
+                {/* Previous Page */}
+                <button
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || loading}
+                    className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                    ‹
+                </button>
+
+                {/* Page Numbers */}
+                {getPageNumbers().map((page) => (
+                    <button
+                        key={page}
+                        onClick={() => onPageChange(page)}
+                        disabled={loading}
+                        className={`px-3 py-1 text-sm font-medium border rounded transition-colors cursor-pointer ${
+                            currentPage === page
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                        {page}
+                    </button>
+                ))}
+
+                {/* Next Page */}
+                <button
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || loading}
+                    className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                    ›
+                </button>
+
+                {/* Last Page */}
+                <button
+                    onClick={() => onPageChange(totalPages)}
+                    disabled={currentPage === totalPages || loading}
+                    className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                    »
+                </button>
+            </div>
+        </div>
+    );
+};
 
 export default AdminCertificates;

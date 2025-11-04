@@ -23,6 +23,13 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
 
     const isSuperAdmin = currentUser?.role === "superAdmin";
 
+    // Reset form when modal opens/closes
+    useEffect(() => {
+        if (isOpen) {
+            resetForm();
+        }
+    }, [isOpen]);
+
     // Handle click outside to close
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,10 +40,13 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
 
         if (isOpen) {
             document.addEventListener("mousedown", handleClickOutside);
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = "hidden";
         }
 
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
+            document.body.style.overflow = "unset";
         };
     }, [isOpen]);
 
@@ -56,24 +66,33 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
         setShowPassword(false);
     }, []);
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         if (loading) return;
         resetForm();
         onClose();
-    };
+    }, [loading, resetForm, onClose]);
 
-    const handleChange = useCallback((e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-        setErrors((prev) => (prev[name] ? { ...prev, [name]: "" } : prev));
-    }, []);
+    const handleChange = useCallback(
+        (e) => {
+            const { name, value } = e.target;
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+            // Clear error when user starts typing
+            if (errors[name]) {
+                setErrors((prev) => ({ ...prev, [name]: "" }));
+            }
+            if (errors.submit) {
+                setErrors((prev) => ({ ...prev, submit: "" }));
+            }
+        },
+        [errors]
+    );
 
-    const togglePasswordVisibility = () => {
+    const togglePasswordVisibility = useCallback(() => {
         setShowPassword(!showPassword);
-    };
+    }, [showPassword]);
 
     const validateForm = useCallback(() => {
         const newErrors = {};
@@ -131,19 +150,23 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
             resetForm();
             onClose();
         } catch (error) {
-            setErrors({ submit: error.message });
+            setErrors({
+                submit:
+                    error.message || "Failed to create user. Please try again.",
+            });
         } finally {
             setLoading(false);
         }
     };
 
+    // Early return for performance
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 cursor-pointer">
             <div
                 ref={modalRef}
-                className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col cursor-auto"
+                className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col cursor-auto transform transition-all duration-200 scale-100"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -153,7 +176,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                     </h2>
                     <button
                         onClick={handleClose}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                         disabled={loading}
                     >
                         <X size={20} />
@@ -172,7 +195,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                 name="role"
                                 value={formData.role}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
+                                className="w-full px-3 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
                                 disabled={loading}
                             >
                                 <option value="user">Trainee</option>
@@ -185,7 +208,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                 )}
                             </select>
                             {errors.role && (
-                                <p className="mt-1 text-sm text-red-600">
+                                <p className="mt-1 text-sm text-red-600 animate-fadeIn">
                                     {errors.role}
                                 </p>
                             )}
@@ -202,7 +225,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                     name="companyName"
                                     value={formData.companyName}
                                     onChange={handleChange}
-                                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text ${
+                                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
                                         errors.companyName
                                             ? "border-red-300"
                                             : "border-gray-300"
@@ -211,7 +234,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                     disabled={loading}
                                 />
                                 {errors.companyName && (
-                                    <p className="mt-1 text-sm text-red-600">
+                                    <p className="mt-1 text-sm text-red-600 animate-fadeIn">
                                         {errors.companyName}
                                     </p>
                                 )}
@@ -227,7 +250,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                         name="firstName"
                                         value={formData.firstName}
                                         onChange={handleChange}
-                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text ${
+                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
                                             errors.firstName
                                                 ? "border-red-300"
                                                 : "border-gray-300"
@@ -236,7 +259,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                         disabled={loading}
                                     />
                                     {errors.firstName && (
-                                        <p className="mt-1 text-sm text-red-600">
+                                        <p className="mt-1 text-sm text-red-600 animate-fadeIn">
                                             {errors.firstName}
                                         </p>
                                     )}
@@ -250,7 +273,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                         name="surname"
                                         value={formData.surname}
                                         onChange={handleChange}
-                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text ${
+                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
                                             errors.surname
                                                 ? "border-red-300"
                                                 : "border-gray-300"
@@ -259,7 +282,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                         disabled={loading}
                                     />
                                     {errors.surname && (
-                                        <p className="mt-1 text-sm text-red-600">
+                                        <p className="mt-1 text-sm text-red-600 animate-fadeIn">
                                             {errors.surname}
                                         </p>
                                     )}
@@ -277,7 +300,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text ${
+                                className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
                                     errors.email
                                         ? "border-red-300"
                                         : "border-gray-300"
@@ -286,7 +309,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                 disabled={loading}
                             />
                             {errors.email && (
-                                <p className="mt-1 text-sm text-red-600">
+                                <p className="mt-1 text-sm text-red-600 animate-fadeIn">
                                     {errors.email}
                                 </p>
                             )}
@@ -303,7 +326,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                     name="password"
                                     value={formData.password}
                                     onChange={handleChange}
-                                    className={`w-full px-3 py-2.5 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text ${
+                                    className={`w-full px-3 py-2.5 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
                                         errors.password
                                             ? "border-red-300"
                                             : "border-gray-300"
@@ -314,7 +337,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                 <button
                                     type="button"
                                     onClick={togglePasswordVisibility}
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer disabled:opacity-50"
                                     disabled={loading}
                                 >
                                     {showPassword ? (
@@ -325,7 +348,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                 </button>
                             </div>
                             {errors.password && (
-                                <p className="mt-1 text-sm text-red-600">
+                                <p className="mt-1 text-sm text-red-600 animate-fadeIn">
                                     {errors.password}
                                 </p>
                             )}
@@ -342,7 +365,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                     name="contactNumber"
                                     value={formData.contactNumber}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
+                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                     placeholder="Phone number"
                                     disabled={loading}
                                 />
@@ -355,7 +378,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                     name="profileStatus"
                                     value={formData.profileStatus}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
+                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
                                     disabled={loading}
                                 >
                                     <option value="approved">Approved</option>
@@ -375,7 +398,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
+                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                 placeholder="Full address"
                                 disabled={loading}
                             />
@@ -383,7 +406,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
 
                         {/* Submit Error */}
                         {errors.submit && (
-                            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
                                 <p className="text-sm text-red-600">
                                     {errors.submit}
                                 </p>
@@ -397,7 +420,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
                     <button
                         type="button"
                         onClick={handleClose}
-                        className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer"
+                        className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer disabled:opacity-50"
                         disabled={loading}
                     >
                         Cancel

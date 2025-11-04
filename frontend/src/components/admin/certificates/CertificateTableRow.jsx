@@ -47,20 +47,23 @@ const CertificateTableRow = ({
     const getStatusConfig = (status) => {
         const configs = {
             active: {
-                bg: "bg-green-100",
-                text: "text-green-800",
+                bg: "bg-emerald-50",
+                text: "text-emerald-700",
+                border: "border-emerald-200",
                 label: "Active",
                 icon: <Check size={12} className="mr-1" />,
             },
             expired: {
-                bg: "bg-yellow-100",
-                text: "text-yellow-800",
+                bg: "bg-yellow-50",
+                text: "text-yellow-700",
+                border: "border-yellow-200",
                 label: "Expired",
                 icon: <Clock size={12} className="mr-1" />,
             },
             revoked: {
-                bg: "bg-red-100",
-                text: "text-red-800",
+                bg: "bg-red-50",
+                text: "text-red-700",
+                border: "border-red-200",
                 label: "Revoked",
                 icon: <X size={12} className="mr-1" />,
             },
@@ -74,13 +77,14 @@ const CertificateTableRow = ({
     const isExpired = new Date() > new Date(certificate.expirationDate);
     const isActive = certificate.status === "active" && !isExpired;
 
-    // Subtle alternating row colors for better readability
-    const rowBgColor = rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50";
-
     const formatDate = (dateString) => {
         if (!dateString) return "—";
         try {
-            return new Date(dateString).toLocaleDateString();
+            return new Date(dateString).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+            });
         } catch (error) {
             return "Invalid Date";
         }
@@ -125,7 +129,6 @@ const CertificateTableRow = ({
         return certificate.verificationCode || "No Code";
     };
 
-    // UPDATED: Handle download with proper implementation
     const handleDownload = async () => {
         try {
             if (onDownload) {
@@ -137,7 +140,6 @@ const CertificateTableRow = ({
     };
 
     const handleVerify = () => {
-        // Open verification in new tab
         if (certificate.verificationCode) {
             const verifyUrl = `${window.location.origin}/verify?code=${certificate.verificationCode}`;
             window.open(verifyUrl, "_blank");
@@ -146,41 +148,44 @@ const CertificateTableRow = ({
 
     return (
         <tr
-            className={`${rowBgColor} hover:bg-blue-200/30 transition-colors group`}
+            className={`border-b border-gray-100 transition-all duration-200 ${
+                isSelected
+                    ? "bg-blue-50 hover:bg-blue-100"
+                    : "hover:bg-gray-50/80"
+            }`}
         >
             {/* Checkbox */}
-            <td className="px-4 py-3 whitespace-nowrap">
+            <td className="pl-6 pr-4 py-4 whitespace-nowrap">
                 <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={onSelect}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-blue-500 focus:ring-2 focus:ring-offset-1 transition-colors"
                 />
             </td>
 
             {/* User Info */}
-            <td className="px-4 py-3 whitespace-nowrap">
-                <div className="flex items-center">
-                    <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-200">
+            <td className="px-4 py-4 whitespace-nowrap">
+                <div className="flex items-center group">
+                    <div className="flex-shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 group-hover:shadow-xs transition-shadow">
                         {certificate.user?.profilePic ? (
                             <img
-                                src={certificate.user.profilePic} // ✅ DIRECT CLOUDINARY URL
+                                src={certificate.user.profilePic}
                                 alt="Profile"
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                    // Fallback if image fails to load
                                     e.target.style.display = "none";
                                 }}
                             />
                         ) : (
-                            <User size={18} className="text-gray-400" />
+                            <User size={16} className="text-gray-400" />
                         )}
                     </div>
                     <div className="ml-3">
-                        <div className="text-sm font-semibold text-gray-900 truncate max-w-[140px]">
+                        <div className="text-sm font-medium text-gray-900 truncate max-w-[160px] group-hover:text-gray-700 transition-colors">
                             {getUserDisplayName(certificate.user)}
                         </div>
-                        <div className="text-sm text-gray-500 truncate max-w-[140px]">
+                        <div className="text-sm text-gray-500 truncate max-w-[160px]">
                             {getUserEmail(certificate.user)}
                         </div>
                         <div className="text-xs text-gray-400 capitalize">
@@ -191,7 +196,7 @@ const CertificateTableRow = ({
             </td>
 
             {/* Course Info */}
-            <td className="px-4 py-3 whitespace-nowrap">
+            <td className="px-4 py-4 whitespace-nowrap">
                 <div className="flex items-center">
                     <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded flex items-center justify-center border border-gray-200 mr-3">
                         <Award size={14} className="text-gray-400" />
@@ -208,9 +213,9 @@ const CertificateTableRow = ({
             </td>
 
             {/* Status */}
-            <td className="px-4 py-3 whitespace-nowrap">
+            <td className="px-4 py-4 whitespace-nowrap">
                 <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
                 >
                     {statusConfig.icon}
                     {statusConfig.label}
@@ -221,12 +226,12 @@ const CertificateTableRow = ({
             </td>
 
             {/* Completion Date */}
-            <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+            <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
                 {formatDate(certificate.completionDate)}
             </td>
 
             {/* Expiration Date */}
-            <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+            <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
                 {certificate.expirationDate
                     ? formatDate(certificate.expirationDate)
                     : "—"}
@@ -236,66 +241,69 @@ const CertificateTableRow = ({
             </td>
 
             {/* Verification Code */}
-            <td className="px-4 py-3 text-sm font-mono text-gray-600 whitespace-nowrap">
+            <td className="px-4 py-4 text-sm font-mono text-gray-600 whitespace-nowrap">
                 <code className="bg-gray-100 px-2 py-1 rounded text-xs">
                     {getVerificationCode()}
                 </code>
             </td>
 
             {/* Actions */}
-            <td className="px-4 py-3 whitespace-nowrap">
-                <div className="flex items-center space-x-2" ref={actionsRef}>
+            <td className="pr-6 pl-4 py-4 whitespace-nowrap">
+                <div
+                    className="flex items-center justify-end gap-1"
+                    ref={actionsRef}
+                >
                     {/* Quick View Button - Always Visible */}
                     <button
                         onClick={onView}
-                        className="text-blue-600 hover:text-blue-800 cursor-pointer p-2 rounded-lg hover:bg-blue-100 transition-all duration-200"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 active:scale-95"
                         title="View Details"
                     >
                         <Eye size={16} />
                     </button>
 
-                    {/* Quick Download Button - NEW: Always visible download button */}
-                    <button
-                        onClick={handleDownload}
-                        className="text-green-600 hover:text-green-800 cursor-pointer p-2 rounded-lg hover:bg-green-100 transition-all duration-200"
-                        title="Download Certificate"
-                    >
-                        <Download size={16} />
-                    </button>
-
-                    {/* Quick Verify Button */}
-                    {certificate.verificationCode && (
-                        <button
-                            onClick={handleVerify}
-                            className="text-purple-600 hover:text-purple-800 cursor-pointer p-2 rounded-lg hover:bg-purple-100 transition-all duration-200"
-                            title="Verify Certificate"
-                        >
-                            <ExternalLink size={16} />
-                        </button>
-                    )}
-
                     {/* Actions Dropdown */}
                     <div className="relative">
                         <button
                             onClick={() => setShowActions(!showActions)}
-                            className="text-gray-500 hover:text-gray-700 cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer hover:scale-110 active:scale-95"
                         >
                             <MoreVertical size={16} />
                         </button>
 
                         {showActions && (
-                            <div className="absolute right-0 z-20 w-48 mt-1 bg-white border rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
-                                {/* Download - also available in dropdown */}
+                            <div className="absolute right-0 z-20 w-48 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-200/50 ring-1 ring-black ring-opacity-5 py-1 animate-in fade-in-0 zoom-in-95">
+                                {/* Download */}
                                 <button
                                     onClick={() => {
                                         handleDownload();
                                         setShowActions(false);
                                     }}
-                                    className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
+                                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 transition-all duration-150 hover:bg-gray-50 cursor-pointer group"
                                 >
-                                    <Download size={14} className="mr-2" />
+                                    <Download
+                                        size={14}
+                                        className="mr-2 group-hover:scale-110 transition-transform"
+                                    />
                                     Download PDF
                                 </button>
+
+                                {/* Verify */}
+                                {certificate.verificationCode && (
+                                    <button
+                                        onClick={() => {
+                                            handleVerify();
+                                            setShowActions(false);
+                                        }}
+                                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 transition-all duration-150 hover:bg-gray-50 cursor-pointer group"
+                                    >
+                                        <ExternalLink
+                                            size={14}
+                                            className="mr-2 group-hover:scale-110 transition-transform"
+                                        />
+                                        Verify Certificate
+                                    </button>
+                                )}
 
                                 {/* Status Updates */}
                                 {certificate.status !== "active" && (
@@ -304,9 +312,12 @@ const CertificateTableRow = ({
                                             // Handle activate
                                             setShowActions(false);
                                         }}
-                                        className="flex items-center w-full px-4 py-2.5 text-sm text-green-700 transition-colors hover:bg-green-50 cursor-pointer"
+                                        className="flex items-center w-full px-3 py-2 text-sm text-green-700 transition-all duration-150 hover:bg-green-50 cursor-pointer group"
                                     >
-                                        <Check size={14} className="mr-2" />
+                                        <Check
+                                            size={14}
+                                            className="mr-2 group-hover:scale-110 transition-transform"
+                                        />
                                         Activate
                                     </button>
                                 )}
@@ -316,9 +327,12 @@ const CertificateTableRow = ({
                                             onRevoke();
                                             setShowActions(false);
                                         }}
-                                        className="flex items-center w-full px-4 py-2.5 text-sm text-red-700 transition-colors hover:bg-red-50 cursor-pointer"
+                                        className="flex items-center w-full px-3 py-2 text-sm text-red-700 transition-all duration-150 hover:bg-red-50 cursor-pointer group"
                                     >
-                                        <X size={14} className="mr-2" />
+                                        <X
+                                            size={14}
+                                            className="mr-2 group-hover:scale-110 transition-transform"
+                                        />
                                         Revoke
                                     </button>
                                 )}
@@ -329,22 +343,28 @@ const CertificateTableRow = ({
                                         onRegenerate();
                                         setShowActions(false);
                                     }}
-                                    className="flex items-center w-full px-4 py-2.5 text-sm text-blue-700 transition-colors hover:bg-blue-50 cursor-pointer"
+                                    className="flex items-center w-full px-3 py-2 text-sm text-blue-700 transition-all duration-150 hover:bg-blue-50 cursor-pointer group"
                                 >
-                                    <RotateCcw size={14} className="mr-2" />
+                                    <RotateCcw
+                                        size={14}
+                                        className="mr-2 group-hover:scale-110 transition-transform"
+                                    />
                                     Regenerate
                                 </button>
 
-                                <div className="border-t border-gray-100"></div>
+                                <div className="border-t border-gray-100 my-1"></div>
 
                                 <button
                                     onClick={() => {
                                         onDelete();
                                         setShowActions(false);
                                     }}
-                                    className="flex items-center w-full px-4 py-2.5 text-sm text-red-700 transition-colors hover:bg-red-50 cursor-pointer"
+                                    className="flex items-center w-full px-3 py-2 text-sm text-red-700 transition-all duration-150 hover:bg-red-50 cursor-pointer group"
                                 >
-                                    <Trash2 size={14} className="mr-2" />
+                                    <Trash2
+                                        size={14}
+                                        className="mr-2 group-hover:scale-110 transition-transform"
+                                    />
                                     Delete Certificate
                                 </button>
                             </div>

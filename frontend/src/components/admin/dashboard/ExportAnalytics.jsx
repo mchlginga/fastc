@@ -4,29 +4,29 @@ import { Download, TrendingUp, TrendingDown } from "react-feather";
 const ExportAnalytics = ({ stats, loading = false }) => {
     if (loading) {
         return (
-            <section className="p-6 bg-white border border-gray-100 rounded-2xl shadow-md mb-8">
+            <section className="p-6 bg-white border border-gray-100 rounded-xl shadow-xs mb-8">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <div className="h-6 bg-gray-300 rounded w-48 animate-pulse mb-2"></div>
+                        <div className="h-6 bg-gray-200 rounded w-48 animate-pulse mb-2"></div>
                         <div className="h-4 bg-gray-200 rounded w-64 animate-pulse"></div>
                     </div>
-                    <div className="h-6 bg-gray-300 rounded w-24 animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[...Array(3)].map((_, index) => (
                         <div key={index} className="text-center">
-                            <div className="bg-gray-200 rounded-2xl p-4 mb-3">
+                            <div className="bg-gray-200 rounded-xl p-4 mb-3">
                                 <div className="h-8 bg-gray-300 rounded w-16 mx-auto animate-pulse"></div>
                             </div>
-                            <div className="h-4 bg-gray-300 rounded w-20 mx-auto animate-pulse mb-1"></div>
+                            <div className="h-4 bg-gray-200 rounded w-20 mx-auto animate-pulse mb-1"></div>
                             <div className="h-3 bg-gray-200 rounded w-24 mx-auto animate-pulse"></div>
                         </div>
                     ))}
                 </div>
 
                 <div className="mt-6 pt-6 border-t border-gray-200">
-                    <div className="h-10 bg-gray-300 rounded-xl w-40 animate-pulse"></div>
+                    <div className="h-10 bg-gray-200 rounded-xl w-40 animate-pulse"></div>
                 </div>
             </section>
         );
@@ -61,11 +61,11 @@ const ExportAnalytics = ({ stats, loading = false }) => {
     ];
 
     return (
-        <section className="p-6 bg-white border border-gray-100 rounded-2xl shadow-md mb-8">
+        <section className="p-6 bg-white border border-gray-100 rounded-xl shadow-xs mb-8">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                        <Download size={24} className="mr-3 text-blue-600" />
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                        <Download size={20} className="mr-3 text-blue-600" />
                         CSV Export Analytics
                     </h3>
                     <p className="text-gray-600 text-sm mt-1">
@@ -92,9 +92,9 @@ const ExportAnalytics = ({ stats, loading = false }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {analyticsCards.map((card, index) => (
                     <div key={index} className="text-center">
-                        <div className={`${card.bg} rounded-2xl p-4 mb-3`}>
+                        <div className={`${card.bg} rounded-xl p-4 mb-3`}>
                             <p
-                                className={`text-3xl font-bold ${card.textColor}`}
+                                className={`text-2xl font-semibold ${card.textColor}`}
                             >
                                 {card.value}
                             </p>
@@ -112,9 +112,9 @@ const ExportAnalytics = ({ stats, loading = false }) => {
             <div className="mt-6 pt-6 border-t border-gray-200">
                 <Link
                     to="/admin/job-match"
-                    className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition transform hover:-translate-y-0.5 cursor-pointer shadow-md hover:shadow-lg"
+                    className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all duration-200 cursor-pointer shadow-xs hover:shadow-sm"
                 >
-                    <Download size={18} className="mr-2" />
+                    <Download size={16} className="mr-2" />
                     Go to Job Matching
                 </Link>
             </div>

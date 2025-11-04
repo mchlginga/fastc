@@ -41,6 +41,7 @@ import AdminCertificates from "./pages/admin/AdminCertificates";
 import AdminJob from "./pages/admin/AdminJobMatching";
 import AdminProfile from "./pages/admin/AdminProfile";
 import AdminSettings from "./pages/admin/AdminSettings";
+import VerifyCertificate from "./pages/admin/VerifyCertificate";
 
 /* company */
 import CompanyHeaderFooter from "./pages/company/CompanyHeaderFooter";
@@ -68,6 +69,7 @@ function App() {
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermSer />} />
                 <Route path="pending-approval" element={<PendingApproval />} />
+                <Route path="verify" element={<VerifyCertificate />} />
 
                 {/* profile setup route */}
                 <Route

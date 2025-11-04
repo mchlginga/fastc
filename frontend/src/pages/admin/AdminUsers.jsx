@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Users } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
@@ -28,18 +28,35 @@ import {
 // Skeleton Component
 import AdminUsersSkeleton from "../../components/admin/users/AdminUsersSkeleton";
 
+// Debounce hook
+const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+};
+
 function AdminUsers() {
     const { user: adminUser } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [users, setUsers] = useState([]);
-    const [filteredUsers, setFilteredUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [toastNotification, setToastNotification] = useState(null);
 
     // Filters and search
     const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
     const [statusFilter, setStatusFilter] = useState(
         searchParams.get("status") || "all"
     );
@@ -70,10 +87,52 @@ function AdminUsers() {
     const [bulkDelete, setBulkDelete] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    // Fetch users - UPDATED: Remove filtered dependencies
+    // Fetch users with optimized dependencies
+    const fetchUsers = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const response = await adminUserService.getUsers({
+                search: debouncedSearchTerm,
+                status: statusFilter !== "all" ? statusFilter : "",
+                role: roleFilter !== "all" ? roleFilter : "",
+                page: pagination.currentPage,
+                limit: pagination.usersPerPage,
+            });
+
+            setUsers(response.users);
+            setPagination((prev) => ({
+                ...prev,
+                currentPage: response.pagination.currentPage,
+                totalPages: response.pagination.totalPages,
+                totalUsers: response.pagination.totalUsers,
+            }));
+        } catch (err) {
+            console.error("Error fetching users:", err);
+            setError(err.message || "Failed to load users");
+        } finally {
+            setLoading(false);
+        }
+    }, [
+        debouncedSearchTerm,
+        statusFilter,
+        roleFilter,
+        pagination.currentPage,
+        pagination.usersPerPage,
+    ]);
+
+    // Initial fetch and when filters change
     useEffect(() => {
         fetchUsers();
-    }, [pagination.currentPage, pagination.usersPerPage]); // Only depend on pagination
+    }, [fetchUsers]);
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        if (pagination.currentPage !== 1) {
+            setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        }
+    }, [debouncedSearchTerm, statusFilter, roleFilter]);
 
     // Update URL when filters change
     useEffect(() => {
@@ -85,56 +144,11 @@ function AdminUsers() {
         setSearchParams(params);
     }, [statusFilter, roleFilter, pagination.currentPage, setSearchParams]);
 
-    // Filter users when search or filters change - UPDATED: Reset to page 1 when filters change
-    useEffect(() => {
-        // Reset to first page when filters change
-        if (pagination.currentPage !== 1) {
-            setPagination((prev) => ({ ...prev, currentPage: 1 }));
-        } else {
-            // If already on page 1, trigger fetch
-            fetchUsers();
-        }
-    }, [searchTerm, statusFilter, roleFilter]);
-
-    const fetchUsers = async () => {
-        try {
-            setLoading(true);
-            const response = await adminUserService.getUsers({
-                search: searchTerm,
-                status: statusFilter !== "all" ? statusFilter : "",
-                role: roleFilter !== "all" ? roleFilter : "",
-                page: pagination.currentPage,
-                limit: pagination.usersPerPage,
-            });
-            setUsers(response.users);
-            setFilteredUsers(response.users); // Set filteredUsers to the API response
-            setPagination((prev) => ({
-                ...prev,
-                currentPage: response.pagination.currentPage,
-                totalPages: response.pagination.totalPages,
-                totalUsers: response.pagination.totalUsers,
-            }));
-        } catch (err) {
-            setError(err.message || "Failed to load users");
-            console.error("Error fetching users:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleStatusUpdate = async (userId, newStatus) => {
         try {
             await adminUserService.updateUserStatus(userId, newStatus);
 
             setUsers((prev) =>
-                prev.map((user) =>
-                    user._id === userId
-                        ? { ...user, profileStatus: newStatus }
-                        : user
-                )
-            );
-
-            setFilteredUsers((prev) =>
                 prev.map((user) =>
                     user._id === userId
                         ? { ...user, profileStatus: newStatus }
@@ -156,7 +170,6 @@ function AdminUsers() {
 
     const handleBulkStatusUpdate = async (newStatus) => {
         try {
-            // Convert Set to Array and ensure we have valid user IDs
             const userIds = Array.from(selectedUsers).filter(
                 (id) => id && id.length > 0
             );
@@ -169,24 +182,9 @@ function AdminUsers() {
                 return;
             }
 
-            console.log(
-                "Bulk updating users:",
-                userIds,
-                "to status:",
-                newStatus
-            );
-
             await adminUserService.bulkUpdateUserStatus(userIds, newStatus);
 
             setUsers((prev) =>
-                prev.map((user) =>
-                    selectedUsers.has(user._id)
-                        ? { ...user, profileStatus: newStatus }
-                        : user
-                )
-            );
-
-            setFilteredUsers((prev) =>
                 prev.map((user) =>
                     selectedUsers.has(user._id)
                         ? { ...user, profileStatus: newStatus }
@@ -214,9 +212,6 @@ function AdminUsers() {
         try {
             await adminUserService.deleteUser(userId);
             setUsers((prev) => prev.filter((user) => user._id !== userId));
-            setFilteredUsers((prev) =>
-                prev.filter((user) => user._id !== userId)
-            );
             setToastNotification({
                 message: "User deleted successfully",
                 type: "success",
@@ -245,16 +240,12 @@ function AdminUsers() {
                 return false;
             }
 
-            // Use bulk delete if available, otherwise delete individually
             const deletePromises = userIds.map((userId) =>
                 adminUserService.deleteUser(userId)
             );
 
             await Promise.all(deletePromises);
             setUsers((prev) =>
-                prev.filter((user) => !selectedUsers.has(user._id))
-            );
-            setFilteredUsers((prev) =>
                 prev.filter((user) => !selectedUsers.has(user._id))
             );
             setSelectedUsers(new Set());
@@ -334,7 +325,7 @@ function AdminUsers() {
         if (selectAll) {
             setSelectedUsers(new Set());
         } else {
-            const allIds = new Set(filteredUsers.map((user) => user._id));
+            const allIds = new Set(users.map((user) => user._id));
             setSelectedUsers(allIds);
         }
         setSelectAll(!selectAll);
@@ -348,7 +339,7 @@ function AdminUsers() {
             newSelected.add(userId);
         }
         setSelectedUsers(newSelected);
-        setSelectAll(newSelected.size === filteredUsers.length);
+        setSelectAll(newSelected.size === users.length);
     };
 
     // Pagination handlers
@@ -356,6 +347,9 @@ function AdminUsers() {
         setPagination((prev) => ({ ...prev, currentPage: newPage }));
         setSelectedUsers(new Set());
         setSelectAll(false);
+
+        // Smooth scroll to top
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     const handleUsersPerPageChange = (newPerPage) => {
@@ -398,11 +392,11 @@ function AdminUsers() {
 
     const stats = getStats();
 
-    if (loading) {
+    if (loading && users.length === 0) {
         return <AdminUsersSkeleton />;
     }
 
-    if (error) {
+    if (error && users.length === 0) {
         return <ErrorState message={error} onRetry={fetchUsers} />;
     }
 
@@ -426,7 +420,10 @@ function AdminUsers() {
 
                 {/* Stats Cards */}
                 <div className="mb-6">
-                    <UserStats stats={stats} />
+                    <UserStats
+                        stats={stats}
+                        loading={loading && users.length > 0}
+                    />
                 </div>
 
                 {/* Main Content Card */}
@@ -447,13 +444,14 @@ function AdminUsers() {
                             onBulkStatusUpdate={handleBulkStatusUpdate}
                             onBulkDelete={confirmBulkDelete}
                             stats={stats}
+                            loading={loading && users.length > 0}
                         />
                     </div>
 
                     {/* Table Section */}
                     <div>
                         <UserTable
-                            users={filteredUsers}
+                            users={users}
                             selectedUsers={selectedUsers}
                             selectAll={selectAll}
                             onSelectAll={handleSelectAll}
@@ -468,6 +466,7 @@ function AdminUsers() {
                             statusFilter={statusFilter}
                             setStatusFilter={setStatusFilter}
                             stats={stats}
+                            loading={loading && users.length > 0}
                         />
                     </div>
 
@@ -478,6 +477,7 @@ function AdminUsers() {
                                 pagination={pagination}
                                 onPageChange={handlePageChange}
                                 onUsersPerPageChange={handleUsersPerPageChange}
+                                loading={loading && users.length > 0}
                             />
                         </div>
                     )}
@@ -558,7 +558,12 @@ function AdminUsers() {
 }
 
 // Pagination Component
-const Pagination = ({ pagination, onPageChange, onUsersPerPageChange }) => {
+const Pagination = ({
+    pagination,
+    onPageChange,
+    onUsersPerPageChange,
+    loading = false,
+}) => {
     const { currentPage, totalPages, totalUsers, usersPerPage } = pagination;
 
     const getPageNumbers = () => {
@@ -582,6 +587,27 @@ const Pagination = ({ pagination, onPageChange, onUsersPerPageChange }) => {
         return pages;
     };
 
+    if (loading) {
+        return (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                </div>
+                <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                <div className="flex gap-1">
+                    {[...Array(5)].map((_, index) => (
+                        <div
+                            key={index}
+                            className="h-8 w-8 bg-gray-200 rounded animate-pulse"
+                        ></div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             {/* Users per page selector */}
@@ -593,6 +619,7 @@ const Pagination = ({ pagination, onPageChange, onUsersPerPageChange }) => {
                         onUsersPerPageChange(Number(e.target.value))
                     }
                     className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                    disabled={loading}
                 >
                     <option value={10}>10</option>
                     <option value={25}>25</option>
@@ -614,7 +641,7 @@ const Pagination = ({ pagination, onPageChange, onUsersPerPageChange }) => {
                 {/* First Page */}
                 <button
                     onClick={() => onPageChange(1)}
-                    disabled={currentPage === 1}
+                    disabled={currentPage === 1 || loading}
                     className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                     «
@@ -623,7 +650,7 @@ const Pagination = ({ pagination, onPageChange, onUsersPerPageChange }) => {
                 {/* Previous Page */}
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
+                    disabled={currentPage === 1 || loading}
                     className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                     ‹
@@ -634,11 +661,12 @@ const Pagination = ({ pagination, onPageChange, onUsersPerPageChange }) => {
                     <button
                         key={page}
                         onClick={() => onPageChange(page)}
+                        disabled={loading}
                         className={`px-3 py-1 text-sm font-medium border rounded transition-colors cursor-pointer ${
                             currentPage === page
                                 ? "bg-blue-600 text-white border-blue-600"
                                 : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                        }`}
+                        } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                         {page}
                     </button>
@@ -647,7 +675,7 @@ const Pagination = ({ pagination, onPageChange, onUsersPerPageChange }) => {
                 {/* Next Page */}
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage === totalPages || loading}
                     className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                     ›
@@ -656,7 +684,7 @@ const Pagination = ({ pagination, onPageChange, onUsersPerPageChange }) => {
                 {/* Last Page */}
                 <button
                     onClick={() => onPageChange(totalPages)}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage === totalPages || loading}
                     className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                     »

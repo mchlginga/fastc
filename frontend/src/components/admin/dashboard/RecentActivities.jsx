@@ -3,7 +3,7 @@ import { CheckCircle, Clipboard, Award } from "react-feather";
 const RecentActivities = ({ activities, loading = false }) => {
     if (loading) {
         return (
-            <div className="p-6 bg-white border border-gray-100 rounded-2xl shadow-md">
+            <div className="p-6 bg-white border border-gray-100 rounded-xl shadow-xs">
                 <h3 className="text-lg font-semibold text-gray-900 mb-6">
                     Recent Activities
                 </h3>
@@ -12,17 +12,17 @@ const RecentActivities = ({ activities, loading = false }) => {
                     {[...Array(3)].map((_, index) => (
                         <div key={index}>
                             <div className="flex items-center mb-4">
-                                <div className="w-4 h-4 bg-gray-300 rounded mr-2 animate-pulse"></div>
-                                <div className="h-4 bg-gray-300 rounded w-20 animate-pulse"></div>
+                                <div className="w-4 h-4 bg-gray-200 rounded mr-2 animate-pulse"></div>
+                                <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
                             </div>
                             <div className="space-y-3">
                                 {[...Array(3)].map((_, itemIndex) => (
                                     <div
                                         key={itemIndex}
-                                        className="p-3 bg-gray-50 rounded-xl border border-gray-200"
+                                        className="p-3 bg-gray-200 rounded-xl"
                                     >
                                         <div className="h-4 bg-gray-300 rounded w-24 animate-pulse mb-2"></div>
-                                        <div className="h-3 bg-gray-200 rounded w-32 animate-pulse"></div>
+                                        <div className="h-3 bg-gray-300 rounded w-32 animate-pulse"></div>
                                     </div>
                                 ))}
                             </div>
@@ -61,7 +61,7 @@ const RecentActivities = ({ activities, loading = false }) => {
     ];
 
     return (
-        <div className="p-6 bg-white border border-gray-100 rounded-2xl shadow-md">
+        <div className="p-6 bg-white border border-gray-100 rounded-xl shadow-xs">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">
                 Recent Activities
             </h3>
@@ -78,7 +78,7 @@ const RecentActivities = ({ activities, loading = false }) => {
                                 {section.data.slice(0, 3).map((item) => (
                                     <div
                                         key={item._id}
-                                        className={`p-3 rounded-xl border ${section.bg} ${section.border} transition transform hover:-translate-y-0.5`}
+                                        className={`p-3 rounded-xl border ${section.bg} ${section.border} transition-all duration-200 hover:shadow-xs`}
                                     >
                                         <p className="font-medium text-gray-900 truncate text-sm">
                                             {item.user?.name || "User"}

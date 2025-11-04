@@ -27,6 +27,10 @@ const UserFilters = ({
 }) => {
     const [showBulkActions, setShowBulkActions] = useState(false);
 
+    const handleClearSearch = () => {
+        setSearchTerm("");
+    };
+
     if (loading) {
         return (
             <div className="p-6 border-b border-gray-100">
@@ -64,8 +68,20 @@ const UserFilters = ({
                             placeholder="Search users by name, email, or company..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 text-gray-700 placeholder-gray-500 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 cursor-text"
+                            className="w-full pl-10 pr-10 py-2.5 text-gray-700 placeholder-gray-500 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 cursor-text"
+                            disabled={loading}
                         />
+                        {/* Clear Search Button */}
+                        {searchTerm && (
+                            <button
+                                onClick={handleClearSearch}
+                                disabled={loading}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer"
+                                title="Clear search"
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -74,7 +90,8 @@ const UserFilters = ({
                     {/* Add User Button */}
                     <button
                         onClick={onAddUser}
-                        className="flex items-center px-4 py-2.5 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer shadow-xs"
+                        disabled={loading}
+                        className="flex items-center px-4 py-2.5 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Plus size={16} className="mr-2" />
                         Add User
@@ -83,11 +100,17 @@ const UserFilters = ({
                     {/* Filters Toggle */}
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer shadow-xs"
+                        disabled={loading}
+                        className="flex items-center px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Filter size={16} className="mr-2" />
                         Filters
-                        <ChevronDown size={16} className="ml-2" />
+                        <ChevronDown
+                            size={16}
+                            className={`ml-2 transition-transform duration-200 ${
+                                showFilters ? "rotate-180" : ""
+                            }`}
+                        />
                     </button>
 
                     {/* Bulk Actions */}
@@ -97,10 +120,16 @@ const UserFilters = ({
                                 onClick={() =>
                                     setShowBulkActions(!showBulkActions)
                                 }
-                                className="flex items-center px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer shadow-xs"
+                                disabled={loading}
+                                className="flex items-center px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {selectedUsers.size} selected
-                                <ChevronDown size={16} className="ml-2" />
+                                <ChevronDown
+                                    size={16}
+                                    className={`ml-2 transition-transform duration-200 ${
+                                        showBulkActions ? "rotate-180" : ""
+                                    }`}
+                                />
                             </button>
 
                             {showBulkActions && (
@@ -168,7 +197,8 @@ const UserFilters = ({
                                 onChange={(e) =>
                                     setStatusFilter(e.target.value)
                                 }
-                                className="w-full px-3 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
+                                disabled={loading}
+                                className="w-full px-3 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <option value="all">All Statuses</option>
                                 <option value="pending">Pending</option>
@@ -185,7 +215,8 @@ const UserFilters = ({
                             <select
                                 value={roleFilter}
                                 onChange={(e) => setRoleFilter(e.target.value)}
-                                className="w-full px-3 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
+                                disabled={loading}
+                                className="w-full px-3 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <option value="all">All Roles</option>
                                 <option value="user">Trainee</option>
@@ -228,11 +259,12 @@ const UserFilters = ({
                                         onClick={() =>
                                             setStatusFilter(filter.status)
                                         }
+                                        disabled={loading}
                                         className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer border ${
                                             statusFilter === filter.status
                                                 ? "bg-blue-50 text-blue-700 border-blue-200"
                                                 : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
-                                        }`}
+                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                                     >
                                         {filter.label}
                                         <span

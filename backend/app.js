@@ -39,6 +39,7 @@ const {
     adminCertificates,
     match,
     statistics,
+    skills,
     // upload,
     // certificate,
     // completion,
@@ -89,6 +90,7 @@ app.use("/api/admin", adminEnrollments);
 app.use("/api/admin", adminCertificates);
 app.use("/api/match", match);
 app.use("/api/statistics", statistics);
+app.use("/api/admin/skills", skills);
 
 // app.use("/api/upload", upload);
 // app.use("/api/certificates", certificate);

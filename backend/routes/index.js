@@ -10,6 +10,7 @@ const adminEnrollments = require("./adminEnrollments");
 const adminCertificates = require("./adminCertificates");
 const match = require("./match");
 const statistics = require("./statistics");
+const skills = require("./skills");
 // const upload = require("./upload");
 // const certificate = require("./certificate");
 // const completion = require("./completion");
@@ -28,6 +29,7 @@ module.exports = {
     adminCertificates,
     match,
     statistics,
+    skills,
     // upload,
     // certificate,
     // completion,

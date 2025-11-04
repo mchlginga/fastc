@@ -1,5 +1,6 @@
 const Course = require("../models/course");
 const Enrollment = require("../models/enrollment");
+const Skill = require("../models/skill");
 const { statusCodes } = require("../utils/constant");
 
 // Get all courses with filtering and pagination
@@ -46,8 +47,18 @@ exports.getCourses = async (req, res, next) => {
         const sortConfig = {};
         sortConfig[sortBy] = sortOrder === "desc" ? -1 : 1;
 
-        // Execute query with pagination
+        // Execute query with pagination - POPULATE SKILLS
         const courses = await Course.find(filter)
+            .populate({
+                path: "skillsTaught.skill",
+                model: "Skill",
+                select: "name category description aliases level isActive",
+            })
+            .populate({
+                path: "primarySkill",
+                model: "Skill",
+                select: "name category description aliases level isActive",
+            })
             .sort(sortConfig)
             .limit(limit * 1)
             .skip((page - 1) * limit);
@@ -79,6 +90,48 @@ exports.getCourses = async (req, res, next) => {
                 totalCourses: total,
                 coursesPerPage: parseInt(limit),
             },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Get course by ID
+exports.getCourseById = async (req, res, next) => {
+    try {
+        const course = await Course.findById(req.params.id)
+            .populate({
+                path: "skillsTaught.skill",
+                model: "Skill",
+                select: "name category description aliases level isActive",
+            })
+            .populate({
+                path: "primarySkill",
+                model: "Skill",
+                select: "name category description aliases level isActive",
+            });
+
+        if (!course) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Course not found",
+            });
+        }
+
+        // Get enrollment count for this course
+        const enrollmentCount = await Enrollment.countDocuments({
+            course: course._id,
+            status: { $in: ["active", "completed"] },
+        });
+
+        const courseWithEnrollments = {
+            ...course.toObject(),
+            enrollmentCount,
+        };
+
+        res.status(statusCodes.OK).json({
+            success: true,
+            course: courseWithEnrollments,
         });
     } catch (error) {
         next(error);
@@ -137,38 +190,6 @@ exports.getCourseStats = async (req, res, next) => {
     }
 };
 
-// Get course by ID
-exports.getCourseById = async (req, res, next) => {
-    try {
-        const course = await Course.findById(req.params.id);
-
-        if (!course) {
-            return res.status(statusCodes.NOT_FOUND).json({
-                success: false,
-                message: "Course not found",
-            });
-        }
-
-        // Get enrollment count for this course
-        const enrollmentCount = await Enrollment.countDocuments({
-            course: course._id,
-            status: { $in: ["active", "completed"] },
-        });
-
-        const courseWithEnrollments = {
-            ...course.toObject(),
-            enrollmentCount,
-        };
-
-        res.status(statusCodes.OK).json({
-            success: true,
-            course: courseWithEnrollments,
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
 // Create new course
 exports.createCourse = async (req, res, next) => {
     try {
@@ -185,6 +206,8 @@ exports.createCourse = async (req, res, next) => {
             isActive = true,
             enrollmentPeriod = 0,
             endDate = null,
+            primarySkill,
+            skillsTaught = [],
         } = req.body;
 
         // Parse array fields from JSON strings
@@ -193,11 +216,21 @@ exports.createCourse = async (req, res, next) => {
         if (typeof requirements === "string")
             requirements = JSON.parse(requirements);
         if (typeof outcomes === "string") outcomes = JSON.parse(outcomes);
+        if (typeof skillsTaught === "string")
+            skillsTaught = JSON.parse(skillsTaught); // 🆕 ADD THIS
 
         // Convert data types
         if (typeof isActive === "string") isActive = isActive === "true";
         if (typeof enrollmentPeriod === "string")
             enrollmentPeriod = parseInt(enrollmentPeriod) || 0;
+
+        // Debug log to see what the backend receives
+        console.log("📥 Backend received:", {
+            title,
+            primarySkill,
+            skillsTaught:
+                typeof skillsTaught === "string" ? skillsTaught : skillsTaught,
+        });
 
         // Validate required fields
         if (!title || !description || !category || !duration) {
@@ -234,6 +267,30 @@ exports.createCourse = async (req, res, next) => {
             imagePath = req.file.path; // Cloudinary URL
         }
 
+        // Validate skills exist before creating course
+        if (primarySkill) {
+            const primarySkillExists = await Skill.findById(primarySkill);
+            if (!primarySkillExists) {
+                return res.status(statusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: "Primary skill not found",
+                });
+            }
+        }
+
+        // Validate skillsTaught exist
+        if (skillsTaught && skillsTaught.length > 0) {
+            const skillIds = skillsTaught.map((st) => st.skill);
+            const skillsExist = await Skill.find({ _id: { $in: skillIds } });
+
+            if (skillsExist.length !== skillIds.length) {
+                return res.status(statusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: "One or more skills not found",
+                });
+            }
+        }
+
         // Create course
         const course = await Course.create({
             title,
@@ -249,12 +306,26 @@ exports.createCourse = async (req, res, next) => {
             enrollmentPeriod,
             endDate: endDate ? new Date(endDate) : null,
             image: imagePath,
+            primarySkill,
+            skillsTaught,
         });
+
+        const populatedCourse = await Course.findById(course._id)
+            .populate({
+                path: "skillsTaught.skill",
+                model: "Skill",
+                select: "name category description aliases level isActive",
+            })
+            .populate({
+                path: "primarySkill",
+                model: "Skill",
+                select: "name category description aliases level isActive",
+            });
 
         res.status(statusCodes.CREATED).json({
             success: true,
             message: "Course created successfully",
-            course,
+            course: populatedCourse,
         });
     } catch (error) {
         console.error("Error creating course:", error);
@@ -352,9 +423,11 @@ exports.updateCourse = async (req, res, next) => {
             isActive,
             enrollmentPeriod,
             endDate,
+            primarySkill,
+            skillsTaught = [],
         } = req.body;
 
-        // 🆕 ADD: Check for image removal flag
+        //  Check for image removal flag
         const removeImage = req.body.removeImage === "true";
 
         // Parse array fields from JSON strings
@@ -363,11 +436,21 @@ exports.updateCourse = async (req, res, next) => {
         if (typeof requirements === "string")
             requirements = JSON.parse(requirements);
         if (typeof outcomes === "string") outcomes = JSON.parse(outcomes);
+        if (typeof skillsTaught === "string")
+            skillsTaught = JSON.parse(skillsTaught); // 🆕 ADD THIS
 
         // Convert data types
         if (typeof isActive === "string") isActive = isActive === "true";
         if (typeof enrollmentPeriod === "string")
             enrollmentPeriod = parseInt(enrollmentPeriod) || 0;
+
+        // 🆕 ADD: Debug log to see what the backend receives for update
+        console.log("📥 Backend received update:", {
+            title,
+            primarySkill,
+            skillsTaught:
+                typeof skillsTaught === "string" ? skillsTaught : skillsTaught,
+        });
 
         const updateData = {};
 
@@ -386,8 +469,34 @@ exports.updateCourse = async (req, res, next) => {
             updateData.enrollmentPeriod = enrollmentPeriod;
         if (endDate !== undefined)
             updateData.endDate = endDate ? new Date(endDate) : null;
+        if (primarySkill !== undefined) updateData.primarySkill = primarySkill; // 🆕 ADD THIS
+        if (skillsTaught !== undefined) updateData.skillsTaught = skillsTaught; // 🆕 ADD THIS
 
-        // 🆕 IMPROVED: Handle image upload/removal with Cloudinary
+        //  Validate skills exist before updating course
+        if (primarySkill) {
+            const primarySkillExists = await Skill.findById(primarySkill);
+            if (!primarySkillExists) {
+                return res.status(statusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: "Primary skill not found",
+                });
+            }
+        }
+
+        //  Validate skillsTaught exist
+        if (skillsTaught && skillsTaught.length > 0) {
+            const skillIds = skillsTaught.map((st) => st.skill);
+            const skillsExist = await Skill.find({ _id: { $in: skillIds } });
+
+            if (skillsExist.length !== skillIds.length) {
+                return res.status(statusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: "One or more skills not found",
+                });
+            }
+        }
+
+        //  Handle image upload/removal with Cloudinary
         if (req.file) {
             console.log("🖼️ New image uploaded for course update");
 
@@ -465,7 +574,17 @@ exports.updateCourse = async (req, res, next) => {
                 new: true,
                 runValidators: true,
             }
-        );
+        )
+            .populate({
+                path: "skillsTaught.skill",
+                model: "Skill",
+                select: "name category description aliases level isActive",
+            })
+            .populate({
+                path: "primarySkill",
+                model: "Skill",
+                select: "name category description aliases level isActive",
+            });
 
         if (!course) {
             return res.status(statusCodes.NOT_FOUND).json({

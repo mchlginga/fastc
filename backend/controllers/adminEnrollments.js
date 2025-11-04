@@ -1,6 +1,7 @@
 const Enrollment = require("../models/enrollment");
 const User = require("../models/user");
 const Course = require("../models/course");
+const mongoose = require("mongoose");
 const { statusCodes } = require("../utils/constant");
 
 // Get all enrollments with filtering and pagination
@@ -222,6 +223,7 @@ exports.getEnrollmentById = async (req, res, next) => {
 };
 
 // Create new enrollment (manual enrollment by admin)
+// Create new enrollment (manual enrollment by admin)
 exports.createEnrollment = async (req, res, next) => {
     try {
         const {
@@ -278,21 +280,25 @@ exports.createEnrollment = async (req, res, next) => {
             });
         }
 
-        // Calculate access until date
-        let accessUntilDate;
-        if (accessUntil) {
+        //  Calculate access until date - allow null/empty for self-paced
+        let accessUntilDate = null;
+        if (accessUntil && accessUntil.trim() !== "") {
             accessUntilDate = new Date(accessUntil);
-        } else {
-            accessUntilDate = new Date();
-            if (course.enrollmentPeriod > 0) {
-                accessUntilDate.setDate(
-                    accessUntilDate.getDate() + course.enrollmentPeriod
-                );
-            } else {
-                // Default to 1 year if no enrollment period specified
-                accessUntilDate.setFullYear(accessUntilDate.getFullYear() + 1);
+            // Validate the date
+            if (isNaN(accessUntilDate.getTime())) {
+                return res.status(statusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: "Invalid access until date format",
+                });
             }
+        } else if (course.enrollmentPeriod > 0) {
+            // Only set access date if course has enrollment period
+            accessUntilDate = new Date();
+            accessUntilDate.setDate(
+                accessUntilDate.getDate() + course.enrollmentPeriod
+            );
         }
+        // If no accessUntil provided and course is self-paced (enrollmentPeriod = 0), leave as null
 
         // Validate status
         if (
@@ -315,7 +321,7 @@ exports.createEnrollment = async (req, res, next) => {
             user: userId,
             course: courseId,
             status,
-            accessUntil: accessUntilDate,
+            accessUntil: accessUntilDate, // This can be null now
             progress,
             enrolledAt: new Date(),
         });
@@ -332,6 +338,73 @@ exports.createEnrollment = async (req, res, next) => {
             success: true,
             message: "Enrollment created successfully",
             enrollment: populatedEnrollment,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Update enrollment status
+exports.updateEnrollment = async (req, res, next) => {
+    try {
+        const {
+            status,
+            progress,
+            accessUntil,
+            completedLessons,
+            lastAccessedLesson,
+        } = req.body;
+
+        const updateData = {};
+
+        if (status) updateData.status = status;
+        if (progress !== undefined) updateData.progress = progress;
+
+        //  Handle empty accessUntil
+        if (accessUntil !== undefined) {
+            if (accessUntil === "" || accessUntil === null) {
+                updateData.accessUntil = null;
+            } else {
+                updateData.accessUntil = new Date(accessUntil);
+            }
+        }
+
+        if (completedLessons) updateData.completedLessons = completedLessons;
+        if (lastAccessedLesson)
+            updateData.lastAccessedLesson = lastAccessedLesson;
+
+        // Auto-handle completion
+        if (status === "completed" && !updateData.completedAt) {
+            updateData.completedAt = new Date();
+        }
+
+        const enrollment = await Enrollment.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            {
+                new: true,
+                runValidators: true,
+            }
+        )
+            .populate(
+                "user",
+                "firstName surname email companyName role profilePic"
+            )
+            .populate("course", "title category skillLevel duration image")
+            .populate("lastAccessedLesson", "title duration")
+            .populate("completedLessons", "title duration order");
+
+        if (!enrollment) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Enrollment not found",
+            });
+        }
+
+        res.status(statusCodes.OK).json({
+            success: true,
+            message: "Enrollment updated successfully",
+            enrollment,
         });
     } catch (error) {
         next(error);
@@ -456,6 +529,11 @@ exports.bulkUpdateEnrollmentStatus = async (req, res, next) => {
     try {
         const { enrollmentIds, status } = req.body;
 
+        console.log("Received bulk enrollment update request:", {
+            enrollmentIds,
+            status,
+        });
+
         if (
             !enrollmentIds ||
             !Array.isArray(enrollmentIds) ||
@@ -482,17 +560,49 @@ exports.bulkUpdateEnrollmentStatus = async (req, res, next) => {
             });
         }
 
+        // Validate and convert enrollment IDs to ObjectId
+        const validEnrollmentIds = enrollmentIds
+            .filter((id) => {
+                if (!id || id.length !== 24) {
+                    console.log(`Invalid enrollment ID length: ${id}`);
+                    return false;
+                }
+                if (!mongoose.Types.ObjectId.isValid(id)) {
+                    console.log(`Invalid enrollment ID format: ${id}`);
+                    return false;
+                }
+                return true;
+            })
+            .map((id) => new mongoose.Types.ObjectId(id));
+
+        if (validEnrollmentIds.length === 0) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "No valid enrollment IDs provided",
+            });
+        }
+
+        console.log(
+            "Valid enrollment IDs for bulk update:",
+            validEnrollmentIds
+        );
+
         const updateData = { status };
         if (status === "completed") {
             updateData.completedAt = new Date();
         } else if (status === "cancelled") {
             updateData.completedAt = null;
+        } else if (status === "expired") {
+            updateData.accessUntil = new Date(Date.now() - 24 * 60 * 60 * 1000); // Yesterday
         }
 
+        // Update enrollments
         const result = await Enrollment.updateMany(
-            { _id: { $in: enrollmentIds } },
+            { _id: { $in: validEnrollmentIds } },
             updateData
         );
+
+        console.log("Bulk enrollment update result:", result);
 
         res.status(statusCodes.OK).json({
             success: true,
@@ -500,64 +610,7 @@ exports.bulkUpdateEnrollmentStatus = async (req, res, next) => {
             modifiedCount: result.modifiedCount,
         });
     } catch (error) {
-        next(error);
-    }
-};
-
-// Update enrollment details
-exports.updateEnrollment = async (req, res, next) => {
-    try {
-        const {
-            status,
-            progress,
-            accessUntil,
-            completedLessons,
-            lastAccessedLesson,
-        } = req.body;
-
-        const updateData = {};
-
-        if (status) updateData.status = status;
-        if (progress !== undefined) updateData.progress = progress;
-        if (accessUntil) updateData.accessUntil = new Date(accessUntil);
-        if (completedLessons) updateData.completedLessons = completedLessons;
-        if (lastAccessedLesson)
-            updateData.lastAccessedLesson = lastAccessedLesson;
-
-        // Auto-handle completion
-        if (status === "completed" && !updateData.completedAt) {
-            updateData.completedAt = new Date();
-        }
-
-        const enrollment = await Enrollment.findByIdAndUpdate(
-            req.params.id,
-            updateData,
-            {
-                new: true,
-                runValidators: true,
-            }
-        )
-            .populate(
-                "user",
-                "firstName surname email companyName role profilePic"
-            )
-            .populate("course", "title category skillLevel duration image")
-            .populate("lastAccessedLesson", "title duration")
-            .populate("completedLessons", "title duration order");
-
-        if (!enrollment) {
-            return res.status(statusCodes.NOT_FOUND).json({
-                success: false,
-                message: "Enrollment not found",
-            });
-        }
-
-        res.status(statusCodes.OK).json({
-            success: true,
-            message: "Enrollment updated successfully",
-            enrollment,
-        });
-    } catch (error) {
+        console.error("Bulk enrollment update error:", error);
         next(error);
     }
 };

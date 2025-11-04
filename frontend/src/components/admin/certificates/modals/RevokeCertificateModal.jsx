@@ -18,7 +18,6 @@ const RevokeCertificateModal = ({ isOpen, onClose, certificate, onRevoke }) => {
 
     if (!isOpen || !certificate) return null;
 
-    // 🆕 FIX: Safe user display name with null checks
     const getUserDisplayName = (user) => {
         if (!user) return "Unknown User";
 
@@ -33,24 +32,19 @@ const RevokeCertificateModal = ({ isOpen, onClose, certificate, onRevoke }) => {
         return fullName || user.email || "Unknown User";
     };
 
-    // 🆕 FIX: Safe course title access
     const getCourseTitle = (course) => {
         return course?.title || "Unknown Course";
     };
 
-    // 🆕 FIX: Safe verification code access
     const getVerificationCode = () => {
         return certificate.verificationCode || "No Code";
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 cursor-pointer">
-            <div
-                className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto cursor-auto"
-                onClick={(e) => e.stopPropagation()}
-            >
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-auto cursor-auto transform transition-all duration-200 scale-100">
                 {/* Header */}
-                <div className="flex justify-between items-center p-4 border-b border-gray-300">
+                <div className="flex justify-between items-center p-6 border-b border-gray-200">
                     <div className="flex items-center">
                         <AlertTriangle
                             size={20}
@@ -67,7 +61,7 @@ const RevokeCertificateModal = ({ isOpen, onClose, certificate, onRevoke }) => {
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-1 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                         disabled={revoking}
                     >
                         <X size={20} />
@@ -75,27 +69,27 @@ const RevokeCertificateModal = ({ isOpen, onClose, certificate, onRevoke }) => {
                 </div>
 
                 {/* Content */}
-                <div className="p-4 space-y-3">
+                <div className="p-6 space-y-4">
                     <p className="text-gray-700">
                         Are you sure you want to revoke the certificate for:
                     </p>
-                    <div className="bg-gray-50 rounded p-3">
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                         <p className="font-medium text-gray-800">
                             {getUserDisplayName(certificate.user)}
                         </p>
                         <p className="text-sm text-gray-600">
                             Course: {getCourseTitle(certificate.course)}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 mt-2">
                             Verification Code: {getVerificationCode()}
                         </p>
                     </div>
-                    <div className="bg-red-50 border border-red-200 rounded p-3">
-                        <p className="text-sm text-red-800">
-                            <strong>Warning:</strong> Revoking this certificate
-                            will:
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p className="text-sm text-red-800 font-medium mb-2">
+                            <AlertTriangle size={16} className="inline mr-1" />
+                            Warning: Revoking this certificate will:
                         </p>
-                        <ul className="text-sm text-red-700 mt-2 list-disc list-inside space-y-1">
+                        <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
                             <li>Mark the certificate as revoked</li>
                             <li>Make it invalid for verification</li>
                             <li>
@@ -107,23 +101,23 @@ const RevokeCertificateModal = ({ isOpen, onClose, certificate, onRevoke }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-2 p-4 border-t border-gray-300 bg-gray-50">
+                <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
                     <button
                         type="button"
                         onClick={onClose}
                         disabled={revoking}
-                        className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors cursor-pointer"
+                        className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer disabled:opacity-50"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleConfirm}
                         disabled={revoking}
-                        className="px-4 py-2 text-sm text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        className="px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
                     >
                         {revoking ? (
-                            <span className="flex items-center gap-1">
-                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                 Revoking...
                             </span>
                         ) : (

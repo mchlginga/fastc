@@ -3,7 +3,7 @@ import { BarChart2 } from "react-feather";
 const SystemOverview = ({ overview, loading = false }) => {
     if (loading) {
         return (
-            <div className="p-6 bg-white border border-gray-100 rounded-2xl shadow-md">
+            <div className="p-6 bg-white border border-gray-100 rounded-xl shadow-xs">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <BarChart2 size={20} className="mr-2 text-gray-600" />
                     System Overview
@@ -15,8 +15,8 @@ const SystemOverview = ({ overview, loading = false }) => {
                             key={index}
                             className="flex justify-between items-center py-3 border-b border-gray-100"
                         >
-                            <div className="h-4 bg-gray-300 rounded w-24 animate-pulse"></div>
-                            <div className="h-4 bg-gray-300 rounded w-12 animate-pulse"></div>
+                            <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                            <div className="h-4 bg-gray-200 rounded w-12 animate-pulse"></div>
                         </div>
                     ))}
                 </div>
@@ -37,7 +37,7 @@ const SystemOverview = ({ overview, loading = false }) => {
     ];
 
     return (
-        <div className="p-6 bg-white border border-gray-100 rounded-2xl shadow-md">
+        <div className="p-6 bg-white border border-gray-100 rounded-xl shadow-xs">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <BarChart2 size={20} className="mr-2 text-gray-600" />
                 System Overview
@@ -53,7 +53,7 @@ const SystemOverview = ({ overview, loading = false }) => {
                             {item.label}
                         </span>
                         <span
-                            className={`font-bold text-lg ${
+                            className={`font-semibold text-base ${
                                 item.isPercentage
                                     ? overview.completionRate >= 70
                                         ? "text-green-600"

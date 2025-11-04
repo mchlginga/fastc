@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { User, Eye, MoreVertical, Check, X, Edit, Trash2 } from "react-feather";
 
 const UserTableRow = ({
@@ -12,6 +12,7 @@ const UserTableRow = ({
     rowIndex,
 }) => {
     const [showActions, setShowActions] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
     const actionsRef = useRef(null);
 
     // Close actions when clicking outside
@@ -29,6 +30,21 @@ const UserTableRow = ({
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    const handleStatusUpdate = useCallback(
+        async (newStatus) => {
+            setIsUpdating(true);
+            try {
+                await onStatusUpdate(user._id, newStatus);
+                setShowActions(false);
+            } catch (error) {
+                console.error("Status update error:", error);
+            } finally {
+                setIsUpdating(false);
+            }
+        },
+        [user._id, onStatusUpdate]
+    );
 
     const getStatusConfig = (status) => {
         const configs = {
@@ -88,21 +104,27 @@ const UserTableRow = ({
     const roleConfig = getRoleConfig(user.role);
 
     return (
-        <tr className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors duration-150">
+        <tr
+            className={`border-b border-gray-100 transition-all duration-200 ${
+                isSelected
+                    ? "bg-blue-50 hover:bg-blue-100"
+                    : "hover:bg-gray-50/80"
+            } ${isUpdating ? "opacity-60" : ""}`}
+        >
             {/* Checkbox */}
             <td className="pl-6 pr-4 py-4 whitespace-nowrap">
                 <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={onSelect}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-blue-500 focus:ring-2 focus:ring-offset-1"
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-blue-500 focus:ring-2 focus:ring-offset-1 transition-colors"
                 />
             </td>
 
             {/* User Info */}
             <td className="px-4 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                    <div className="flex-shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200">
+                <div className="flex items-center group">
+                    <div className="flex-shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 group-hover:shadow-xs transition-shadow">
                         {user.profilePic ? (
                             <img
                                 src={user.profilePic}
@@ -117,7 +139,7 @@ const UserTableRow = ({
                         )}
                     </div>
                     <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900 truncate max-w-[160px]">
+                        <div className="text-sm font-medium text-gray-900 truncate max-w-[160px] group-hover:text-gray-700 transition-colors">
                             {user.role === "company"
                                 ? user.companyName
                                 : `${user.firstName} ${user.surname}`}
@@ -132,7 +154,7 @@ const UserTableRow = ({
             {/* Role */}
             <td className="px-4 py-4 whitespace-nowrap">
                 <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${roleConfig.bg} ${roleConfig.text} ${roleConfig.border}`}
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${roleConfig.bg} ${roleConfig.text} ${roleConfig.border}`}
                 >
                     {roleConfig.label}
                 </span>
@@ -141,7 +163,7 @@ const UserTableRow = ({
             {/* Status */}
             <td className="px-4 py-4 whitespace-nowrap">
                 <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
                 >
                     {statusConfig.label}
                 </span>
@@ -170,7 +192,8 @@ const UserTableRow = ({
                     {/* Quick View Button */}
                     <button
                         onClick={onView}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer"
+                        disabled={isUpdating}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 active:scale-95"
                         title="View Details"
                     >
                         <Eye size={16} />
@@ -180,42 +203,47 @@ const UserTableRow = ({
                     <div className="relative">
                         <button
                             onClick={() => setShowActions(!showActions)}
-                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer"
+                            disabled={isUpdating}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 active:scale-95"
                         >
                             <MoreVertical size={16} />
                         </button>
 
                         {showActions && (
-                            <div className="absolute right-0 z-20 w-48 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-200/50 ring-1 ring-black ring-opacity-5 py-1">
+                            <div className="absolute right-0 z-20 w-48 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-200/50 ring-1 ring-black ring-opacity-5 py-1 animate-in fade-in-0 zoom-in-95">
                                 {/* Quick Status Updates */}
                                 {user.profileStatus !== "approved" && (
                                     <button
-                                        onClick={() => {
-                                            onStatusUpdate(
-                                                user._id,
-                                                "approved"
-                                            );
-                                            setShowActions(false);
-                                        }}
-                                        className="flex items-center w-full px-3 py-2 text-sm text-emerald-700 transition-colors hover:bg-emerald-50 cursor-pointer"
+                                        onClick={() =>
+                                            handleStatusUpdate("approved")
+                                        }
+                                        disabled={isUpdating}
+                                        className="flex items-center w-full px-3 py-2 text-sm text-emerald-700 transition-all duration-150 hover:bg-emerald-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                                     >
-                                        <Check size={14} className="mr-2" />
-                                        Approve User
+                                        <Check
+                                            size={14}
+                                            className="mr-2 group-hover:scale-110 transition-transform"
+                                        />
+                                        {isUpdating
+                                            ? "Updating..."
+                                            : "Approve User"}
                                     </button>
                                 )}
                                 {user.profileStatus !== "rejected" && (
                                     <button
-                                        onClick={() => {
-                                            onStatusUpdate(
-                                                user._id,
-                                                "rejected"
-                                            );
-                                            setShowActions(false);
-                                        }}
-                                        className="flex items-center w-full px-3 py-2 text-sm text-red-700 transition-colors hover:bg-red-50 cursor-pointer"
+                                        onClick={() =>
+                                            handleStatusUpdate("rejected")
+                                        }
+                                        disabled={isUpdating}
+                                        className="flex items-center w-full px-3 py-2 text-sm text-red-700 transition-all duration-150 hover:bg-red-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                                     >
-                                        <X size={14} className="mr-2" />
-                                        Reject User
+                                        <X
+                                            size={14}
+                                            className="mr-2 group-hover:scale-110 transition-transform"
+                                        />
+                                        {isUpdating
+                                            ? "Updating..."
+                                            : "Reject User"}
                                     </button>
                                 )}
 
@@ -229,9 +257,13 @@ const UserTableRow = ({
                                         onEdit();
                                         setShowActions(false);
                                     }}
-                                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
+                                    disabled={isUpdating}
+                                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 transition-all duration-150 hover:bg-gray-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                                 >
-                                    <Edit size={14} className="mr-2" />
+                                    <Edit
+                                        size={14}
+                                        className="mr-2 group-hover:scale-110 transition-transform"
+                                    />
                                     Edit User
                                 </button>
 
@@ -242,9 +274,13 @@ const UserTableRow = ({
                                         onDelete();
                                         setShowActions(false);
                                     }}
-                                    className="flex items-center w-full px-3 py-2 text-sm text-red-700 transition-colors hover:bg-red-50 cursor-pointer"
+                                    disabled={isUpdating}
+                                    className="flex items-center w-full px-3 py-2 text-sm text-red-700 transition-all duration-150 hover:bg-red-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                                 >
-                                    <Trash2 size={14} className="mr-2" />
+                                    <Trash2
+                                        size={14}
+                                        className="mr-2 group-hover:scale-110 transition-transform"
+                                    />
                                     Delete User
                                 </button>
                             </div>

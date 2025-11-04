@@ -9,6 +9,7 @@ const {
     bulkUpdateUserStatus,
     updateUser,
     deleteUser,
+    getUserSkills,
 } = require("../controllers/adminUsers");
 
 // User management routes - SPECIFIC ROUTES FIRST
@@ -21,6 +22,13 @@ router.patch(
     protect,
     checkRoles(["superAdmin", "admin"]),
     bulkUpdateUserStatus
+);
+
+router.get(
+    "/users/:id/skills",
+    protect,
+    checkRoles(["superAdmin", "admin"]),
+    getUserSkills
 );
 
 // PARAMETERIZED ROUTES - MUST COME AFTER SPECIFIC ROUTES
