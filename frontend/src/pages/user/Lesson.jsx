@@ -467,13 +467,12 @@ function Lesson() {
         try {
             setCompleting(true);
 
+            // 🆕 FIX: Remove duplicate attendance marking - it's already done via face verification
+            // await handleMarkAttendance(); // REMOVED - Attendance already marked during face verification
+
             // Call API to complete lesson
             await completeLesson(enrollment.id, lessonId);
 
-            // Mark attendance for this lesson
-            await handleMarkAttendance();
-
-            // Rest of the function remains the same...
             // Refresh data from backend
             const enrollmentsResponse = await getUserEnrollments();
             const courseEnrollment = enrollmentsResponse.enrollments.find(
