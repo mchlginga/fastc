@@ -1,73 +1,114 @@
 import { Users, Book, UserCheck, Clipboard } from "react-feather";
 
-const StatCard = ({ title, value, icon, bg, description, link }) => (
+const StatCard = ({
+    title,
+    value,
+    icon,
+    bg,
+    description,
+    link,
+    loading = false,
+}) => (
     <div
-        className="bg-white rounded-2xl shadow-md p-6 flex items-center justify-between hover:-translate-y-1 hover:shadow-lg transition transform cursor-pointer border border-gray-100"
-        onClick={() => link && (window.location.href = link)}
+        className={`p-5 bg-white border border-gray-100 rounded-xl shadow-xs hover:shadow-sm transition-all duration-200 cursor-default ${
+            link && !loading ? "hover:-translate-y-0.5 cursor-pointer" : ""
+        }`}
+        onClick={() => link && !loading && (window.location.href = link)}
     >
-        <div className={`${bg} p-3 rounded-xl mr-4`}>{icon}</div>
-        <div className="text-right">
-            <h3 className="text-3xl font-bold text-gray-800">{value}</h3>
-            <p className="text-gray-500 text-sm font-medium">{title}</p>
-            <p className="text-gray-400 text-xs">{description}</p>
+        <div className="flex items-center justify-between">
+            <div>
+                <h3 className="text-2xl font-semibold text-gray-900">
+                    {loading ? (
+                        <div className="h-7 bg-gray-200 rounded w-12 animate-pulse"></div>
+                    ) : (
+                        value.toLocaleString()
+                    )}
+                </h3>
+                <p className="text-sm font-medium text-gray-500 mt-1">
+                    {loading ? (
+                        <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    ) : (
+                        title
+                    )}
+                </p>
+                {description && !loading && (
+                    <p className="text-xs text-gray-400 mt-1">{description}</p>
+                )}
+            </div>
+            <div className={`p-3 rounded-xl ${bg}`}>
+                {loading ? (
+                    <div className="w-6 h-6 bg-gray-300 rounded animate-pulse"></div>
+                ) : (
+                    icon
+                )}
+            </div>
         </div>
     </div>
 );
 
-function AdminProfileStats({ stats }) {
+function AdminProfileStats({ stats, loading = false }) {
     const statCards = [
         {
             title: "Total Users",
             value: stats.totalUsers,
-            icon: <Users size={26} className="text-blue-600" />,
-            bg: "bg-blue-100",
-            description: "Registered users",
+            icon: <Users size={20} className="text-blue-600" />,
+            bg: "bg-blue-50",
             link: "/admin/users",
         },
         {
             title: "Active Courses",
             value: stats.activeCourses,
-            icon: <Book size={26} className="text-green-600" />,
-            bg: "bg-green-100",
-            description: "Available courses",
+            icon: <Book size={20} className="text-green-600" />,
+            bg: "bg-green-50",
             link: "/admin/courses",
         },
         {
             title: "Pending Approvals",
             value: stats.pendingApprovals,
-            icon: <UserCheck size={26} className="text-orange-600" />,
-            bg: "bg-orange-100",
-            description: "Awaiting review",
+            icon: <UserCheck size={20} className="text-amber-600" />,
+            bg: "bg-amber-50",
             link: "/admin/users?status=pending",
         },
         {
             title: "Total Enrollments",
             value: stats.totalEnrollments,
-            icon: <Clipboard size={26} className="text-purple-600" />,
-            bg: "bg-purple-100",
-            description: "Course enrollments",
+            icon: <Clipboard size={20} className="text-purple-600" />,
+            bg: "bg-purple-50",
             link: "/admin/enrollments",
         },
     ];
 
-    return (
-        <section className="mb-10">
-            <h3 className="text-lg font-semibold text-gray-800 mb-6">
-                System Statistics
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {statCards.map((card, index) => (
+    if (loading) {
+        return (
+            <section className="grid grid-cols-1 gap-5 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+                {[...Array(4)].map((_, index) => (
                     <StatCard
                         key={index}
-                        title={card.title}
-                        value={card.value}
-                        icon={card.icon}
-                        bg={card.bg}
-                        description={card.description}
-                        link={card.link}
+                        title=""
+                        value=""
+                        icon={null}
+                        bg="bg-gray-100"
+                        loading={true}
                     />
                 ))}
-            </div>
+            </section>
+        );
+    }
+
+    return (
+        <section className="grid grid-cols-1 gap-5 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+            {statCards.map((card, index) => (
+                <StatCard
+                    key={index}
+                    title={card.title}
+                    value={card.value}
+                    icon={card.icon}
+                    bg={card.bg}
+                    description={card.description}
+                    link={card.link}
+                    loading={false}
+                />
+            ))}
         </section>
     );
 }

@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Camera, User, Shield, Activity, Settings } from "react-feather";
+import { Camera, User, Shield, Settings, Activity } from "react-feather";
 
 function AdminProfileHeader({
     user,
@@ -75,7 +75,6 @@ function AdminProfileHeader({
             <span
                 className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${config.bg} ${config.text} ${config.border}`}
             >
-                <Shield size={14} className="mr-1" />
                 {config.label}
             </span>
         );
@@ -83,12 +82,12 @@ function AdminProfileHeader({
 
     return (
         <section className="mb-10">
-            <div className="bg-white rounded-2xl shadow-md p-8 hover:shadow-lg transition-all duration-300 border border-gray-100">
+            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
                 <div className="md:flex items-center gap-10">
                     <div className="md:w-1/3 flex flex-col items-center mb-6 md:mb-0">
                         <div className="relative">
                             <div
-                                className={`w-36 h-36 rounded-full shadow-md ring-4 ring-gray-200 transition overflow-hidden bg-gray-100 flex items-center justify-center ${
+                                className={`w-32 h-32 rounded-full shadow-sm ring-2 ring-gray-200 transition overflow-hidden bg-gray-100 flex items-center justify-center ${
                                     profilePicUrl
                                         ? "hover:scale-105 hover:ring-blue-400 cursor-pointer"
                                         : ""
@@ -106,7 +105,7 @@ function AdminProfileHeader({
                                 ) : (
                                     <div className="flex items-center justify-center w-full h-full">
                                         <User
-                                            size={48}
+                                            size={40}
                                             className="text-gray-400"
                                         />
                                     </div>
@@ -115,7 +114,7 @@ function AdminProfileHeader({
                             <button
                                 onClick={triggerFileInput}
                                 disabled={uploading}
-                                className="absolute bottom-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="absolute bottom-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                 title="Change profile picture"
                             >
                                 {uploading ? (
@@ -133,28 +132,22 @@ function AdminProfileHeader({
                                 disabled={uploading}
                             />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-800 mt-4">
+                        <h2 className="text-xl font-semibold text-gray-800 mt-4">
                             {user?.firstName || "Admin"} {user?.surname || ""}
                         </h2>
                         <div className="mt-2">{getRoleBadge(user?.role)}</div>
                     </div>
 
-                    <div className="md:w-2/3 border-t md:border-t-0 md:border-l border-gray-300 md:pl-10 pt-6 md:pt-0">
+                    <div className="md:w-2/3 border-t md:border-t-0 md:border-l border-gray-200 md:pl-10 pt-6 md:pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <Info
-                                label="Email"
-                                value={user?.email || "N/A"}
-                                icon={<User size={16} />}
-                            />
+                            <Info label="Email" value={user?.email || "N/A"} />
                             <Info
                                 label="Phone"
                                 value={user?.contactNumber || "N/A"}
-                                icon={<Settings size={16} />}
                             />
                             <Info
                                 label="Location"
                                 value={user?.address || "N/A"}
-                                icon={<Activity size={16} />}
                             />
                             <Info
                                 label="Joined"
@@ -165,39 +158,14 @@ function AdminProfileHeader({
                                           ).toLocaleDateString()
                                         : "N/A"
                                 }
-                                icon={<Shield size={16} />}
-                            />
-                            <Info
-                                label="Online Users"
-                                value={systemOverview?.onlineUsers || 0}
-                                icon={<Activity size={16} />}
-                            />
-                            <Info
-                                label="Admin Since"
-                                value={
-                                    user?.createdAt
-                                        ? new Date(
-                                              user.createdAt
-                                          ).toLocaleDateString()
-                                        : "N/A"
-                                }
-                                icon={<Shield size={16} />}
                             />
                         </div>
                         <div className="flex space-x-3">
                             <Link
                                 to="/admin/settings"
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors inline-flex items-center"
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors inline-flex items-center shadow-xs"
                             >
-                                <Settings size={16} className="mr-2" />
-                                Admin Settings
-                            </Link>
-                            <Link
-                                to="/admin/dashboard"
-                                className="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors inline-flex items-center"
-                            >
-                                <Activity size={16} className="mr-2" />
-                                Dashboard
+                                Settings
                             </Link>
                         </div>
                     </div>

@@ -3,7 +3,6 @@ import { X } from "react-feather";
 function ProfilePictureModal({ isOpen, onClose, profilePicUrl, imageError }) {
     if (!isOpen) return null;
 
-    // ✅ DIRECT CLOUDINARY URL - NO FUNCTION NEEDED
     const displayUrl = profilePicUrl && !imageError ? profilePicUrl : null;
 
     return (

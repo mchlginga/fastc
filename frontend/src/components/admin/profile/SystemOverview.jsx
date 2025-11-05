@@ -61,9 +61,8 @@ const SystemOverview = ({ overview }) => {
     const systemHealth = getSystemHealth();
 
     return (
-        <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <BarChart2 size={20} className="mr-2 text-gray-600" />
                 System Overview
             </h3>
 
@@ -74,9 +73,7 @@ const SystemOverview = ({ overview }) => {
                         className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0"
                     >
                         <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-gray-100 rounded-lg">
-                                {item.icon}
-                            </div>
+                            <div className="p-2 bg-gray-100 rounded-lg"></div>
                             <div>
                                 <span className="text-sm font-medium text-gray-700">
                                     {item.label}
@@ -84,7 +81,7 @@ const SystemOverview = ({ overview }) => {
                             </div>
                         </div>
                         <span
-                            className={`font-bold text-lg ${
+                            className={`font-semibold text-lg ${
                                 item.label.includes("Rate")
                                     ? overview.completionRate >= 70
                                         ? "text-green-600"
@@ -98,30 +95,6 @@ const SystemOverview = ({ overview }) => {
                         </span>
                     </div>
                 ))}
-            </div>
-
-            {/* System Health Summary */}
-            <div className="p-4 rounded-lg border border-gray-200">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2">
-                    System Health
-                </h4>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <span
-                            className={`text-sm font-medium ${systemHealth.color}`}
-                        >
-                            {systemHealth.status}
-                        </span>
-                        <p className="text-xs text-gray-600 mt-1">
-                            Based on completion rate and system metrics
-                        </p>
-                    </div>
-                    <div
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${systemHealth.bg} ${systemHealth.color}`}
-                    >
-                        {overview.completionRate || 0}% Rate
-                    </div>
-                </div>
             </div>
         </div>
     );

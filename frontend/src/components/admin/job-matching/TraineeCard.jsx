@@ -9,28 +9,26 @@ const TraineeCard = ({
     const skills = trainee.match.factors?.skillDetails || [];
     const certs = trainee.certificates || [];
 
-    // 🆕 FIX: Format the filter bonus to remove excessive decimal places
+    // Format the filter bonus to remove excessive decimal places
     const formatBonus = (bonus) => {
         if (!bonus || bonus === 0) return null;
-        // Round to 2 decimal places to avoid floating-point precision issues
         return Math.round(bonus * 100) / 100;
     };
 
     const filterBonus = formatBonus(trainee.match.factors?.filterBonus);
 
     return (
-        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6 hover:shadow-sm transition-all duration-200">
             {/* Header */}
             <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                    <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center overflow-hidden border border-gray-200">
                         {trainee.profilePic ? (
                             <img
-                                src={trainee.profilePic} // ✅ DIRECT CLOUDINARY URL
+                                src={trainee.profilePic}
                                 alt={`${trainee.name}'s profile`}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                    // Fallback if image fails to load
                                     e.target.style.display = "none";
                                 }}
                             />
@@ -41,23 +39,22 @@ const TraineeCard = ({
                         )}
                     </div>
                     <div>
-                        <h3 className="font-semibold text-gray-900">
+                        <h3 className="font-semibold text-gray-900 text-sm">
                             {trainee.name}
                         </h3>
-                        {/* 🆕 UPDATED: Hide email for pending companies */}
                         {!isPendingCompany ? (
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs text-gray-500 mt-0.5">
                                 {trainee.email}
                             </p>
                         ) : (
-                            <p className="text-sm text-gray-400 italic">
+                            <p className="text-xs text-gray-400 italic mt-0.5">
                                 Contact details available after approval
                             </p>
                         )}
                     </div>
                 </div>
                 <div
-                    className={`px-2.5 py-1 rounded text-sm font-medium ${getMatchBadgeClass(
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${getMatchBadgeClass(
                         trainee.match.matchLevel
                     )}`}
                 >
@@ -67,7 +64,7 @@ const TraineeCard = ({
 
             {/* Category */}
             <div className="mb-6">
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-gray-900 text-sm">
                     {trainee.match.category}
                 </p>
             </div>
@@ -75,12 +72,14 @@ const TraineeCard = ({
             {/* Skills */}
             {skills.length > 0 && (
                 <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-2">Skills</p>
+                    <p className="text-xs text-gray-500 mb-2 font-medium">
+                        Skills
+                    </p>
                     <div className="flex flex-wrap gap-1.5">
                         {skills.map((skill, idx) => (
                             <span
                                 key={idx}
-                                className="px-2.5 py-1 text-xs bg-blue-100 text-blue-800 rounded-full font-medium"
+                                className="px-2.5 py-1 text-xs bg-blue-50 text-blue-700 rounded-lg font-medium border border-blue-100"
                             >
                                 {skill.name}
                                 {skill.certCount > 1 && ` (${skill.certCount})`}
@@ -93,18 +92,20 @@ const TraineeCard = ({
             {/* Certifications */}
             {certs.length > 0 && (
                 <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-2">Certifications</p>
+                    <p className="text-xs text-gray-500 mb-2 font-medium">
+                        Certifications
+                    </p>
                     <div className="flex flex-wrap gap-1.5">
                         {certs.slice(0, 4).map((cert, idx) => (
                             <span
                                 key={idx}
-                                className="px-2.5 py-1 text-xs bg-purple-100 text-purple-800 rounded-full font-medium"
+                                className="px-2.5 py-1 text-xs bg-purple-50 text-purple-700 rounded-lg font-medium border border-purple-100"
                             >
                                 {cert.title}
                             </span>
                         ))}
                         {certs.length > 4 && (
-                            <span className="px-2.5 py-1 text-xs bg-gray-100 text-gray-600 rounded-full font-medium">
+                            <span className="px-2.5 py-1 text-xs bg-gray-50 text-gray-600 rounded-lg font-medium border border-gray-200">
                                 +{certs.length - 4} more
                             </span>
                         )}
@@ -114,20 +115,20 @@ const TraineeCard = ({
 
             {/* Footer Info */}
             <div className="flex items-center justify-between pt-4 border-t border-gray-100 text-xs">
-                <span className="text-gray-500">
+                <span className="text-gray-500 font-medium">
                     {trainee.availability || "Not specified"}
                 </span>
                 {filterBonus > 0 && (
-                    <span className="text-green-600 font-medium">
+                    <span className="text-emerald-600 font-medium">
                         +{filterBonus}% bonus
                     </span>
                 )}
             </div>
 
-            {/* 🆕 NEW: Info message for pending companies */}
+            {/* Info message for pending companies */}
             {isPendingCompany && (
                 <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-700 text-center">
+                    <p className="text-xs text-blue-700 text-center font-medium">
                         Full profile access after approval
                     </p>
                 </div>

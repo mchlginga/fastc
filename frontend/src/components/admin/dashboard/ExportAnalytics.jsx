@@ -65,7 +65,6 @@ const ExportAnalytics = ({ stats, loading = false }) => {
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                        <Download size={20} className="mr-3 text-blue-600" />
                         CSV Export Analytics
                     </h3>
                     <p className="text-gray-600 text-sm mt-1">
@@ -79,11 +78,6 @@ const ExportAnalytics = ({ stats, loading = false }) => {
                             : "bg-red-100 text-red-800"
                     }`}
                 >
-                    {isPositive ? (
-                        <TrendingUp size={16} className="mr-1" />
-                    ) : (
-                        <TrendingDown size={16} className="mr-1" />
-                    )}
                     {isPositive ? "+" : ""}
                     {percentChange}% vs last month
                 </div>
@@ -114,7 +108,6 @@ const ExportAnalytics = ({ stats, loading = false }) => {
                     to="/admin/job-match"
                     className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all duration-200 cursor-pointer shadow-xs hover:shadow-sm"
                 >
-                    <Download size={16} className="mr-2" />
                     Go to Job Matching
                 </Link>
             </div>

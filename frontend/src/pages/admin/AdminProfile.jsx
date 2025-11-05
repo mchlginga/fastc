@@ -210,8 +210,22 @@ function AdminProfile() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900">
+                                Admin Profile
+                            </h1>
+                            <p className="text-gray-600 text-sm mt-1">
+                                Manage your profile and view system overview
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Admin Profile Header Section */}
                 <AdminProfileHeader
                     user={user}

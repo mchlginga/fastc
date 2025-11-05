@@ -135,24 +135,27 @@ const AdminSettings = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header - Same as other admin pages */}
+                {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center mb-2">
-                        <Settings size={28} className="text-blue-600 mr-3" />
-                        <h1 className="text-3xl font-bold text-gray-900">
-                            Admin Settings
-                        </h1>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900">
+                                Admin Settings
+                            </h1>
+                            <p className="text-gray-600 text-sm mt-1">
+                                Manage your admin account preferences and
+                                settings
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-gray-600">
-                        Manage your admin account preferences and settings
-                    </p>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-md border border-gray-100">
+                {/* Main Content Card */}
+                <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
                     {/* Tabs */}
-                    <div className="border-b border-gray-200">
+                    <div className="border-b border-gray-100">
                         <div className="flex space-x-8 px-6">
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
@@ -189,7 +192,7 @@ const AdminSettings = () => {
                                             name="firstName"
                                             value={formData.firstName}
                                             onChange={handleChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
                                         />
                                     </div>
                                     <div>
@@ -201,7 +204,7 @@ const AdminSettings = () => {
                                             name="surname"
                                             value={formData.surname}
                                             onChange={handleChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
                                         />
                                     </div>
                                     <div>
@@ -213,7 +216,7 @@ const AdminSettings = () => {
                                             name="email"
                                             value={formData.email}
                                             onChange={handleChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
                                         />
                                     </div>
                                     <div>
@@ -225,7 +228,7 @@ const AdminSettings = () => {
                                             name="contactNumber"
                                             value={formData.contactNumber}
                                             onChange={handleChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
                                         />
                                     </div>
                                     <div className="md:col-span-2">
@@ -237,16 +240,15 @@ const AdminSettings = () => {
                                             name="address"
                                             value={formData.address}
                                             onChange={handleChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text"
                                         />
                                     </div>
                                 </div>
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
                                 >
-                                    <Save size={18} className="mr-2" />
                                     {loading ? "Saving..." : "Save Changes"}
                                 </button>
                             </form>
@@ -263,7 +265,7 @@ const AdminSettings = () => {
                                         ([key, value]) => (
                                             <div
                                                 key={key}
-                                                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                                                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                                             >
                                                 <div>
                                                     <p className="font-medium text-gray-800 capitalize">
@@ -311,10 +313,10 @@ const AdminSettings = () => {
                                 </div>
 
                                 <div className="flex space-x-4">
-                                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer">
+                                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors cursor-pointer shadow-xs">
                                         Save Preferences
                                     </button>
-                                    <button className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer">
+                                    <button className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors cursor-pointer shadow-xs">
                                         Reset to Default
                                     </button>
                                 </div>
@@ -329,7 +331,7 @@ const AdminSettings = () => {
                                 </h3>
 
                                 {/* Change Password */}
-                                <div className="p-4 border border-gray-200 rounded-lg">
+                                <div className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                     <div className="flex items-center mb-4">
                                         <Key
                                             size={20}
@@ -363,7 +365,7 @@ const AdminSettings = () => {
                                                 onChange={
                                                     handlePasswordDataChange
                                                 }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-text"
                                                 required
                                             />
                                         </div>
@@ -378,7 +380,7 @@ const AdminSettings = () => {
                                                 onChange={
                                                     handlePasswordDataChange
                                                 }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-text"
                                                 required
                                             />
                                         </div>
@@ -395,14 +397,14 @@ const AdminSettings = () => {
                                                 onChange={
                                                     handlePasswordDataChange
                                                 }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-text"
                                                 required
                                             />
                                         </div>
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
                                         >
                                             {loading
                                                 ? "Updating..."
@@ -412,7 +414,7 @@ const AdminSettings = () => {
                                 </div>
 
                                 {/* Two-Factor Authentication */}
-                                <div className="p-4 border border-gray-200 rounded-lg">
+                                <div className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center">
                                             <Shield
@@ -429,7 +431,7 @@ const AdminSettings = () => {
                                                 </p>
                                             </div>
                                         </div>
-                                        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer">
+                                        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer shadow-xs">
                                             Enable 2FA
                                         </button>
                                     </div>
@@ -447,7 +449,7 @@ const AdminSettings = () => {
                                                 sessions
                                             </p>
                                         </div>
-                                        <button className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer">
+                                        <button className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer shadow-xs">
                                             View Sessions
                                         </button>
                                     </div>
@@ -457,8 +459,8 @@ const AdminSettings = () => {
                     </div>
                 </div>
 
-                {/* Admin Role Info */}
-                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-6">
+                {/* Admin Role Info - Consistent styling */}
+                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
                     <div className="flex items-start">
                         <Shield className="text-blue-600 mr-3 mt-1" size={20} />
                         <div>

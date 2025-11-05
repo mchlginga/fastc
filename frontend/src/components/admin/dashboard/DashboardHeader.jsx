@@ -53,7 +53,7 @@ const DashboardHeader = ({
                     <div className="flex items-center bg-white px-4 py-2 rounded-xl shadow-xs border border-gray-100">
                         <Clock size={18} className="text-blue-500 mr-2" />
                         <span className="text-sm text-gray-600">
-                            Updated {formatTimeWithoutSeconds(lastUpdated)}
+                            {formatTimeWithoutSeconds(lastUpdated)}
                         </span>
                     </div>
                 </div>

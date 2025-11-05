@@ -329,27 +329,28 @@ const AdminJobMatching = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
+                {/* Header - Updated to match AdminUsers */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                    <h1 className="text-2xl font-semibold text-gray-900 mb-2">
                         AI Job Matching
                     </h1>
-                    <p className="text-gray-600">
-                        Smart matching of trainees to vocational roles using AI
+                    <p className="text-gray-600 text-sm">
+                        Smart matching of trainees to vocational roles using
+                        AI-powered algorithms
                     </p>
                 </div>
 
                 {/* Stats Cards */}
                 <div className="mb-6">
-                    <JobMatchingStats stats={stats} />
+                    <JobMatchingStats stats={stats} loading={loading} />
                 </div>
 
                 {/* Main Content */}
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Filter Panel */}
-                    <div className="w-full lg:w-80 flex-shrink-0">
+                    <div className="w-full lg:w-80 shrink-0">
                         <JobMatchingFilters
                             filters={filters}
                             filterOptions={filterOptions}

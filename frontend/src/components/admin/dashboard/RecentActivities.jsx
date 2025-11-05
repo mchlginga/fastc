@@ -37,7 +37,6 @@ const RecentActivities = ({ activities, loading = false }) => {
         {
             key: "recentCompletions",
             title: "Completions",
-            icon: <CheckCircle size={16} className="mr-2 text-green-500" />,
             data: activities.recentCompletions,
             bg: "bg-green-50",
             border: "border-green-200",
@@ -45,7 +44,6 @@ const RecentActivities = ({ activities, loading = false }) => {
         {
             key: "recentEnrollments",
             title: "Enrollments",
-            icon: <Clipboard size={16} className="mr-2 text-blue-500" />,
             data: activities.recentEnrollments,
             bg: "bg-blue-50",
             border: "border-blue-200",
@@ -53,7 +51,6 @@ const RecentActivities = ({ activities, loading = false }) => {
         {
             key: "recentCertificates",
             title: "Certificates",
-            icon: <Award size={16} className="mr-2 text-purple-500" />,
             data: activities.recentCertificates,
             bg: "bg-purple-50",
             border: "border-purple-200",

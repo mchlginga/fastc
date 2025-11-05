@@ -68,7 +68,7 @@ const ActivityItem = ({ activity }) => {
 
     return (
         <div className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-            <div className="flex-shrink-0 mt-1">
+            <div className="shrink-0 mt-1">
                 {getActivityIcon(activity.type)}
             </div>
             <div className="flex-1 min-w-0">
@@ -86,7 +86,7 @@ const ActivityItem = ({ activity }) => {
 
 const RecentActivities = ({ activities }) => {
     return (
-        <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
                 Recent Activities
             </h3>
