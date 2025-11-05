@@ -147,7 +147,7 @@ const CompanyHeaderFooter = () => {
             <header className="bg-white sticky top-0 shadow-sm z-50 border-b border-gray-100">
                 <div className="container mx-auto px-4 py-3">
                     <div className="flex justify-between items-center">
-                        {/* Logo */}
+                        {/* Logo - Left Side */}
                         <Link
                             to="/company"
                             className="flex items-center cursor-pointer group"
@@ -161,8 +161,8 @@ const CompanyHeaderFooter = () => {
                             </h1>
                         </Link>
 
-                        {/* Desktop Navigation */}
-                        <div className="hidden md:flex items-center space-x-8">
+                        {/* Desktop Navigation & Profile - Right Side (hidden on lg and below) */}
+                        <div className="hidden xl:flex items-center space-x-8">
                             <NavLink
                                 to="/company"
                                 end
@@ -243,8 +243,8 @@ const CompanyHeaderFooter = () => {
                             </div>
                         </div>
 
-                        {/* Mobile Menu Button */}
-                        <div className="md:hidden flex items-center">
+                        {/* Hamburger Menu Button (shown on lg and below) */}
+                        <div className="xl:hidden flex items-center">
                             <button
                                 onClick={toggleMenu}
                                 className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
@@ -262,9 +262,9 @@ const CompanyHeaderFooter = () => {
                     </div>
                 </div>
 
-                {/* Mobile Menu */}
+                {/* Mobile Menu (shown on lg and below) */}
                 {isMenuOpen && (
-                    <div className="md:hidden bg-white border-t border-gray-100 shadow-lg absolute top-full left-0 w-full z-50 animate-in slide-in-from-top">
+                    <div className="xl:hidden bg-white border-t border-gray-100 shadow-lg absolute top-full left-0 w-full z-50 animate-in slide-in-from-top">
                         <div className="container mx-auto px-4 py-4 space-y-1">
                             <NavLink
                                 to="/company"
