@@ -15,12 +15,80 @@ function EnrollmentCard({
 
     const statusConfig = getStatusConfig(enrollment.status);
 
+    const handleContentClick = (e) => {
+        // Don't trigger if clicking on buttons
+        if (e.target.closest("button") || e.target.closest("a")) {
+            return;
+        }
+        // For active courses, navigate to course
+        if (type === "active" && onContinueLearning) {
+            onContinueLearning();
+        }
+        // For completed courses, navigate to course overview
+        if (type === "completed" && onViewCourse) {
+            onViewCourse();
+        }
+        if (type === "pending" && onViewCourse) {
+            onViewCourse();
+        }
+    };
+
+    const getDateLabel = () => {
+        if (type === "pending") {
+            // Use requestedAt for pending enrollments
+            const dateToUse = enrollment.requestedAt || enrollment.enrolledAt;
+            return `Requested: ${new Date(dateToUse).toLocaleDateString(
+                "en-US",
+                {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                }
+            )}`;
+        }
+
+        if (type === "completed") {
+            return `Completed: ${
+                enrollment.completedAt
+                    ? new Date(enrollment.completedAt).toLocaleDateString(
+                          "en-US",
+                          {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                          }
+                      )
+                    : "Unknown"
+            }`;
+        }
+
+        // For active courses, show when they were actually enrolled
+        if (type === "active" && enrollment.enrolledAt) {
+            return `Enrolled: ${new Date(
+                enrollment.enrolledAt
+            ).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+            })}`;
+        }
+
+        return enrollment.accessStatus || "Self-paced";
+    };
+
+    const getPendingStatusText = () => {
+        return "Waiting for Admin Approval";
+    };
+
     return (
-        <div className="bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col">
+        <div
+            className="bg-white rounded-xl shadow-xs border border-gray-100 hover:shadow-sm transition-all duration-200 flex flex-col group cursor-pointer"
+            onClick={handleContentClick}
+        >
             <img
                 src={enrollment.course?.image || "/default-course.jpg"}
                 alt={enrollment.course?.title || "Course"}
-                className="w-full h-48 object-cover rounded-t-2xl"
+                className="w-full h-48 object-cover rounded-t-xl group-hover:brightness-95 transition-all duration-200"
                 onError={(e) => {
                     e.target.src = "/default-course.jpg";
                 }}
@@ -28,7 +96,7 @@ function EnrollmentCard({
             />
             <div className="p-6 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-semibold text-gray-800">
+                    <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors duration-200">
                         {enrollment.course.title || "Untitled Course"}
                     </h4>
                     <span
@@ -43,7 +111,7 @@ function EnrollmentCard({
                 {type === "active" && (
                     <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
                         <div
-                            className="bg-blue-600 h-2.5 rounded-full"
+                            className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
                             style={{
                                 width: `${enrollment.progress || 0}%`,
                             }}
@@ -55,7 +123,7 @@ function EnrollmentCard({
                 {type === "completed" && (
                     <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
                         <div
-                            className="bg-green-600 h-2.5 rounded-full"
+                            className="bg-green-600 h-2.5 rounded-full transition-all duration-300"
                             style={{ width: "100%" }}
                         ></div>
                     </div>
@@ -65,29 +133,8 @@ function EnrollmentCard({
                     {type === "active" && (
                         <span>Progress: {enrollment.progress || 0}%</span>
                     )}
-                    {type === "completed" && (
-                        <span className="text-green-600 font-medium">
-                            100% Complete
-                        </span>
-                    )}
-                    <div className="flex items-center">
-                        <Clock size={14} className="mr-1" />
-                        <span>
-                            {type === "pending"
-                                ? `Enrolled: ${new Date(
-                                      enrollment.enrolledAt
-                                  ).toLocaleDateString()}`
-                                : type === "completed"
-                                ? `Completed: ${
-                                      enrollment.completedAt
-                                          ? new Date(
-                                                enrollment.completedAt
-                                            ).toLocaleDateString()
-                                          : "Unknown"
-                                  }`
-                                : enrollment.accessStatus || "Self-paced"}
-                        </span>
-                    </div>
+
+                    <span>{getDateLabel()}</span>
                 </div>
 
                 {/* Action Buttons */}
@@ -96,22 +143,23 @@ function EnrollmentCard({
                         <>
                             <button
                                 onClick={onContinueLearning}
-                                className="flex-1 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition text-center flex items-center justify-center cursor-pointer"
+                                className="flex-1 min-h-11 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-center flex items-center justify-center cursor-pointer"
                             >
                                 Continue Learning
                             </button>
                             <button
-                                onClick={() =>
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     onCancelEnrollment(
                                         enrollment.enrollmentId,
                                         enrollment.course.title
-                                    )
-                                }
+                                    );
+                                }}
                                 disabled={
                                     cancellingEnrollment ===
                                     enrollment.enrollmentId
                                 }
-                                className="min-h-[44px] px-4 bg-gray-500 hover:bg-gray-600 text-white py-2.5 rounded-lg text-sm font-medium transition text-center flex items-center justify-center disabled:bg-gray-400 cursor-pointer"
+                                className="min-h-11 px-4 bg-gray-500 hover:bg-gray-600 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-center flex items-center justify-center disabled:bg-gray-400 cursor-pointer"
                             >
                                 {cancellingEnrollment ===
                                 enrollment.enrollmentId ? (
@@ -125,21 +173,22 @@ function EnrollmentCard({
 
                     {type === "pending" && (
                         <>
-                            <div className="flex-1 min-h-[44px] bg-yellow-100 text-yellow-800 text-center py-2.5 rounded-lg text-sm font-medium flex items-center justify-center">
-                                Waiting for Admin Approval
+                            <div className="flex-1 min-h-11 bg-yellow-100 text-yellow-800 text-center py-2.5 rounded-lg text-sm font-medium flex items-center justify-center">
+                                {getPendingStatusText()}
                             </div>
                             <button
-                                onClick={() =>
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     onCancelEnrollment(
                                         enrollment.enrollmentId,
                                         enrollment.course.title
-                                    )
-                                }
+                                    );
+                                }}
                                 disabled={
                                     cancellingEnrollment ===
                                     enrollment.enrollmentId
                                 }
-                                className="min-h-[44px] px-4 bg-gray-500 hover:bg-gray-600 text-white py-2.5 rounded-lg text-sm font-medium transition text-center flex items-center justify-center disabled:bg-gray-400 cursor-pointer"
+                                className="min-h-11 px-4 bg-gray-500 hover:bg-gray-600 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-center flex items-center justify-center disabled:bg-gray-400 cursor-pointer"
                             >
                                 {cancellingEnrollment ===
                                 enrollment.enrollmentId ? (
@@ -153,12 +202,14 @@ function EnrollmentCard({
 
                     {type === "completed" && (
                         <button
-                            onClick={
-                                certificate ? onViewCertificate : onViewCourse
-                            }
-                            className="w-full min-h-[44px] bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg text-sm font-medium transition text-center flex items-center justify-center mt-auto cursor-pointer"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                certificate
+                                    ? onViewCertificate()
+                                    : onViewCourse();
+                            }}
+                            className="w-full min-h-11 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-center flex items-center justify-center mt-auto cursor-pointer"
                         >
-                            <CheckCircle size={16} className="mr-2" />
                             {certificate
                                 ? "View Certificate"
                                 : "Course Completed"}

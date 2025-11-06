@@ -21,6 +21,7 @@ const EnrollmentTableRow = ({
     onEdit,
     onStatusUpdate,
     onDelete,
+    onApproveEnrollment, // 🆕 NEW
     rowIndex,
 }) => {
     const [showActions, setShowActions] = useState(false);
@@ -58,6 +59,19 @@ const EnrollmentTableRow = ({
         [enrollment._id, onStatusUpdate]
     );
 
+    // 🆕 NEW: Handle approve action
+    const handleApprove = useCallback(async () => {
+        setIsUpdating(true);
+        try {
+            await onApproveEnrollment(enrollment._id);
+            setShowActions(false);
+        } catch (error) {
+            console.error("Approve enrollment error:", error);
+        } finally {
+            setIsUpdating(false);
+        }
+    }, [enrollment._id, onApproveEnrollment]);
+
     const getStatusConfig = (status) => {
         const configs = {
             pending: {
@@ -65,35 +79,30 @@ const EnrollmentTableRow = ({
                 text: "text-amber-700",
                 border: "border-amber-200",
                 label: "Pending",
-                icon: <Clock size={12} className="mr-1" />,
             },
             active: {
                 bg: "bg-emerald-50",
                 text: "text-emerald-700",
                 border: "border-emerald-200",
                 label: "Active",
-                icon: <Check size={12} className="mr-1" />,
             },
             completed: {
                 bg: "bg-blue-50",
                 text: "text-blue-700",
                 border: "border-blue-200",
                 label: "Completed",
-                icon: <Award size={12} className="mr-1" />,
             },
             cancelled: {
                 bg: "bg-red-50",
                 text: "text-red-700",
                 border: "border-red-200",
                 label: "Cancelled",
-                icon: <X size={12} className="mr-1" />,
             },
             expired: {
                 bg: "bg-gray-50",
                 text: "text-gray-700",
                 border: "border-gray-200",
                 label: "Expired",
-                icon: <AlertCircle size={12} className="mr-1" />,
             },
         };
         return configs[status] || configs.pending;
@@ -163,7 +172,7 @@ const EnrollmentTableRow = ({
             {/* User Info */}
             <td className="px-4 py-4 whitespace-nowrap">
                 <div className="flex items-center group">
-                    <div className="flex-shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 group-hover:shadow-xs transition-shadow">
+                    <div className="shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 group-hover:shadow-xs transition-shadow">
                         {user?.profilePic ? (
                             <img
                                 src={user.profilePic}
@@ -194,11 +203,11 @@ const EnrollmentTableRow = ({
             {/* Course Info */}
             <td className="px-4 py-4 whitespace-nowrap">
                 <div className="flex items-center group">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 mr-3 group-hover:shadow-xs transition-shadow">
+                    <div className="shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 mr-3 group-hover:shadow-xs transition-shadow">
                         <Book size={14} className="text-gray-400" />
                     </div>
                     <div>
-                        <div className="text-sm font-medium text-gray-900 truncate max-w-[160px] group-hover:text-gray-700 transition-colors">
+                        <div className="text-sm font-medium text-gray-900 truncate max-w-40 group-hover:text-gray-700 transition-colors">
                             {course?.title || "Unknown Course"}
                         </div>
                         <div className="text-xs text-gray-500">
@@ -273,6 +282,29 @@ const EnrollmentTableRow = ({
 
                         {showActions && (
                             <div className="absolute right-0 z-20 w-56 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-200/50 ring-1 ring-black ring-opacity-5 py-1 animate-in fade-in-0 zoom-in-95">
+                                {/* 🆕 NEW: Approve Action for Pending Enrollments */}
+                                {enrollment.status === "pending" && (
+                                    <>
+                                        <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                            Approval Action
+                                        </div>
+                                        <button
+                                            onClick={handleApprove}
+                                            disabled={isUpdating}
+                                            className="flex items-center w-full px-3 py-2 text-sm text-green-700 transition-all duration-150 hover:bg-green-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+                                        >
+                                            <Check
+                                                size={14}
+                                                className="mr-2 group-hover:scale-110 transition-transform"
+                                            />
+                                            {isUpdating
+                                                ? "Approving..."
+                                                : "Approve Enrollment"}
+                                        </button>
+                                        <div className="border-t border-gray-100 my-1"></div>
+                                    </>
+                                )}
+
                                 {/* Status Update Section */}
                                 <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                     Update Status
@@ -294,25 +326,6 @@ const EnrollmentTableRow = ({
                                         {isUpdating
                                             ? "Updating..."
                                             : "Set as Pending"}
-                                    </button>
-                                )}
-
-                                {/* Active Status */}
-                                {enrollment.status !== "active" && (
-                                    <button
-                                        onClick={() =>
-                                            handleStatusUpdate("active")
-                                        }
-                                        disabled={isUpdating}
-                                        className="flex items-center w-full px-3 py-2 text-sm text-emerald-700 transition-all duration-150 hover:bg-emerald-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
-                                    >
-                                        <Check
-                                            size={14}
-                                            className="mr-2 group-hover:scale-110 transition-transform"
-                                        />
-                                        {isUpdating
-                                            ? "Updating..."
-                                            : "Activate"}
                                     </button>
                                 )}
 

@@ -16,7 +16,6 @@ exports.enrollInCourse = async (req, res, next) => {
             });
         }
 
-        // 🆕 ENHANCED: Use course method to check enrollment eligibility
         if (!course.canEnroll()) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
@@ -51,31 +50,30 @@ exports.enrollInCourse = async (req, res, next) => {
         });
 
         let enrollment;
-        const enrolledAt = new Date();
+        const requestedAt = new Date();
 
-        // 🆕 ENHANCED: Calculate accessUntil based on course type
+        // Access period should only start when admin approves
         let accessUntil = null;
-        if (!course.isSelfPaced) {
-            accessUntil = course.calculateAccessUntil(enrolledAt);
-        }
 
         if (cancelledEnrollment) {
-            // Reactivate the cancelled enrollment
+            // Reactivate the cancelled enrollment as pending
             cancelledEnrollment.status = "pending";
-            cancelledEnrollment.enrolledAt = enrolledAt;
-            cancelledEnrollment.accessUntil = accessUntil;
+            cancelledEnrollment.requestedAt = requestedAt;
+            cancelledEnrollment.enrolledAt = null;
+            cancelledEnrollment.accessUntil = null;
             cancelledEnrollment.cancelledAt = undefined;
             cancelledEnrollment.progress = 0;
             cancelledEnrollment.completedLessons = [];
             await cancelledEnrollment.save();
             enrollment = cancelledEnrollment;
         } else {
-            // Create new enrollment
+            // Create new enrollment with pending status
             enrollment = await Enrollment.create({
                 user: userId,
                 course: courseId,
-                enrolledAt,
-                accessUntil, // 🆕 Now properly set based on course type
+                requestedAt: requestedAt,
+                enrolledAt: null,
+                accessUntil: null,
                 status: "pending",
                 progress: 0,
                 completedLessons: [],
@@ -91,7 +89,7 @@ exports.enrollInCourse = async (req, res, next) => {
         res.status(statusCodes.CREATED).json({
             success: true,
             message: cancelledEnrollment
-                ? "Enrollment reactivated successfully"
+                ? "Enrollment request reactivated successfully"
                 : "Enrollment request submitted for admin approval",
             enrollment: {
                 id: enrollment._id,
@@ -106,6 +104,7 @@ exports.enrollInCourse = async (req, res, next) => {
                     isSelfPaced: enrollment.course.isSelfPaced,
                 },
                 status: enrollment.status,
+                requestedAt: enrollment.requestedAt,
                 enrolledAt: enrollment.enrolledAt,
                 accessUntil: enrollment.accessUntil,
                 needsApproval: true,
@@ -146,7 +145,7 @@ exports.getUserEnrollments = async (req, res, next) => {
                 "course",
                 "title description image duration category skillLevel lessons enrollmentPeriod endDate isActive"
             )
-            .sort({ enrolledAt: -1 })
+            .sort({ requestedAt: -1 }) // 🆕 CHANGED: Sort by requestedAt
             .lean();
 
         // Format response with calculated fields
@@ -160,13 +159,15 @@ exports.getUserEnrollments = async (req, res, next) => {
             );
             const completedCount = completedLessons.length;
 
-            // 🆕 FIXED: Proper time remaining calculation
             let timeRemainingDisplay = "Self-paced";
             let daysRemaining = null;
             let accessStatus = "Self-paced";
 
-            // 🆕 ONLY calculate time remaining if course has enrollment period AND accessUntil is set
-            if (course.enrollmentPeriod > 0 && enrollment.accessUntil) {
+            if (
+                enrollment.status === "active" &&
+                course.enrollmentPeriod > 0 &&
+                enrollment.accessUntil
+            ) {
                 const now = new Date();
                 const accessUntil = new Date(enrollment.accessUntil);
                 const timeRemaining = Math.ceil(
@@ -176,7 +177,6 @@ exports.getUserEnrollments = async (req, res, next) => {
                 daysRemaining = timeRemaining > 0 ? timeRemaining : 0;
 
                 if (daysRemaining > 0) {
-                    // 🆕 IMPROVED: Show weeks/months for better UX
                     if (daysRemaining >= 30) {
                         const months = Math.floor(daysRemaining / 30);
                         timeRemainingDisplay = `${months} month${
@@ -198,9 +198,14 @@ exports.getUserEnrollments = async (req, res, next) => {
                     accessStatus = "Expired";
                 }
             } else {
-                // 🆕 Self-paced course - no time limit
-                timeRemainingDisplay = "Self-paced";
-                accessStatus = "Self-paced";
+                // For pending enrollments, show waiting for approval
+                if (enrollment.status === "pending") {
+                    timeRemainingDisplay = "Waiting approval";
+                    accessStatus = "Pending Approval";
+                } else {
+                    timeRemainingDisplay = "Self-paced";
+                    accessStatus = "Self-paced";
+                }
             }
 
             return {
@@ -220,13 +225,14 @@ exports.getUserEnrollments = async (req, res, next) => {
                 },
                 progress: enrollment.progress,
                 status: enrollment.status,
-                enrolledAt: enrollment.enrolledAt,
+                requestedAt: enrollment.requestedAt, 
+                enrolledAt: enrollment.enrolledAt, 
                 completedAt: enrollment.completedAt,
-                accessUntil: enrollment.accessUntil,
+                accessUntil: enrollment.accessUntil, 
                 completedLessons: completedLessons,
                 lastAccessedLesson: enrollment.lastAccessedLesson,
                 timeRemaining: timeRemainingDisplay,
-                accessStatus: accessStatus, // 🆕 Use the improved status
+                accessStatus: accessStatus,
                 completedLessonsCount: completedCount,
                 totalLessonsCount: totalLessons,
                 daysRemaining: daysRemaining,

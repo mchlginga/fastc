@@ -13,12 +13,11 @@ function CourseCard({
     isUserEnrolled,
     getEnrollmentStatus,
 }) {
-    // Safety check for course - return a placeholder if course is invalid
     if (!course || !course._id) {
         console.warn("Invalid course data:", course);
         return (
-            <div className="bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col">
-                <div className="w-full h-48 bg-gray-200 rounded-t-2xl flex items-center justify-center">
+            <div className="bg-white rounded-xl shadow-xs border border-gray-100 flex flex-col">
+                <div className="w-full h-48 bg-gray-200 rounded-t-xl flex items-center justify-center">
                     <span className="text-gray-500">Course unavailable</span>
                 </div>
                 <div className="p-6 flex-1 flex flex-col">
@@ -30,7 +29,7 @@ function CourseCard({
                     </p>
                     <button
                         disabled
-                        className="w-full min-h-[44px] py-2.5 rounded-lg text-sm font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
+                        className="w-full min-h-11 py-2.5 rounded-lg text-sm font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
                     >
                         Unavailable
                     </button>
@@ -43,13 +42,10 @@ function CourseCard({
     const enrollmentSuccess = enrollmentStatus === "success";
     const enrollmentError = enrollmentStatus === "error";
 
-    // Safe function calls with error handling
     const enrollmentDeadline = getEnrollmentDeadline(course);
     const courseAccessType = getCourseAccessType(course);
 
-    // Handle card content click
     const handleContentClick = (e) => {
-        // Don't trigger if clicking on the button or links
         if (e.target.closest("button") || e.target.closest("a")) {
             return;
         }
@@ -58,7 +54,6 @@ function CourseCard({
         }
     };
 
-    // Handle view details button click
     const handleViewDetails = (e) => {
         e.stopPropagation();
         if (onCourseClick && course._id) {
@@ -66,7 +61,6 @@ function CourseCard({
         }
     };
 
-    // Handle enroll button click
     const handleEnrollClick = (e) => {
         e.stopPropagation();
         if (onEnroll && course._id) {
@@ -76,13 +70,13 @@ function CourseCard({
 
     return (
         <div
-            className="bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col cursor-pointer"
+            className="bg-white rounded-xl shadow-xs border border-gray-100 hover:shadow-sm transition-all duration-200 flex flex-col cursor-pointer group"
             onClick={handleContentClick}
         >
             <img
                 src={course?.image || "/default-course.jpg"}
                 alt={course?.title || ""}
-                className="w-full h-48 object-cover rounded-t-2xl"
+                className="w-full h-48 object-cover rounded-t-xl group-hover:brightness-95 transition-all duration-200"
                 onError={(e) => {
                     e.target.src = "/default-course.jpg";
                 }}
@@ -97,11 +91,10 @@ function CourseCard({
                             "bg-gray-100 text-gray-800"
                         }`}
                     >
-                        <Calendar size={10} className="inline mr-1" />
                         {enrollmentDeadline?.text || "Enrollment Open"}
                     </span>
                     <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        className={`hidden xl:inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                             courseAccessType?.color ||
                             "bg-gray-100 text-gray-800"
                         }`}
@@ -110,11 +103,11 @@ function CourseCard({
                     </span>
                 </div>
 
-                <h4 className="font-semibold text-gray-800 mb-2 hover:text-blue-600 transition">
+                <h4 className="font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-200 line-clamp-2">
                     {course.title || "Untitled Course"}
                 </h4>
 
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-1">
+                <p className="text-gray-600 text-sm mb-4 line-clamp-1 flex-1">
                     {course.description || "No description available"}
                 </p>
 
@@ -140,10 +133,10 @@ function CourseCard({
                 <div className="flex gap-2">
                     <button
                         onClick={handleViewDetails}
-                        className="flex-1 min-h-[44px] py-2.5 rounded-lg text-sm font-medium transition text-center flex items-center justify-center bg-gray-600 hover:bg-gray-700 text-white cursor-pointer"
+                        className="flex-1 min-h-11 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-center flex items-center justify-center bg-gray-600 hover:bg-gray-700 text-white cursor-pointer"
                     >
-                        View Details
-                        <ArrowRight size={16} className="ml-2" />
+                        <span className="hidden sm:inline">View Details</span>
+                        <span className="sm:hidden">View</span>
                     </button>
 
                     {!isUserEnrolled &&
@@ -152,7 +145,7 @@ function CourseCard({
                             <button
                                 onClick={handleEnrollClick}
                                 disabled={isEnrolling}
-                                className={`min-h-[44px] px-4 py-2.5 rounded-lg text-sm font-medium transition text-center flex items-center justify-center ${
+                                className={`min-h-11 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-center flex items-center justify-center ${
                                     isEnrolling
                                         ? "bg-blue-400 text-white cursor-not-allowed"
                                         : "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
@@ -161,7 +154,10 @@ function CourseCard({
                                 {isEnrolling ? (
                                     <div className="flex items-center justify-center">
                                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                        Enrolling...
+                                        <span className="hidden sm:inline">
+                                            Enrolling...
+                                        </span>
+                                        <span className="sm:hidden">...</span>
                                     </div>
                                 ) : (
                                     "Enroll"

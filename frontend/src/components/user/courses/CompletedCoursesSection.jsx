@@ -6,8 +6,14 @@ import { Award, Search } from "react-feather";
 function CompletedCoursesSection({ enrollments, certificates, searchQuery }) {
     const navigate = useNavigate();
 
+    const handleViewCourse = (enrollment) => {
+        navigate(`/user/courses/${enrollment.course.id}`, {
+            state: { from: "completed" },
+        });
+    };
+
     return (
-        <section className="mb-8">
+        <section className="p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                 <h3 className="text-xl font-semibold text-gray-800">
                     Completed Courses
@@ -80,9 +86,7 @@ function CompletedCoursesSection({ enrollments, certificates, searchQuery }) {
                                     navigate("/user/certificates")
                                 }
                                 onViewCourse={() =>
-                                    navigate(
-                                        `/user/courses/${enrollment.course.id}`
-                                    )
+                                    handleViewCourse(enrollment)
                                 }
                             />
                         );

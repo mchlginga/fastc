@@ -21,7 +21,7 @@ export const getEnrollmentDeadline = (course) => {
         return {
             text: "Enrollment Open",
             status: "open",
-            color: "bg-green-100 text-green-800",
+            color: "bg-emerald-100 text-emerald-800",
         };
     }
 

@@ -50,21 +50,18 @@ exports.getEnrollments = async (req, res, next) => {
             };
         }
 
-        // Sort configuration
-        const sortConfig = {};
-        sortConfig[sortBy] = sortOrder === "desc" ? -1 : 1;
-
         // Execute query with pagination and population
-        const enrollments = await Enrollment.find(filter)
+        let enrollments = await Enrollment.find(filter)
             .populate(
                 "user",
                 "firstName surname email companyName role profilePic"
             )
             .populate("course", "title category skillLevel duration image")
             .populate("lastAccessedLesson", "title")
-            .sort(sortConfig)
+            .sort({ createdAt: -1 }) // Default sort by creation date
             .limit(limit * 1)
-            .skip((page - 1) * limit);
+            .skip((page - 1) * limit)
+            .lean(); // Convert to plain objects for sorting
 
         // Apply search filter after population
         let filteredEnrollments = enrollments;
@@ -90,12 +87,28 @@ exports.getEnrollments = async (req, res, next) => {
             });
         }
 
+        const sortedEnrollments = filteredEnrollments.sort((a, b) => {
+            // Priority: pending first
+            if (a.status === "pending" && b.status !== "pending") return -1;
+            if (a.status !== "pending" && b.status === "pending") return 1;
+
+            // Same status, sort by appropriate date
+            const dateA = new Date(
+                a.requestedAt || a.enrolledAt || a.createdAt
+            );
+            const dateB = new Date(
+                b.requestedAt || b.enrolledAt || b.createdAt
+            );
+
+            return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+        });
+
         // Get total count for pagination
         const total = await Enrollment.countDocuments(filter);
 
         res.status(statusCodes.OK).json({
             success: true,
-            enrollments: filteredEnrollments,
+            enrollments: sortedEnrollments,
             pagination: {
                 currentPage: parseInt(page),
                 totalPages: Math.ceil(total / limit),
@@ -223,13 +236,12 @@ exports.getEnrollmentById = async (req, res, next) => {
 };
 
 // Create new enrollment (manual enrollment by admin)
-// Create new enrollment (manual enrollment by admin)
 exports.createEnrollment = async (req, res, next) => {
     try {
         const {
             userId,
             courseId,
-            status = "active",
+            status = "pending", // 🆕 CHANGED: Default to pending for consistency
             accessUntil,
             progress = 0,
         } = req.body;
@@ -267,64 +279,62 @@ exports.createEnrollment = async (req, res, next) => {
             });
         }
 
-        // Check for existing enrollment
+        // Check for existing enrollment (exclude cancelled)
         const existingEnrollment = await Enrollment.findOne({
             user: userId,
             course: courseId,
+            status: { $ne: "cancelled" },
         });
 
         if (existingEnrollment) {
             return res.status(statusCodes.CONFLICT).json({
                 success: false,
-                message: "User is already enrolled in this course",
+                message:
+                    "User already has an active or pending enrollment for this course",
+                existingEnrollment: {
+                    id: existingEnrollment._id,
+                    status: existingEnrollment.status,
+                },
             });
         }
 
-        //  Calculate access until date - allow null/empty for self-paced
+        // 🆕 NEW: Handle different status scenarios
+        const enrolledAt = new Date();
         let accessUntilDate = null;
-        if (accessUntil && accessUntil.trim() !== "") {
-            accessUntilDate = new Date(accessUntil);
-            // Validate the date
-            if (isNaN(accessUntilDate.getTime())) {
-                return res.status(statusCodes.BAD_REQUEST).json({
-                    success: false,
-                    message: "Invalid access until date format",
-                });
+        let requestedAt = enrolledAt;
+
+        // Only calculate accessUntil for active enrollments with enrollment period
+        if (status === "active" && course.enrollmentPeriod > 0) {
+            if (accessUntil && accessUntil.trim() !== "") {
+                accessUntilDate = new Date(accessUntil);
+                if (isNaN(accessUntilDate.getTime())) {
+                    return res.status(statusCodes.BAD_REQUEST).json({
+                        success: false,
+                        message: "Invalid access until date format",
+                    });
+                }
+            } else {
+                // Auto-calculate access until based on course enrollment period
+                accessUntilDate = new Date();
+                accessUntilDate.setDate(
+                    accessUntilDate.getDate() + course.enrollmentPeriod
+                );
             }
-        } else if (course.enrollmentPeriod > 0) {
-            // Only set access date if course has enrollment period
-            accessUntilDate = new Date();
-            accessUntilDate.setDate(
-                accessUntilDate.getDate() + course.enrollmentPeriod
-            );
-        }
-        // If no accessUntil provided and course is self-paced (enrollmentPeriod = 0), leave as null
-
-        // Validate status
-        if (
-            ![
-                "pending",
-                "active",
-                "completed",
-                "cancelled",
-                "expired",
-            ].includes(status)
-        ) {
-            return res.status(statusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Invalid enrollment status",
-            });
         }
 
-        // Create enrollment
-        const enrollment = await Enrollment.create({
+        const enrollmentData = {
             user: userId,
             course: courseId,
             status,
-            accessUntil: accessUntilDate, // This can be null now
             progress,
-            enrolledAt: new Date(),
-        });
+            requestedAt: requestedAt,
+            // Only set enrolledAt when status is active
+            enrolledAt: status === "active" ? enrolledAt : null,
+            accessUntil: accessUntilDate,
+        };
+
+        // Create enrollment
+        const enrollment = await Enrollment.create(enrollmentData);
 
         // Populate the created enrollment
         const populatedEnrollment = await Enrollment.findById(enrollment._id)
@@ -336,7 +346,10 @@ exports.createEnrollment = async (req, res, next) => {
 
         res.status(statusCodes.CREATED).json({
             success: true,
-            message: "Enrollment created successfully",
+            message:
+                status === "active"
+                    ? "Enrollment created and activated successfully"
+                    : "Enrollment created successfully (pending approval)",
             enrollment: populatedEnrollment,
         });
     } catch (error) {
@@ -431,20 +444,7 @@ exports.updateEnrollmentStatus = async (req, res, next) => {
             });
         }
 
-        const enrollment = await Enrollment.findByIdAndUpdate(
-            req.params.id,
-            {
-                status,
-                ...(status === "completed" ? { completedAt: new Date() } : {}),
-                ...(status === "cancelled" ? { completedAt: null } : {}),
-            },
-            { new: true, runValidators: true }
-        )
-            .populate(
-                "user",
-                "firstName surname email companyName role profilePic"
-            )
-            .populate("course", "title category skillLevel duration image");
+        const enrollment = await Enrollment.findById(req.params.id);
 
         if (!enrollment) {
             return res.status(statusCodes.NOT_FOUND).json({
@@ -453,10 +453,49 @@ exports.updateEnrollmentStatus = async (req, res, next) => {
             });
         }
 
+        const updateData = { status };
+
+        // 🆕 NEW: Handle enrolledAt based on status changes
+        if (status === "active" && enrollment.status !== "active") {
+            updateData.enrolledAt = new Date(); // Set enrolledAt when activating
+
+            // Calculate access until if not already set
+            if (!enrollment.accessUntil) {
+                const course = await Course.findById(enrollment.course);
+                if (course.enrollmentPeriod > 0) {
+                    const accessUntil = new Date();
+                    accessUntil.setDate(
+                        accessUntil.getDate() + course.enrollmentPeriod
+                    );
+                    updateData.accessUntil = accessUntil;
+                }
+            }
+        } else if (status === "pending" && enrollment.status === "active") {
+            updateData.enrolledAt = null; // Clear enrolledAt when moving back to pending
+        }
+
+        // Handle completion and cancellation
+        if (status === "completed") {
+            updateData.completedAt = new Date();
+        } else if (status === "cancelled") {
+            updateData.completedAt = null;
+        }
+
+        const updatedEnrollment = await Enrollment.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        )
+            .populate(
+                "user",
+                "firstName surname email companyName role profilePic"
+            )
+            .populate("course", "title category skillLevel duration image");
+
         res.status(statusCodes.OK).json({
             success: true,
             message: `Enrollment status updated to ${status}`,
-            enrollment,
+            enrollment: updatedEnrollment,
         });
     } catch (error) {
         next(error);
@@ -562,17 +601,7 @@ exports.bulkUpdateEnrollmentStatus = async (req, res, next) => {
 
         // Validate and convert enrollment IDs to ObjectId
         const validEnrollmentIds = enrollmentIds
-            .filter((id) => {
-                if (!id || id.length !== 24) {
-                    console.log(`Invalid enrollment ID length: ${id}`);
-                    return false;
-                }
-                if (!mongoose.Types.ObjectId.isValid(id)) {
-                    console.log(`Invalid enrollment ID format: ${id}`);
-                    return false;
-                }
-                return true;
-            })
+            .filter((id) => mongoose.Types.ObjectId.isValid(id))
             .map((id) => new mongoose.Types.ObjectId(id));
 
         if (validEnrollmentIds.length === 0) {
@@ -587,13 +616,30 @@ exports.bulkUpdateEnrollmentStatus = async (req, res, next) => {
             validEnrollmentIds
         );
 
+        // 🆕 NEW: Get current enrollments to handle enrolledAt logic
+        const currentEnrollments = await Enrollment.find({
+            _id: { $in: validEnrollmentIds },
+        });
+
         const updateData = { status };
+
+        // Handle enrolledAt for status changes to active
+        if (status === "active") {
+            updateData.enrolledAt = new Date();
+
+            // For enrollments moving to active, we may need to set accessUntil
+            // This would require additional logic to fetch course data
+        } else if (status === "pending") {
+            // Clear enrolledAt when moving back to pending
+            updateData.enrolledAt = null;
+        }
+
         if (status === "completed") {
             updateData.completedAt = new Date();
         } else if (status === "cancelled") {
             updateData.completedAt = null;
         } else if (status === "expired") {
-            updateData.accessUntil = new Date(Date.now() - 24 * 60 * 60 * 1000); // Yesterday
+            updateData.accessUntil = new Date(Date.now() - 24 * 60 * 60 * 1000);
         }
 
         // Update enrollments
@@ -708,6 +754,153 @@ exports.getUserEnrollments = async (req, res, next) => {
             },
         });
     } catch (error) {
+        next(error);
+    }
+};
+
+exports.approveEnrollment = async (req, res, next) => {
+    try {
+        const enrollment = await Enrollment.findById(req.params.id);
+
+        if (!enrollment) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Enrollment not found",
+            });
+        }
+
+        if (enrollment.status !== "pending") {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Only pending enrollments can be approved",
+            });
+        }
+
+        // Get course to calculate access period
+        const course = await Course.findById(enrollment.course);
+        let accessUntil = null;
+
+        // Calculate access until if course has enrollment period
+        if (course.enrollmentPeriod > 0) {
+            accessUntil = new Date();
+            accessUntil.setDate(
+                accessUntil.getDate() + course.enrollmentPeriod
+            );
+        }
+
+        // Update enrollment to active status
+        enrollment.status = "active";
+        enrollment.enrolledAt = new Date(); // 🆕 Set enrolledAt when approved
+        enrollment.accessUntil = accessUntil;
+        await enrollment.save();
+
+        // Populate the updated enrollment
+        const populatedEnrollment = await Enrollment.findById(enrollment._id)
+            .populate(
+                "user",
+                "firstName surname email companyName role profilePic"
+            )
+            .populate("course", "title category skillLevel duration image");
+
+        res.status(statusCodes.OK).json({
+            success: true,
+            message: "Enrollment approved successfully",
+            enrollment: populatedEnrollment,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.bulkApproveEnrollments = async (req, res, next) => {
+    try {
+        const { enrollmentIds } = req.body;
+
+        if (
+            !enrollmentIds ||
+            !Array.isArray(enrollmentIds) ||
+            enrollmentIds.length === 0
+        ) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Enrollment IDs array is required",
+            });
+        }
+
+        // Validate enrollment IDs
+        const validEnrollmentIds = enrollmentIds
+            .filter((id) => mongoose.Types.ObjectId.isValid(id))
+            .map((id) => new mongoose.Types.ObjectId(id));
+
+        if (validEnrollmentIds.length === 0) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "No valid enrollment IDs provided",
+            });
+        }
+
+        console.log(
+            `🔄 Processing bulk approval for ${validEnrollmentIds.length} enrollments`
+        );
+
+        // Get all pending enrollments with course data
+        const pendingEnrollments = await Enrollment.find({
+            _id: { $in: validEnrollmentIds },
+            status: "pending",
+        }).populate("course");
+
+        if (pendingEnrollments.length === 0) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "No pending enrollments found to approve",
+            });
+        }
+
+        console.log(
+            `✅ Found ${pendingEnrollments.length} pending enrollments to approve`
+        );
+
+        // Update each pending enrollment
+        const updatePromises = pendingEnrollments.map(async (enrollment) => {
+            let accessUntil = null;
+
+            // Calculate access until if course has enrollment period
+            if (enrollment.course && enrollment.course.enrollmentPeriod > 0) {
+                accessUntil = new Date();
+                accessUntil.setDate(
+                    accessUntil.getDate() + enrollment.course.enrollmentPeriod
+                );
+            }
+
+            return Enrollment.findByIdAndUpdate(
+                enrollment._id,
+                {
+                    status: "active",
+                    enrolledAt: new Date(),
+                    accessUntil: accessUntil,
+                },
+                { new: true, runValidators: true }
+            );
+        });
+
+        const updatedEnrollments = await Promise.all(updatePromises);
+
+        // Get the count of successfully updated enrollments
+        const successCount = updatedEnrollments.filter(
+            (enrollment) => enrollment !== null
+        ).length;
+
+        console.log(`✅ Successfully approved ${successCount} enrollments`);
+
+        res.status(statusCodes.OK).json({
+            success: true,
+            message: `Approved ${successCount} pending enrollments`,
+            approvedCount: successCount,
+            totalProcessed: pendingEnrollments.length,
+            enrollments: updatedEnrollments,
+        });
+    } catch (error) {
+        console.error("❌ Bulk approval error:", error);
         next(error);
     }
 };

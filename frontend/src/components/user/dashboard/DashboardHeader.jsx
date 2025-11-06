@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 function DashboardHeader({ user, dashboardData }) {
     const getWelcomeMessage = () => {
         if (dashboardData.activeEnrollments > 0) {
@@ -17,13 +15,16 @@ function DashboardHeader({ user, dashboardData }) {
     };
 
     return (
-        <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl text-white p-8 mb-10 shadow-lg overflow-hidden">
-            <div className="absolute inset-0 opacity-10 bg-[url('/wave-pattern.svg')] bg-cover"></div>
-            <div className="relative z-10">
-                <h1 className="text-4xl font-bold mb-2">
-                    Welcome back, {user?.firstName || "Learner"} 👋
-                </h1>
-                <p className="text-blue-100 text-lg">{getWelcomeMessage()}</p>
+        <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+                <div>
+                    <h1 className="text-2xl font-semibold text-gray-900">
+                        Welcome back, {user?.firstName || "Learner"}
+                    </h1>
+                    <p className="text-gray-600 text-sm mt-1">
+                        {getWelcomeMessage()}
+                    </p>
+                </div>
             </div>
         </div>
     );

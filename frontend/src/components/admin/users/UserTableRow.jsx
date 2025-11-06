@@ -124,7 +124,7 @@ const UserTableRow = ({
             {/* User Info */}
             <td className="px-4 py-4 whitespace-nowrap">
                 <div className="flex items-center group">
-                    <div className="flex-shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 group-hover:shadow-xs transition-shadow">
+                    <div className="shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 group-hover:shadow-xs transition-shadow">
                         {user.profilePic ? (
                             <img
                                 src={user.profilePic}
@@ -139,12 +139,12 @@ const UserTableRow = ({
                         )}
                     </div>
                     <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900 truncate max-w-[160px] group-hover:text-gray-700 transition-colors">
+                        <div className="text-sm font-medium text-gray-900 truncate max-w-40 group-hover:text-gray-700 transition-colors">
                             {user.role === "company"
                                 ? user.companyName
                                 : `${user.firstName} ${user.surname}`}
                         </div>
-                        <div className="text-sm text-gray-500 truncate max-w-[160px]">
+                        <div className="text-sm text-gray-500 truncate max-w-40">
                             {user.email}
                         </div>
                     </div>

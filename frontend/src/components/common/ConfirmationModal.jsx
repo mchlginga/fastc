@@ -66,7 +66,7 @@ const ConfirmationModal = ({
                 <div className="p-6">
                     <div className="flex items-start gap-4">
                         <div
-                            className={`flex-shrink-0 p-3 rounded-xl ${typeStyles.iconBg}`}
+                            className={`shrink-0 p-3 rounded-xl ${typeStyles.iconBg}`}
                         >
                             {typeStyles.icon}
                         </div>
@@ -81,7 +81,7 @@ const ConfirmationModal = ({
                         {!isLoading && (
                             <button
                                 onClick={onClose}
-                                className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                className="shrink-0 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             >
                                 <X size={20} />
                             </button>

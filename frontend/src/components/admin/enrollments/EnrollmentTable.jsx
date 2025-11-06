@@ -10,6 +10,7 @@ const EnrollmentTable = ({
     onViewEnrollment,
     onEditEnrollment,
     onStatusUpdate,
+    onApproveEnrollment, // 🆕 ADD THIS PROP
     onDeleteEnrollment,
     statusFilter,
     courseFilter,
@@ -123,6 +124,7 @@ const EnrollmentTable = ({
                                     onView={() => onViewEnrollment(enrollment)}
                                     onEdit={() => onEditEnrollment(enrollment)}
                                     onStatusUpdate={onStatusUpdate}
+                                    onApproveEnrollment={onApproveEnrollment} // 🆕 PASS THIS PROP
                                     onDelete={() =>
                                         onDeleteEnrollment(enrollment)
                                     }

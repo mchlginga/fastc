@@ -51,21 +51,18 @@ const CertificateTableRow = ({
                 text: "text-emerald-700",
                 border: "border-emerald-200",
                 label: "Active",
-                icon: <Check size={12} className="mr-1" />,
             },
             expired: {
                 bg: "bg-yellow-50",
                 text: "text-yellow-700",
                 border: "border-yellow-200",
                 label: "Expired",
-                icon: <Clock size={12} className="mr-1" />,
             },
             revoked: {
                 bg: "bg-red-50",
                 text: "text-red-700",
                 border: "border-red-200",
                 label: "Revoked",
-                icon: <X size={12} className="mr-1" />,
             },
         };
         return configs[status] || configs.active;
@@ -167,7 +164,7 @@ const CertificateTableRow = ({
             {/* User Info */}
             <td className="px-4 py-4 whitespace-nowrap">
                 <div className="flex items-center group">
-                    <div className="flex-shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 group-hover:shadow-xs transition-shadow">
+                    <div className="shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 group-hover:shadow-xs transition-shadow">
                         {certificate.user?.profilePic ? (
                             <img
                                 src={certificate.user.profilePic}
@@ -182,10 +179,10 @@ const CertificateTableRow = ({
                         )}
                     </div>
                     <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900 truncate max-w-[160px] group-hover:text-gray-700 transition-colors">
+                        <div className="text-sm font-medium text-gray-900 truncate max-w-40 group-hover:text-gray-700 transition-colors">
                             {getUserDisplayName(certificate.user)}
                         </div>
-                        <div className="text-sm text-gray-500 truncate max-w-[160px]">
+                        <div className="text-sm text-gray-500 truncate max-w-40">
                             {getUserEmail(certificate.user)}
                         </div>
                         <div className="text-xs text-gray-400 capitalize">
@@ -198,11 +195,11 @@ const CertificateTableRow = ({
             {/* Course Info */}
             <td className="px-4 py-4 whitespace-nowrap">
                 <div className="flex items-center">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded flex items-center justify-center border border-gray-200 mr-3">
+                    <div className="shrink-0 w-8 h-8 bg-gray-100 rounded flex items-center justify-center border border-gray-200 mr-3">
                         <Award size={14} className="text-gray-400" />
                     </div>
                     <div>
-                        <div className="text-sm font-medium text-gray-900 truncate max-w-[160px]">
+                        <div className="text-sm font-medium text-gray-900 truncate max-w-40">
                             {getCourseTitle(certificate.course)}
                         </div>
                         <div className="text-xs text-gray-500">

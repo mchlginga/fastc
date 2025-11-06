@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getCourses } from "../../services/courseService";
@@ -25,6 +25,23 @@ import ErrorState from "../../components/common/ErrorState";
 import ToastNotification from "../../components/common/ToastNotification";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 
+// Debounce hook
+const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+};
+
 function UserCourses() {
     const { user } = useAuth();
     const [searchParams] = useSearchParams();
@@ -41,6 +58,7 @@ function UserCourses() {
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
     // Toast notification state
     const [toast, setToast] = useState({
@@ -57,34 +75,35 @@ function UserCourses() {
         isLoading: false,
     });
 
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
+            setLoadingError(null);
+
+            const [enrollmentsResponse, coursesData, certificatesResponse] =
+                await Promise.all([
+                    getUserEnrollments(),
+                    getCourses(),
+                    getUserCertificates(),
+                ]);
+
+            setEnrollments(enrollmentsResponse.enrollments || []);
+            setAvailableCourses(coursesData || []);
+            setCertificates(certificatesResponse.certificates || []);
+        } catch (err) {
+            console.error("Fetch data error:", err);
+            setLoadingError(err.message || "Failed to load courses");
+            showToast("Failed to load courses. Please try again.", "error");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-
-                const [enrollmentsResponse, coursesData, certificatesResponse] =
-                    await Promise.all([
-                        getUserEnrollments(),
-                        getCourses(),
-                        getUserCertificates(),
-                    ]);
-
-                setEnrollments(enrollmentsResponse.enrollments || []);
-                setAvailableCourses(coursesData || []);
-                setCertificates(certificatesResponse.certificates || []);
-            } catch (err) {
-                console.error("Fetch data error:", err);
-                setLoadingError(err.message || "Failed to load courses");
-                showToast("Failed to load courses. Please try again.", "error");
-            } finally {
-                setLoading(false);
-            }
-        };
-
         if (user) {
             fetchData();
         }
-    }, [user]);
+    }, [user, fetchData]);
 
     // Toast notification helper
     const showToast = (message, type = "success") => {
@@ -129,9 +148,9 @@ function UserCourses() {
 
     // Filter courses based on search query
     const filterCoursesBySearch = (courses) => {
-        if (!searchQuery.trim()) return courses;
+        if (!debouncedSearchQuery.trim()) return courses;
 
-        const query = searchQuery.toLowerCase().trim();
+        const query = debouncedSearchQuery.toLowerCase().trim();
         return courses.filter(
             (course) =>
                 course &&
@@ -144,9 +163,9 @@ function UserCourses() {
 
     // Filter enrollments based on search query
     const filterEnrollmentsBySearch = (enrollmentsList) => {
-        if (!searchQuery.trim()) return enrollmentsList;
+        if (!debouncedSearchQuery.trim()) return enrollmentsList;
 
-        const query = searchQuery.toLowerCase().trim();
+        const query = debouncedSearchQuery.toLowerCase().trim();
         return enrollmentsList.filter(
             (enrollment) =>
                 enrollment &&
@@ -211,7 +230,6 @@ function UserCourses() {
     };
 
     const handleCancelEnrollment = async (enrollmentId, courseTitle) => {
-        // Show confirmation modal instead of using window.confirm
         showConfirmationModal(enrollmentId, courseTitle);
     };
 
@@ -221,7 +239,6 @@ function UserCourses() {
         if (!enrollmentId) return;
 
         try {
-            // Set loading state in modal
             setConfirmationModal((prev) => ({ ...prev, isLoading: true }));
             setCancellingEnrollment(enrollmentId);
 
@@ -236,7 +253,6 @@ function UserCourses() {
                 "success"
             );
 
-            // Close modal
             hideConfirmationModal();
         } catch (err) {
             console.error("Cancel enrollment error:", err);
@@ -245,8 +261,6 @@ function UserCourses() {
                     `Failed to cancel enrollment in "${courseTitle}". Please try again.`,
                 "error"
             );
-
-            // Close modal even on error
             hideConfirmationModal();
         } finally {
             setCancellingEnrollment(null);
@@ -316,7 +330,7 @@ function UserCourses() {
         filterEnrollmentsBySearch(completedEnrollments);
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Toast Notification */}
                 {toast.show && (
@@ -358,48 +372,51 @@ function UserCourses() {
                     completedEnrollments={filteredCompletedEnrollments}
                 />
 
-                {/* Available Courses */}
-                {!statusFilter && (
-                    <AvailableCoursesSection
-                        courses={filteredAvailableCourses}
-                        user={user}
-                        enrollmentStatus={enrollmentStatus}
-                        onEnroll={handleEnroll}
-                        onCourseClick={handleCourseClick}
-                        isUserEnrolled={isUserEnrolled}
-                        getEnrollmentStatus={getEnrollmentStatus}
-                        searchQuery={searchQuery}
-                    />
-                )}
+                {/* Main Content Card */}
+                <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
+                    {/* Available Courses */}
+                    {!statusFilter && (
+                        <AvailableCoursesSection
+                            courses={filteredAvailableCourses}
+                            user={user}
+                            enrollmentStatus={enrollmentStatus}
+                            onEnroll={handleEnroll}
+                            onCourseClick={handleCourseClick}
+                            isUserEnrolled={isUserEnrolled}
+                            getEnrollmentStatus={getEnrollmentStatus}
+                            searchQuery={debouncedSearchQuery}
+                        />
+                    )}
 
-                {/* Active Courses */}
-                {statusFilter === "active" && (
-                    <ActiveCoursesSection
-                        enrollments={filteredCurrentEnrollments}
-                        cancellingEnrollment={cancellingEnrollment}
-                        onCancelEnrollment={handleCancelEnrollment}
-                        searchQuery={searchQuery}
-                    />
-                )}
+                    {/* Active Courses */}
+                    {statusFilter === "active" && (
+                        <ActiveCoursesSection
+                            enrollments={filteredCurrentEnrollments}
+                            cancellingEnrollment={cancellingEnrollment}
+                            onCancelEnrollment={handleCancelEnrollment}
+                            searchQuery={debouncedSearchQuery}
+                        />
+                    )}
 
-                {/* Pending Courses */}
-                {statusFilter === "pending" && (
-                    <PendingCoursesSection
-                        enrollments={filteredPendingEnrollments}
-                        cancellingEnrollment={cancellingEnrollment}
-                        onCancelEnrollment={handleCancelEnrollment}
-                        searchQuery={searchQuery}
-                    />
-                )}
+                    {/* Pending Courses */}
+                    {statusFilter === "pending" && (
+                        <PendingCoursesSection
+                            enrollments={filteredPendingEnrollments}
+                            cancellingEnrollment={cancellingEnrollment}
+                            onCancelEnrollment={handleCancelEnrollment}
+                            searchQuery={debouncedSearchQuery}
+                        />
+                    )}
 
-                {/* Completed Courses */}
-                {statusFilter === "completed" && (
-                    <CompletedCoursesSection
-                        enrollments={filteredCompletedEnrollments}
-                        certificates={certificates}
-                        searchQuery={searchQuery}
-                    />
-                )}
+                    {/* Completed Courses */}
+                    {statusFilter === "completed" && (
+                        <CompletedCoursesSection
+                            enrollments={filteredCompletedEnrollments}
+                            certificates={certificates}
+                            searchQuery={debouncedSearchQuery}
+                        />
+                    )}
+                </div>
             </div>
         </div>
     );

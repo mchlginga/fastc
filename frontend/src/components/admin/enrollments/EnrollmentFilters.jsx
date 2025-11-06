@@ -29,6 +29,7 @@ const EnrollmentFilters = ({
     onAddEnrollment,
     onBulkStatusUpdate,
     onBulkDelete,
+    onBulkApproveEnrollments,
     stats,
     loading = false,
 }) => {
@@ -64,6 +65,9 @@ const EnrollmentFilters = ({
     const handleClearSearch = () => {
         setSearchTerm("");
     };
+
+    // 🆕 NEW: Check if any selected enrollments are pending
+    const hasPendingEnrollments = selectedEnrollments.size > 0;
 
     if (loading) {
         return (
@@ -170,10 +174,43 @@ const EnrollmentFilters = ({
                                 <div className="absolute right-0 z-10 w-64 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-200/50 ring-1 ring-black ring-opacity-5">
                                     <div className="py-1">
                                         <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                            Update Status
+                                            Approval Actions
                                         </div>
 
+                                        {/* Bulk Approve Button - Only for pending enrollments */}
+                                        <button
+                                            onClick={() => {
+                                                onBulkApproveEnrollments();
+                                                setShowBulkActions(false);
+                                            }}
+                                            disabled={
+                                                !hasPendingEnrollments ||
+                                                loading
+                                            }
+                                            className="flex items-center w-full px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title={
+                                                hasPendingEnrollments
+                                                    ? "Approve selected pending enrollments"
+                                                    : "No pending enrollments selected"
+                                            }
+                                        >
+                                            <Check
+                                                size={16}
+                                                className="mr-3 text-green-600"
+                                            />
+                                            Approve Selected
+                                            {!hasPendingEnrollments && (
+                                                <span className="ml-1 text-xs text-gray-400">
+                                                    (No pending)
+                                                </span>
+                                            )}
+                                        </button>
+                                        <div className="border-t border-gray-100 my-1"></div>
+
                                         {/* Pending Status */}
+                                        <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                            Update Status
+                                        </div>
                                         <button
                                             onClick={() => {
                                                 onBulkStatusUpdate("pending");
@@ -186,21 +223,6 @@ const EnrollmentFilters = ({
                                                 className="mr-3 text-amber-600"
                                             />
                                             Set as Pending
-                                        </button>
-
-                                        {/* Active Status */}
-                                        <button
-                                            onClick={() => {
-                                                onBulkStatusUpdate("active");
-                                                setShowBulkActions(false);
-                                            }}
-                                            className="flex items-center w-full px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
-                                        >
-                                            <Check
-                                                size={16}
-                                                className="mr-3 text-emerald-600"
-                                            />
-                                            Activate Selected
                                         </button>
 
                                         {/* Completed Status */}

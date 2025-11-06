@@ -1,6 +1,7 @@
 import EnrollmentCard from "./EnrollmentCard";
 import EmptyState from "./EmptyState";
 import { Clock, Search } from "react-feather";
+import { useNavigate } from "react-router-dom";
 
 function PendingCoursesSection({
     enrollments,
@@ -8,8 +9,16 @@ function PendingCoursesSection({
     onCancelEnrollment,
     searchQuery,
 }) {
+    const navigate = useNavigate();
+
+    const handleViewCourse = (enrollment) => {
+        navigate(`/user/courses/${enrollment.course.id}/overview`, {
+            state: { from: "pending" },
+        });
+    };
+
     return (
-        <section className="mb-8">
+        <section className="p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                 <h3 className="text-xl font-semibold text-gray-800">
                     Pending Approval
@@ -68,6 +77,7 @@ function PendingCoursesSection({
                             type="pending"
                             cancellingEnrollment={cancellingEnrollment}
                             onCancelEnrollment={onCancelEnrollment}
+                            onViewCourse={() => handleViewCourse(enrollment)}
                         />
                     ))}
                 </div>

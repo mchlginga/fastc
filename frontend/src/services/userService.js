@@ -666,6 +666,72 @@ export const adminEnrollmentService = {
             );
         }
     },
+
+    approveEnrollment: async (enrollmentId) => {
+        try {
+            const response = await api.patch(
+                `/admin/enrollments/${enrollmentId}/approve`
+            );
+            return response.data;
+        } catch (error) {
+            console.error(`Error approving enrollment ${enrollmentId}:`, error);
+            throw error;
+        }
+    },
+
+    bulkApproveEnrollments: async (enrollmentIds) => {
+        try {
+            console.log("🔄 Bulk approving enrollments:", enrollmentIds);
+
+            // Validate input
+            if (
+                !enrollmentIds ||
+                !Array.isArray(enrollmentIds) ||
+                enrollmentIds.length === 0
+            ) {
+                throw new Error("No enrollment IDs provided for bulk approval");
+            }
+
+            // Filter valid enrollment IDs
+            const validEnrollmentIds = enrollmentIds.filter(
+                (id) => id && id.length === 24 && /^[0-9a-fA-F]{24}$/.test(id)
+            );
+
+            if (validEnrollmentIds.length === 0) {
+                throw new Error(
+                    "No valid enrollment IDs provided for bulk approval"
+                );
+            }
+
+            const response = await api.patch(
+                "/admin/enrollments/bulk/approve",
+                {
+                    enrollmentIds: validEnrollmentIds,
+                }
+            );
+
+            console.log("✅ Bulk approval response:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("❌ Error bulk approving enrollments:", error);
+
+            // Provide more specific error messages
+            if (error.response?.status === 400) {
+                throw new Error(
+                    error.response.data.message ||
+                        "Invalid request for bulk approval"
+                );
+            } else if (error.response?.status === 404) {
+                throw new Error("No pending enrollments found to approve");
+            } else if (error.response?.data?.message) {
+                throw new Error(error.response.data.message);
+            } else {
+                throw new Error(
+                    "Failed to bulk approve enrollments. Please try again."
+                );
+            }
+        }
+    },
 };
 
 export const adminCertificateService = {

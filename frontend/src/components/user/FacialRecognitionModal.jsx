@@ -146,19 +146,13 @@ const FacialRecognitionModal = ({
             setStatus("error");
 
             if (error.name === "NotAllowedError") {
-                setErrorMessage(
-                    "Camera permission denied. Please allow camera access and try again."
-                );
+                setErrorMessage("Camera permission denied");
             } else if (error.name === "NotFoundError") {
-                setErrorMessage(
-                    "No camera found. Please check if your camera is connected."
-                );
+                setErrorMessage("No camera detected");
             } else if (error.name === "NotSupportedError") {
-                setErrorMessage("Camera not supported in your browser.");
+                setErrorMessage("Camera not supported");
             } else {
-                setErrorMessage(
-                    "Cannot access camera. Please ensure you've granted camera permissions."
-                );
+                setErrorMessage("Camera access failed");
             }
         }
     };
@@ -462,23 +456,15 @@ const FacialRecognitionModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full transform transition-all duration-300 scale-100">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 cursor-pointer">
+            <div
+                className="bg-white rounded-2xl shadow-xl max-w-md w-full transform transition-all duration-300 scale-100 cursor-auto"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div>
                         <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                            {isEnrollment ? (
-                                <UserCheck
-                                    size={20}
-                                    className="mr-2 text-green-600"
-                                />
-                            ) : (
-                                <Camera
-                                    size={20}
-                                    className="mr-2 text-blue-600"
-                                />
-                            )}
                             {isEnrollment
                                 ? "Facial Enrollment"
                                 : "Attendance Verification"}
@@ -491,7 +477,7 @@ const FacialRecognitionModal = ({
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                     >
                         <X size={20} />
                     </button>
@@ -499,8 +485,12 @@ const FacialRecognitionModal = ({
 
                 {/* Content */}
                 <div className="p-6">
+                    {/* Status Messages */}
                     {status === "initial" && (
                         <div className="text-center mb-4">
+                            <div className="flex items-center justify-center text-blue-600 mb-2">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            </div>
                             <p className="text-gray-600 text-sm">
                                 Initializing camera...
                             </p>
@@ -643,40 +633,20 @@ const FacialRecognitionModal = ({
                         )}
 
                         {status === "processing" && (
-                            <button
-                                disabled
-                                className="flex-1 bg-gray-400 text-white py-3 px-4 rounded-lg font-medium cursor-not-allowed flex items-center justify-center"
-                            >
+                            <div className="flex-1 bg-gray-400 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                                 {isEnrollment ? "Enrolling..." : "Verifying..."}
-                            </button>
+                            </div>
                         )}
 
                         {status === "success" && (
-                            <button
-                                disabled
-                                className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-medium cursor-default flex items-center justify-center"
-                            >
+                            <div className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center">
                                 <CheckCircle size={18} className="mr-2" />
                                 {isEnrollment
                                     ? "Enrollment Complete"
                                     : "Verification Complete"}
-                            </button>
+                            </div>
                         )}
-
-                        {/* Show disabled state during detection */}
-                        {["initial", "detecting", "ready"].includes(status) &&
-                            !faceDetected && (
-                                <button
-                                    disabled
-                                    className="flex-1 bg-gray-400 text-white py-3 px-4 rounded-lg font-medium cursor-not-allowed flex items-center justify-center"
-                                >
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                    {status === "initial"
-                                        ? "Initializing..."
-                                        : "Detecting Face..."}
-                                </button>
-                            )}
                     </div>
 
                     {/* Help Text */}

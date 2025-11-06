@@ -13,6 +13,8 @@ const {
     getCourseEnrollments,
     getUserEnrollments,
     updateEnrollmentProgress,
+    approveEnrollment,
+    bulkApproveEnrollments,
 } = require("../controllers/adminEnrollments");
 
 // All routes are protected and require admin role
@@ -28,21 +30,16 @@ router.get("/enrollments/stats", getEnrollmentStats);
 // Create new enrollment (manual enrollment by admin)
 router.post("/enrollments", createEnrollment);
 
+// BULK ROUTES - MUST BE BEFORE INDIVIDUAL ID ROUTES
 router.patch("/enrollments/bulk/status", bulkUpdateEnrollmentStatus);
+router.patch("/enrollments/bulk/approve", bulkApproveEnrollments);
 
-// Get specific enrollment
+// INDIVIDUAL ENROLLMENT ROUTES
 router.get("/enrollments/:id", getEnrollmentById);
-
-// Update enrollment status
 router.patch("/enrollments/:id/status", updateEnrollmentStatus);
-
-// Update enrollment progress
+router.patch("/enrollments/:id/approve", approveEnrollment);
 router.patch("/enrollments/:id/progress", updateEnrollmentProgress);
-
-// Update enrollment details
 router.put("/enrollments/:id", updateEnrollment);
-
-// Delete enrollment
 router.delete("/enrollments/:id", deleteEnrollment);
 
 // Get course enrollments

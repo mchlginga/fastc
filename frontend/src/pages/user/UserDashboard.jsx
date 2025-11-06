@@ -25,6 +25,7 @@ function UserDashboard() {
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
+                setError(null);
 
                 // Fetch enrollments and certificates in parallel
                 const [enrollmentsResponse, certificatesResponse] =
@@ -36,7 +37,7 @@ function UserDashboard() {
                 const enrollments = enrollmentsResponse.enrollments || [];
                 const certificates = certificatesResponse.certificates || [];
 
-                // Process data...
+                // Process data with proper defaults
                 const activeEnrollments = enrollments.filter(
                     (e) => e.status === "active"
                 ).length;
@@ -51,7 +52,7 @@ function UserDashboard() {
                     (e) => e.status === "active" || e.status === "completed"
                 );
                 const totalProgress = progressEnrollments.reduce(
-                    (sum, e) => sum + e.progress,
+                    (sum, e) => sum + (e.progress || 0),
                     0
                 );
                 const avgProgress =
@@ -69,20 +70,24 @@ function UserDashboard() {
                     userCertificates: certificates,
                 });
             } catch (err) {
-                setError(err.message || "Failed to load dashboard data");
                 console.error("Dashboard error:", err);
+                setError(err.message || "Failed to load dashboard data");
             } finally {
                 setLoading(false);
             }
         };
 
-        if (user) fetchDashboardData();
+        if (user) {
+            fetchDashboardData();
+        }
     }, [user]);
 
+    // Show loading state
     if (loading) {
         return <LoadingState type="dashboard-skeleton" />;
     }
 
+    // Show error state
     if (error) {
         return (
             <ErrorState
@@ -92,8 +97,12 @@ function UserDashboard() {
         );
     }
 
+    if (!dashboardData) {
+        return <LoadingState type="dashboard-skeleton" />;
+    }
+
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Profile Status Alerts */}
                 <ProfileAlerts user={user} />

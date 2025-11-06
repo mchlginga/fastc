@@ -12,13 +12,18 @@ const enrollmentSchema = new mongoose.Schema(
             ref: "Course",
             required: true,
         },
-        enrolledAt: {
+        requestedAt: {
             type: Date,
             default: Date.now,
         },
+
+        enrolledAt: {
+            type: Date,
+            default: null,
+        },
         accessUntil: {
             type: Date,
-            default: null, // 🆕 CHANGED: Default to null for self-paced courses
+            default: null,
         },
         progress: {
             type: Number,

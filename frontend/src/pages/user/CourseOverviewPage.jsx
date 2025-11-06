@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getCourseById } from "../../services/courseService";
-import { enrollInCourse } from "../../services/enrollmentService";
+import {
+    enrollInCourse,
+    getUserEnrollments,
+} from "../../services/enrollmentService";
 import {
     Clock,
     Users,
@@ -26,12 +29,14 @@ function CourseOverviewPage() {
     const { courseId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const location = useLocation();
 
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [enrolling, setEnrolling] = useState(false);
     const [enrollmentSuccess, setEnrollmentSuccess] = useState(false);
+    const [userEnrollments, setUserEnrollments] = useState([]);
 
     // Toast notification state
     const [toast, setToast] = useState({
@@ -40,18 +45,25 @@ function CourseOverviewPage() {
         type: "success",
     });
 
+    const cameFrom = location.state?.from || "available";
+
     useEffect(() => {
-        const fetchCourse = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
                 setError(null);
-                const courseData = await getCourseById(courseId);
+
+                const [courseData, enrollmentsData] = await Promise.all([
+                    getCourseById(courseId),
+                    getUserEnrollments(),
+                ]);
 
                 if (!courseData) {
                     throw new Error("Course not found");
                 }
 
                 setCourse(courseData);
+                setUserEnrollments(enrollmentsData.enrollments || []);
             } catch (err) {
                 console.error("Error fetching course:", err);
                 setError(err.message || "Failed to load course details");
@@ -65,9 +77,16 @@ function CourseOverviewPage() {
         };
 
         if (courseId) {
-            fetchCourse();
+            fetchData();
         }
     }, [courseId]);
+
+    // Check if user has pending enrollment for this course
+    const hasPendingEnrollment = userEnrollments.some(
+        (enrollment) =>
+            enrollment.course?.id === courseId &&
+            enrollment.status === "pending"
+    );
 
     // Toast notification helper
     const showToast = (message, type = "success") => {
@@ -110,10 +129,9 @@ function CourseOverviewPage() {
                 "success"
             );
 
-            // Redirect to courses page after successful enrollment
-            setTimeout(() => {
-                navigate("/user/courses?status=pending");
-            }, 2000);
+            // Refresh enrollments to show pending status
+            const enrollmentsResponse = await getUserEnrollments();
+            setUserEnrollments(enrollmentsResponse.enrollments || []);
         } catch (err) {
             console.error("Enrollment error:", err);
             showToast(
@@ -164,7 +182,7 @@ function CourseOverviewPage() {
     const courseAccessType = getCourseAccessType(course);
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Toast Notification */}
                 {toast.show && (
@@ -175,21 +193,25 @@ function CourseOverviewPage() {
                     />
                 )}
 
-                {/* Back Button */}
-                <div className="mb-6">
-                    <button
-                        onClick={() => navigate("/user/courses")}
-                        className="flex items-center text-gray-600 hover:text-gray-800 transition cursor-pointer"
-                    >
-                        <ArrowLeft size={20} className="mr-2" />
-                        Back to Courses
-                    </button>
+                {/* Header Section */}
+                <div className="mb-8">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900">
+                                Course Details
+                            </h1>
+                            <p className="text-gray-600 text-sm mt-1">
+                                Explore course content, requirements, and
+                                enrollment options
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Course Header */}
-                <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-8">
+                {/* Course Header Card */}
+                <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden mb-8">
                     <div className="md:flex">
-                        <div className="md:flex-shrink-0 md:w-1/3">
+                        <div className="md:shrink-0 md:w-1/3">
                             <img
                                 src={course?.image || "/default-course.jpg"}
                                 alt={getCourseTitle()}
@@ -201,14 +223,11 @@ function CourseOverviewPage() {
                             />
                         </div>
                         <div className="p-8 md:w-2/3">
+                            {/* Status Badges */}
                             <div className="flex flex-wrap gap-2 mb-4">
                                 <span
                                     className={`px-3 py-1 rounded-full text-sm font-medium ${enrollmentDeadline.color}`}
                                 >
-                                    <Calendar
-                                        size={12}
-                                        className="inline mr-1"
-                                    />
                                     {enrollmentDeadline.text}
                                 </span>
                                 <span
@@ -223,113 +242,87 @@ function CourseOverviewPage() {
                                 )}
                             </div>
 
-                            <h1 className="text-3xl font-bold text-gray-800 mb-4">
+                            {/* Course Title & Description */}
+                            <h1 className="text-2xl font-semibold text-gray-800 mb-4">
                                 {getCourseTitle()}
                             </h1>
 
-                            <p className="text-gray-600 text-lg mb-6">
+                            <p className="text-gray-600 text-sm leading-relaxed mb-6">
                                 {getCourseDescription()}
                             </p>
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                <div className="flex items-center text-gray-600">
-                                    <Clock size={18} className="mr-2" />
-                                    <span className="text-sm">
-                                        {getDuration()}
-                                    </span>
-                                </div>
-                                <div className="flex items-center text-gray-600">
-                                    <Users size={18} className="mr-2" />
-                                    <span className="text-sm">
-                                        {getSkillLevel()}
-                                    </span>
-                                </div>
-                                <div className="flex items-center text-gray-600">
-                                    <Book size={18} className="mr-2" />
-                                    <span className="text-sm">
-                                        {getLessons().length} Lessons
-                                    </span>
-                                </div>
-                                <div className="flex items-center text-gray-600">
-                                    <Award size={18} className="mr-2" />
-                                    <span className="text-sm">Certificate</span>
-                                </div>
+                            {/* Enrollment Action */}
+                            <div className="flex gap-3">
+                                {hasPendingEnrollment ? (
+                                    <div className="flex-1 min-h-12 bg-amber-50 text-amber-700 text-center py-3 rounded-lg text-sm font-medium flex items-center justify-center border border-amber-200">
+                                        Waiting for Admin Approval
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={handleEnroll}
+                                        disabled={
+                                            enrolling ||
+                                            enrollmentSuccess ||
+                                            user?.profileStatus === "pending" ||
+                                            enrollmentDeadline.status ===
+                                                "closed"
+                                        }
+                                        className={`flex-1 py-3 px-6 rounded-lg font-medium text-white transition ${
+                                            enrolling ||
+                                            enrollmentSuccess ||
+                                            user?.profileStatus === "pending" ||
+                                            enrollmentDeadline.status ===
+                                                "closed"
+                                                ? "bg-gray-400 cursor-not-allowed"
+                                                : "bg-blue-600 hover:bg-blue-700 cursor-pointer shadow-xs"
+                                        }`}
+                                    >
+                                        {enrolling ? (
+                                            <div className="flex items-center justify-center">
+                                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                                Enrolling...
+                                            </div>
+                                        ) : enrollmentSuccess ? (
+                                            <div className="flex items-center justify-center">
+                                                Enrollment Successful!
+                                            </div>
+                                        ) : user?.profileStatus ===
+                                          "pending" ? (
+                                            "Profile Under Review"
+                                        ) : enrollmentDeadline.status ===
+                                          "closed" ? (
+                                            "Enrollment Closed"
+                                        ) : (
+                                            "Enroll Now"
+                                        )}
+                                    </button>
+                                )}
                             </div>
-
-                            {/* Enrollment Button */}
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={handleEnroll}
-                                    disabled={
-                                        enrolling ||
-                                        enrollmentSuccess ||
-                                        user?.profileStatus === "pending" ||
-                                        enrollmentDeadline.status === "closed"
-                                    }
-                                    className={`flex-1 py-3 px-6 rounded-lg font-medium text-white transition ${
-                                        enrolling ||
-                                        enrollmentSuccess ||
-                                        user?.profileStatus === "pending" ||
-                                        enrollmentDeadline.status === "closed"
-                                            ? "bg-gray-400 cursor-not-allowed"
-                                            : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-                                    }`}
-                                >
-                                    {enrolling ? (
-                                        <div className="flex items-center justify-center">
-                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                            Enrolling...
-                                        </div>
-                                    ) : enrollmentSuccess ? (
-                                        "Enrollment Successful!"
-                                    ) : user?.profileStatus === "pending" ? (
-                                        "Profile Under Review"
-                                    ) : enrollmentDeadline.status ===
-                                      "closed" ? (
-                                        "Enrollment Closed"
-                                    ) : (
-                                        "Enroll Now"
-                                    )}
-                                </button>
-                            </div>
-
-                            {enrollmentSuccess && (
-                                <div className="mt-4 bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg">
-                                    Enrollment request submitted! You will be
-                                    redirected to your courses shortly.
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Course Details */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Course Content Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Content */}
-                    <div className="lg:col-span-2 space-y-8">
+                    <div className="lg:col-span-2 space-y-6">
                         {/* What You'll Learn */}
                         {getOutcomes().length > 0 && (
-                            <div className="bg-white rounded-2xl shadow-md p-6">
-                                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                                    <CheckCircle
-                                        size={20}
-                                        className="mr-2 text-green-600"
-                                    />
+                            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                                     What You'll Learn
                                 </h2>
-                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     {getOutcomes().map((outcome, index) => (
                                         <li
                                             key={index}
-                                            className="flex items-center text-gray-600"
+                                            className="flex items-center text-gray-600 text-sm"
                                         >
                                             <CheckCircle
-                                                size={16}
-                                                className="mr-2 text-green-500 flex-shrink-0"
+                                                size={14}
+                                                className="mr-2 text-emerald-500 shrink-0"
                                             />
-                                            <span className="text-sm">
-                                                {outcome}
-                                            </span>
+                                            <span>{outcome}</span>
                                         </li>
                                     ))}
                                 </ul>
@@ -338,27 +331,23 @@ function CourseOverviewPage() {
 
                         {/* Course Content */}
                         {getLessons().length > 0 && (
-                            <div className="bg-white rounded-2xl shadow-md p-6">
-                                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                                    <Book
-                                        size={20}
-                                        className="mr-2 text-blue-600"
-                                    />
+                            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                                     Course Content
                                 </h2>
                                 <div className="space-y-3">
                                     {getLessons().map((lesson, index) => (
                                         <div
                                             key={lesson._id || index}
-                                            className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                                            className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                                         >
                                             <div className="flex items-center">
-                                                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                                                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
                                                     <span className="text-sm font-medium text-gray-600">
                                                         {index + 1}
                                                     </span>
                                                 </div>
-                                                <span className="text-gray-800">
+                                                <span className="text-gray-800 text-sm">
                                                     {lesson.title ||
                                                         `Lesson ${index + 1}`}
                                                 </span>
@@ -377,8 +366,8 @@ function CourseOverviewPage() {
                     <div className="space-y-6">
                         {/* Requirements */}
                         {getRequirements().length > 0 && (
-                            <div className="bg-white rounded-2xl shadow-md p-6">
-                                <h3 className="font-semibold text-gray-800 mb-3">
+                            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
+                                <h3 className="font-semibold text-gray-800 mb-3 text-sm">
                                     Requirements
                                 </h3>
                                 <ul className="space-y-2">
@@ -397,10 +386,10 @@ function CourseOverviewPage() {
                             </div>
                         )}
 
-                        {/* Course Stats */}
-                        <div className="bg-white rounded-2xl shadow-md p-6">
-                            <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-                                <BarChart2 size={18} className="mr-2" />
+                        {/* Course Details */}
+                        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
+                            <h3 className="font-semibold text-gray-800 mb-4 flex items-center text-sm">
+                                <BarChart2 size={16} className="mr-2" />
                                 Course Details
                             </h3>
                             <div className="space-y-3">
@@ -408,7 +397,7 @@ function CourseOverviewPage() {
                                     <span className="text-gray-600">
                                         Skill Level
                                     </span>
-                                    <span className="font-medium">
+                                    <span className="font-medium text-gray-900">
                                         {getSkillLevel()}
                                     </span>
                                 </div>
@@ -416,7 +405,7 @@ function CourseOverviewPage() {
                                     <span className="text-gray-600">
                                         Total Lessons
                                     </span>
-                                    <span className="font-medium">
+                                    <span className="font-medium text-gray-900">
                                         {getLessons().length}
                                     </span>
                                 </div>
@@ -424,7 +413,7 @@ function CourseOverviewPage() {
                                     <span className="text-gray-600">
                                         Access Period
                                     </span>
-                                    <span className="font-medium">
+                                    <span className="font-medium text-gray-900">
                                         {courseAccessType.displayText}
                                     </span>
                                 </div>
@@ -432,7 +421,7 @@ function CourseOverviewPage() {
                                     <span className="text-gray-600">
                                         Certificate
                                     </span>
-                                    <span className="font-medium text-green-600">
+                                    <span className="font-medium text-emerald-600">
                                         Included
                                     </span>
                                 </div>

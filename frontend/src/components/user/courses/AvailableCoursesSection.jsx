@@ -1,6 +1,7 @@
 import CourseCard from "./CourseCard";
 import EmptyState from "./EmptyState";
 import { Book, Search } from "react-feather";
+import { useNavigate } from "react-router-dom";
 
 function AvailableCoursesSection({
     courses,
@@ -12,8 +13,16 @@ function AvailableCoursesSection({
     getEnrollmentStatus,
     searchQuery,
 }) {
+    const navigate = useNavigate();
+
+    const handleCourseClick = (courseId) => {
+        navigate(`/user/courses/${courseId}/overview`, {
+            state: { from: "available" },
+        });
+    };
+
     return (
-        <section className="mb-8">
+        <section className="p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                 <h3 className="text-xl font-semibold text-gray-800">
                     Available Courses
@@ -53,7 +62,7 @@ function AvailableCoursesSection({
                     }
                 />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {courses.map((course) => (
                         <CourseCard
                             key={course._id}
@@ -61,7 +70,7 @@ function AvailableCoursesSection({
                             user={user}
                             enrollmentStatus={enrollmentStatus[course._id]}
                             onEnroll={onEnroll}
-                            onCourseClick={onCourseClick}
+                            onCourseClick={handleCourseClick}
                             isUserEnrolled={isUserEnrolled(course._id)}
                             getEnrollmentStatus={getEnrollmentStatus}
                         />

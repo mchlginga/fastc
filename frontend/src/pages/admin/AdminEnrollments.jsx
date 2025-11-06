@@ -360,6 +360,106 @@ function AdminEnrollments() {
         }
     };
 
+    const handleApproveEnrollment = async (enrollmentId) => {
+        try {
+            await adminEnrollmentService.approveEnrollment(enrollmentId);
+
+            setEnrollments((prev) =>
+                prev.map((enrollment) =>
+                    enrollment._id === enrollmentId
+                        ? {
+                              ...enrollment,
+                              status: "active",
+                              enrolledAt: new Date().toISOString(), // Update enrolledAt
+                          }
+                        : enrollment
+                )
+            );
+
+            // Refresh stats
+            fetchEnrollmentStats();
+
+            setToastNotification({
+                message: "Enrollment approved successfully",
+                type: "success",
+            });
+        } catch (err) {
+            setToastNotification({
+                message: err.message || "Failed to approve enrollment",
+                type: "error",
+            });
+        }
+    };
+
+    const handleBulkApproveEnrollments = async () => {
+        try {
+            const enrollmentIds = Array.from(selectedEnrollments).filter(
+                (id) => id && id.length > 0
+            );
+
+            if (enrollmentIds.length === 0) {
+                setToastNotification({
+                    message: "No valid enrollments selected",
+                    type: "error",
+                });
+                return;
+            }
+
+            // 🆕 NEW: Check if any selected enrollments are actually pending
+            const pendingEnrollments = enrollments.filter(
+                (enrollment) =>
+                    selectedEnrollments.has(enrollment._id) &&
+                    enrollment.status === "pending"
+            );
+
+            if (pendingEnrollments.length === 0) {
+                setToastNotification({
+                    message:
+                        "No pending enrollments selected. Only pending enrollments can be approved.",
+                    type: "warning",
+                });
+                return;
+            }
+
+            console.log(
+                `🔄 Approving ${pendingEnrollments.length} pending enrollments...`
+            );
+
+            await adminEnrollmentService.bulkApproveEnrollments(enrollmentIds);
+
+            // Update local state - only update enrollments that were actually approved
+            setEnrollments((prev) =>
+                prev.map((enrollment) =>
+                    selectedEnrollments.has(enrollment._id) &&
+                    enrollment.status === "pending"
+                        ? {
+                              ...enrollment,
+                              status: "active",
+                              enrolledAt: new Date().toISOString(), // Update enrolledAt
+                          }
+                        : enrollment
+                )
+            );
+
+            setSelectedEnrollments(new Set());
+            setSelectAll(false);
+
+            // Refresh stats
+            fetchEnrollmentStats();
+
+            setToastNotification({
+                message: `Approved ${pendingEnrollments.length} pending enrollments successfully`,
+                type: "success",
+            });
+        } catch (err) {
+            console.error("Bulk approval error:", err);
+            setToastNotification({
+                message: err.message || "Failed to approve enrollments",
+                type: "error",
+            });
+        }
+    };
+
     const handleEditEnrollment = (enrollment) => {
         setSelectedEnrollment(enrollment);
         setShowEditEnrollmentModal(true);
@@ -493,6 +593,9 @@ function AdminEnrollments() {
                                 setShowAddEnrollmentModal(true)
                             }
                             onBulkStatusUpdate={handleBulkStatusUpdate}
+                            onBulkApproveEnrollments={
+                                handleBulkApproveEnrollments
+                            }
                             onBulkDelete={confirmBulkDelete}
                             stats={stats}
                             loading={loading && enrollments.length > 0}
@@ -513,6 +616,7 @@ function AdminEnrollments() {
                             }}
                             onEditEnrollment={handleEditEnrollment}
                             onStatusUpdate={handleStatusUpdate}
+                            onApproveEnrollment={handleApproveEnrollment}
                             onDeleteEnrollment={confirmDeleteEnrollment}
                             statusFilter={statusFilter}
                             courseFilter={courseFilter}

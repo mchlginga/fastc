@@ -11,14 +11,21 @@ function ActiveCoursesSection({
 }) {
     const navigate = useNavigate();
 
-    // 🆕 FIXED: Proper navigation to course detail
     const handleContinueLearning = (enrollment) => {
-        console.log("🎯 Navigating to course:", enrollment.course.id);
-        navigate(`/user/courses/${enrollment.course.id}`);
+        navigate(`/user/courses/${enrollment.course.id}`, {
+            state: { from: "active" },
+        });
+    };
+
+    // 🆕 ADD: Handle card click to go to CourseDetail
+    const handleViewCourse = (enrollment) => {
+        navigate(`/user/courses/${enrollment.course.id}`, {
+            state: { from: "active" },
+        });
     };
 
     return (
-        <section className="mb-8">
+        <section className="p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                 <h3 className="text-xl font-semibold text-gray-800">
                     Active Courses
@@ -79,6 +86,7 @@ function ActiveCoursesSection({
                             onContinueLearning={() =>
                                 handleContinueLearning(enrollment)
                             }
+                            onViewCourse={() => handleViewCourse(enrollment)}
                         />
                     ))}
                 </div>

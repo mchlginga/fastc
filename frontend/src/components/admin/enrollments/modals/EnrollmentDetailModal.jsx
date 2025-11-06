@@ -19,6 +19,7 @@ const EnrollmentDetailModal = ({
     enrollment,
     onStatusUpdate,
     onEdit,
+    onApproveEnrollment, // 🆕 ADD THIS PROP
 }) => {
     const [activeTab, setActiveTab] = useState("overview");
     const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -75,6 +76,19 @@ const EnrollmentDetailModal = ({
         },
         [enrollment, onStatusUpdate, onClose]
     );
+
+    // 🆕 NEW: Handle approve enrollment
+    const handleApproveEnrollment = useCallback(async () => {
+        try {
+            setUpdatingStatus(true);
+            await onApproveEnrollment(enrollment._id);
+            onClose();
+        } catch (error) {
+            console.error("Approve enrollment error:", error);
+        } finally {
+            setUpdatingStatus(false);
+        }
+    }, [enrollment, onApproveEnrollment, onClose]);
 
     const handleEditClick = useCallback(() => {
         onClose();
@@ -302,6 +316,41 @@ const EnrollmentDetailModal = ({
                                 </div>
                             </div>
 
+                            {/* 🆕 NEW: Quick Approve Section for Pending Enrollments */}
+                            {enrollment.status === "pending" && (
+                                <div>
+                                    <h3 className="font-semibold text-gray-800 mb-4">
+                                        Quick Actions
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <button
+                                            onClick={handleApproveEnrollment}
+                                            disabled={updatingStatus}
+                                            className="w-full text-left p-4 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex-1">
+                                                    <div className="font-medium flex items-center">
+                                                        <Check
+                                                            size={16}
+                                                            className="mr-2"
+                                                        />
+                                                        Approve Enrollment
+                                                    </div>
+                                                    <div className="text-xs text-emerald-600 mt-1">
+                                                        Activate this enrollment
+                                                        and grant course access
+                                                    </div>
+                                                </div>
+                                                {updatingStatus && (
+                                                    <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                                                )}
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Enrollment Status */}
                             <div>
                                 <h3 className="font-semibold text-gray-800 mb-4">
@@ -378,7 +427,7 @@ const EnrollmentDetailModal = ({
                                                     statusOption.status && (
                                                     <Check
                                                         size={16}
-                                                        className="text-blue-600 flex-shrink-0 ml-2"
+                                                        className="text-blue-600 shrink-0 ml-2"
                                                     />
                                                 )}
                                             </div>
