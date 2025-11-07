@@ -10,21 +10,10 @@ import {
 import {
     CompanyProfileHeader,
     CompanyProfileStats,
-    CompanyDetails,
 } from "../../components/company/profile";
 
 import { ToastNotification, ErrorState } from "../../components/common";
 import CompanyProfileSkeleton from "../../components/company/profile/CompanyProfileSkeleton";
-
-// Icons
-import {
-    Clock,
-    Briefcase,
-    RefreshCw,
-    AlertCircle,
-    CheckCircle,
-    XCircle,
-} from "react-feather";
 
 function CompanyProfile() {
     const { user, setUser } = useAuth();
@@ -158,8 +147,22 @@ function CompanyProfile() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900">
+                                Company Profile
+                            </h1>
+                            <p className="text-gray-600 text-sm mt-1">
+                                Manage your company profile and view overview
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Company Profile Header Section */}
                 <CompanyProfileHeader
                     user={user}
@@ -173,21 +176,10 @@ function CompanyProfile() {
                 {/* Company Statistics */}
                 <CompanyProfileStats user={user} />
 
-                {/* Company Details & Information */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-                    {/* Company Details */}
-                    <div className="lg:col-span-2">
-                        <CompanyDetails
-                            user={user}
-                            onProfileUpdate={handleProfileUpdate}
-                        />
-                    </div>
-
-                    {/* Status & Quick Info Sidebar */}
-                    <div className="lg:col-span-1 space-y-6">
-                        <ProfileStatusCard user={user} />
-                        <QuickInfoCard user={user} />
-                    </div>
+                {/* Status & Quick Info Cards */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                    <ProfileStatusCard user={user} />
+                    <QuickInfoCard user={user} />
                 </div>
 
                 {/* Profile Picture Modal */}
@@ -217,25 +209,19 @@ const ProfileStatusCard = ({ user }) => {
         const configs = {
             pending: {
                 bg: "bg-yellow-50",
-                border: "border-yellow-200",
                 text: "text-yellow-800",
-                icon: <AlertCircle size={20} className="text-yellow-600" />,
                 message: "Profile Under Review",
                 description: "Limited access to talent matches",
             },
             approved: {
                 bg: "bg-green-50",
-                border: "border-green-200",
                 text: "text-green-800",
-                icon: <CheckCircle size={20} className="text-green-600" />,
                 message: "Profile Verified",
                 description: "Full access to all features",
             },
             rejected: {
                 bg: "bg-red-50",
-                border: "border-red-200",
                 text: "text-red-800",
-                icon: <XCircle size={20} className="text-red-600" />,
                 message: "Profile Needs Update",
                 description: "Please update your information",
             },
@@ -246,25 +232,32 @@ const ProfileStatusCard = ({ user }) => {
     const statusConfig = getStatusConfig(user?.profileStatus);
 
     return (
-        <div
-            className={`bg-white rounded-2xl shadow-md p-6 border ${statusConfig.border} ${statusConfig.bg}`}
-        >
+        <div className={`bg-white rounded-xl shadow-xs ${statusConfig.bg} p-6`}>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
                 Profile Status
             </h3>
-            <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0">{statusConfig.icon}</div>
-                <div>
-                    <p className={`font-medium ${statusConfig.text}`}>
-                        {statusConfig.message}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                        {statusConfig.description}
-                    </p>
-                </div>
+            <div className="space-y-2">
+                <p className={`font-medium ${statusConfig.text}`}>
+                    {statusConfig.message}
+                </p>
+                <p className="text-sm text-gray-600">
+                    {statusConfig.description}
+                </p>
             </div>
         </div>
     );
+};
+
+// Format date to "June 12, 2023" format
+const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    });
 };
 
 // Quick Info Card Component
@@ -272,27 +265,20 @@ const QuickInfoCard = ({ user }) => {
     const infoItems = [
         {
             label: "Member Since",
-            value: user?.createdAt
-                ? new Date(user.createdAt).toLocaleDateString()
-                : "N/A",
-            icon: <Clock size={16} className="text-gray-400" />,
+            value: formatDate(user?.createdAt),
         },
         {
             label: "Account Type",
             value: "Company",
-            icon: <Briefcase size={16} className="text-gray-400" />,
         },
         {
             label: "Last Updated",
-            value: user?.updatedAt
-                ? new Date(user.updatedAt).toLocaleDateString()
-                : "N/A",
-            icon: <RefreshCw size={16} className="text-gray-400" />,
+            value: formatDate(user?.updatedAt),
         },
     ];
 
     return (
-        <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
                 Quick Info
             </h3>
@@ -302,12 +288,9 @@ const QuickInfoCard = ({ user }) => {
                         key={index}
                         className="flex items-center justify-between py-2"
                     >
-                        <div className="flex items-center space-x-3">
-                            {item.icon}
-                            <span className="text-sm text-gray-600">
-                                {item.label}
-                            </span>
-                        </div>
+                        <span className="text-sm text-gray-600">
+                            {item.label}
+                        </span>
                         <span className="text-sm font-medium text-gray-800">
                             {item.value}
                         </span>

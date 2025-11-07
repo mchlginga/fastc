@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { updateUserProfile, changePassword } from "../../services/userService";
 import { Settings, Save, Briefcase, Lock, Key, Shield } from "react-feather";
@@ -108,7 +108,7 @@ const CompanySettings = () => {
         }
     };
 
-    const handleChange = (e) => {
+    const handleChange = useCallback((e) => {
         const { name, value } = e.target;
 
         if (name.includes(".")) {
@@ -126,14 +126,14 @@ const CompanySettings = () => {
                 [name]: value,
             }));
         }
-    };
+    }, []);
 
-    const handlePasswordDataChange = (e) => {
+    const handlePasswordDataChange = useCallback((e) => {
         setPasswordData((prev) => ({
             ...prev,
             [e.target.name]: e.target.value,
         }));
-    };
+    }, []);
 
     const tabs = [
         { id: "profile", label: "Company Profile", icon: Briefcase },
@@ -141,38 +141,41 @@ const CompanySettings = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
+                {/* Header - Consistent with AdminUsers */}
                 <div className="mb-8">
-                    <div className="flex items-center mb-2">
-                        <Settings size={28} className="text-blue-600 mr-3" />
-                        <h1 className="text-3xl font-bold text-gray-900">
-                            Company Settings
-                        </h1>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900">
+                                Company Settings
+                            </h1>
+                            <p className="text-gray-600 text-sm mt-1">
+                                Manage your company account preferences and
+                                settings
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-gray-600">
-                        Manage your company account preferences and settings
-                    </p>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-md border border-gray-100">
+                {/* Main Content Card - Consistent with AdminUsers */}
+                <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
                     {/* Tabs */}
-                    <div className="border-b border-gray-200">
-                        <div className="flex space-x-8 px-6">
+                    <div className="border-b border-gray-100">
+                        <div className="flex px-6">
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
                                 return (
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors cursor-pointer ${
+                                        className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200 cursor-pointer ${
                                             activeTab === tab.id
                                                 ? "border-blue-500 text-blue-600"
                                                 : "border-transparent text-gray-500 hover:text-gray-700"
                                         }`}
                                     >
-                                        <Icon size={18} className="mr-2" />
+                                        <Icon size={16} className="mr-2" />
                                         {tab.label}
                                     </button>
                                 );
@@ -187,15 +190,11 @@ const CompanySettings = () => {
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-6">
                                     {/* Company Information */}
-                                    <div className="bg-gray-50 rounded-lg p-4">
-                                        <h4 className="font-medium text-gray-800 mb-4 flex items-center">
-                                            <Briefcase
-                                                size={16}
-                                                className="mr-2"
-                                            />
+                                    <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                                        <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
                                             Company Information
                                         </h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
                                                     Company Name *
@@ -205,8 +204,9 @@ const CompanySettings = () => {
                                                     name="companyName"
                                                     value={formData.companyName}
                                                     onChange={handleChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                                     required
+                                                    disabled={loading}
                                                 />
                                             </div>
                                             <div>
@@ -218,10 +218,10 @@ const CompanySettings = () => {
                                                     name="email"
                                                     value={formData.email}
                                                     onChange={handleChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                                                     readOnly
                                                 />
-                                                <p className="text-gray-500 text-xs mt-1">
+                                                <p className="text-gray-500 text-xs mt-2">
                                                     Contact support to change
                                                     your email.
                                                 </p>
@@ -237,7 +237,8 @@ const CompanySettings = () => {
                                                         formData.contactNumber
                                                     }
                                                     onChange={handleChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                                    disabled={loading}
                                                 />
                                             </div>
                                             <div className="md:col-span-2">
@@ -249,22 +250,19 @@ const CompanySettings = () => {
                                                     name="address"
                                                     value={formData.address}
                                                     onChange={handleChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                                    disabled={loading}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Representative Information */}
-                                    <div className="bg-gray-50 rounded-lg p-4">
-                                        <h4 className="font-medium text-gray-800 mb-4 flex items-center">
-                                            <Briefcase
-                                                size={16}
-                                                className="mr-2"
-                                            />
+                                    <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                                        <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
                                             Representative Information
                                         </h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
                                                     Representative Name
@@ -277,7 +275,8 @@ const CompanySettings = () => {
                                                             .name
                                                     }
                                                     onChange={handleChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                                    disabled={loading}
                                                 />
                                             </div>
                                             <div>
@@ -292,7 +291,8 @@ const CompanySettings = () => {
                                                             .email
                                                     }
                                                     onChange={handleChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                                    disabled={loading}
                                                 />
                                             </div>
                                             <div>
@@ -307,7 +307,8 @@ const CompanySettings = () => {
                                                             .contactNumber
                                                     }
                                                     onChange={handleChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                                    disabled={loading}
                                                 />
                                             </div>
                                         </div>
@@ -316,10 +317,17 @@ const CompanySettings = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                    className="flex items-center px-4 py-2.5 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer shadow-xs"
                                 >
-                                    <Save size={18} className="mr-2" />
-                                    {loading ? "Saving..." : "Save Changes"}
+                                    <Save size={16} className="mr-2" />
+                                    {loading ? (
+                                        <span className="flex items-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            Saving...
+                                        </span>
+                                    ) : (
+                                        "Save Changes"
+                                    )}
                                 </button>
                             </form>
                         )}
@@ -332,7 +340,7 @@ const CompanySettings = () => {
                                 </h3>
 
                                 {/* Change Password */}
-                                <div className="p-4 border border-gray-200 rounded-lg">
+                                <div className="p-6 border border-gray-200 rounded-lg bg-white">
                                     <div className="flex items-center mb-4">
                                         <Key
                                             size={20}
@@ -366,8 +374,9 @@ const CompanySettings = () => {
                                                 onChange={
                                                     handlePasswordDataChange
                                                 }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                                 required
+                                                disabled={loading}
                                             />
                                         </div>
                                         <div>
@@ -381,8 +390,9 @@ const CompanySettings = () => {
                                                 onChange={
                                                     handlePasswordDataChange
                                                 }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                                 required
+                                                disabled={loading}
                                             />
                                         </div>
                                         <div>
@@ -398,24 +408,30 @@ const CompanySettings = () => {
                                                 onChange={
                                                     handlePasswordDataChange
                                                 }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
                                                 required
+                                                disabled={loading}
                                             />
                                         </div>
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                            className="flex items-center px-4 py-2.5 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer shadow-xs"
                                         >
-                                            {loading
-                                                ? "Updating..."
-                                                : "Change Password"}
+                                            {loading ? (
+                                                <span className="flex items-center gap-2">
+                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    Updating...
+                                                </span>
+                                            ) : (
+                                                "Change Password"
+                                            )}
                                         </button>
                                     </form>
                                 </div>
 
                                 {/* Account Security */}
-                                <div className="p-4 border border-gray-200 rounded-lg">
+                                <div className="p-6 border border-gray-200 rounded-lg bg-white">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center">
                                             <Shield
@@ -432,7 +448,7 @@ const CompanySettings = () => {
                                                 </p>
                                             </div>
                                         </div>
-                                        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer">
+                                        <button className="flex items-center px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer shadow-xs">
                                             Enable 2FA
                                         </button>
                                     </div>
@@ -443,7 +459,7 @@ const CompanySettings = () => {
                 </div>
 
                 {/* Company Role Info */}
-                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-6">
+                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
                     <div className="flex items-start">
                         <Briefcase
                             className="text-blue-600 mr-3 mt-1"

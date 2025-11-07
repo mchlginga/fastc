@@ -7,7 +7,6 @@ import {
     Phone,
     MapPin,
     Calendar,
-    Settings,
 } from "react-feather";
 
 function CompanyProfileHeader({
@@ -50,6 +49,18 @@ function CompanyProfileHeader({
     };
 
     const profilePicUrl = user?.profilePic || null;
+
+    // Format date to "June 2, 2023" format
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    };
 
     const Info = ({ label, value, icon }) => (
         <div className="flex items-center space-x-3">
@@ -95,12 +106,12 @@ function CompanyProfileHeader({
 
     return (
         <section className="mb-10">
-            <div className="bg-white rounded-2xl shadow-md p-8 hover:shadow-lg transition-all duration-300 border border-gray-100">
+            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
                 <div className="md:flex items-center gap-10">
                     <div className="md:w-1/3 flex flex-col items-center mb-6 md:mb-0">
                         <div className="relative">
                             <div
-                                className={`w-36 h-36 rounded-full shadow-md ring-4 ring-gray-200 transition overflow-hidden bg-gray-100 flex items-center justify-center ${
+                                className={`w-32 h-32 rounded-full shadow-sm ring-2 ring-gray-200 transition overflow-hidden bg-gray-100 flex items-center justify-center ${
                                     profilePicUrl
                                         ? "hover:scale-105 hover:ring-blue-400 cursor-pointer"
                                         : ""
@@ -118,7 +129,7 @@ function CompanyProfileHeader({
                                 ) : (
                                     <div className="flex items-center justify-center w-full h-full">
                                         <Briefcase
-                                            size={48}
+                                            size={40}
                                             className="text-gray-400"
                                         />
                                     </div>
@@ -127,7 +138,7 @@ function CompanyProfileHeader({
                             <button
                                 onClick={triggerFileInput}
                                 disabled={uploading}
-                                className="absolute bottom-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="absolute bottom-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                 title="Change profile picture"
                             >
                                 {uploading ? (
@@ -145,7 +156,7 @@ function CompanyProfileHeader({
                                 disabled={uploading}
                             />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-800 mt-4 text-center">
+                        <h2 className="text-xl font-semibold text-gray-800 mt-4 text-center">
                             {user?.companyName || "Company Name"}
                         </h2>
                         <div className="mt-2">
@@ -153,48 +164,25 @@ function CompanyProfileHeader({
                         </div>
                     </div>
 
-                    <div className="md:w-2/3 border-t md:border-t-0 md:border-l border-gray-300 md:pl-10 pt-6 md:pt-0">
+                    <div className="md:w-2/3 border-t md:border-t-0 md:border-l border-gray-200 md:pl-10 pt-6 md:pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <Info
-                                label="Email"
-                                value={user?.email || "N/A"}
-                                icon={<Mail size={16} />}
-                            />
+                            <Info label="Email" value={user?.email || "N/A"} />
                             <Info
                                 label="Phone"
                                 value={user?.contactNumber || "N/A"}
-                                icon={<Phone size={16} />}
                             />
                             <Info
                                 label="Address"
                                 value={user?.address || "N/A"}
-                                icon={<MapPin size={16} />}
                             />
                             <Info
                                 label="Representative"
                                 value={user?.representative?.name || "N/A"}
-                                icon={<Briefcase size={16} />}
                             />
                             <Info
                                 label="Joined"
-                                value={
-                                    user?.createdAt
-                                        ? new Date(
-                                              user.createdAt
-                                          ).toLocaleDateString()
-                                        : "N/A"
-                                }
-                                icon={<Calendar size={16} />}
+                                value={formatDate(user?.createdAt)}
                             />
-                        </div>
-                        <div className="flex space-x-3">
-                            <Link
-                                to="/company/settings"
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors inline-flex items-center cursor-pointer"
-                            >
-                                <Settings size={16} className="mr-2" />
-                                Company Settings
-                            </Link>
                         </div>
                     </div>
                 </div>

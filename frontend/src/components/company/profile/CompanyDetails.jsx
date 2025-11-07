@@ -206,7 +206,7 @@ const CompanyDetails = ({ user, onProfileUpdate }) => {
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-semibold text-gray-800">
                     Company Details
@@ -217,7 +217,7 @@ const CompanyDetails = ({ user, onProfileUpdate }) => {
                             <button
                                 onClick={handleSave}
                                 disabled={saving}
-                                className={`bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center cursor-pointer ${
+                                className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center cursor-pointer ${
                                     saving
                                         ? "opacity-50 cursor-not-allowed"
                                         : ""

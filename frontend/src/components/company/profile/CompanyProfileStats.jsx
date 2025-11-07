@@ -1,7 +1,7 @@
 import { Users, Clock, Shield, CheckCircle } from "react-feather";
 
 const StatCard = ({ title, value, icon, bg }) => (
-    <div className="bg-white rounded-2xl shadow-md p-6 flex items-center justify-between hover:-translate-y-1 hover:shadow-lg transition transform border border-gray-100">
+    <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6 flex items-center justify-between">
         <div className={`${bg} p-3 rounded-xl mr-4`}>{icon}</div>
         <div className="text-right">
             <h3 className="text-xl font-bold text-gray-800">{value}</h3>
@@ -43,9 +43,6 @@ function CompanyProfileStats({ user }) {
 
     return (
         <section className="mb-10">
-            <h3 className="text-lg font-semibold text-gray-800 mb-6">
-                Company Overview
-            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {statCards.map((card, index) => (
                     <StatCard
