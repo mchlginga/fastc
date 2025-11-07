@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Award, Menu, X } from "react-feather";
+import { Menu, X } from "react-feather";
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -36,9 +36,10 @@ const Header = () => {
                         to="/"
                         className="flex items-center cursor-pointer group"
                     >
-                        <Award
-                            size={28}
-                            className="text-blue-600 mr-2 group-hover:scale-110 transition-transform"
+                        <img
+                            src="/logo.png"
+                            alt="FAST-C Logo"
+                            className="h-11 w-auto mr-3"
                         />
                         <h1 className="text-xl font-bold text-gray-800">
                             FAST-C

@@ -12,23 +12,39 @@ const Footer = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                     {/* Brand Section */}
                     <div className="text-center md:text-left">
-                        <Link
-                            to="/"
-                            className="flex items-center justify-center md:justify-start mb-4 cursor-pointer group"
-                        >
-                            <Award
-                                size={28}
-                                className="text-blue-400 mr-2 group-hover:scale-110 transition-transform"
-                            />
-                            <h2 className="text-xl font-bold text-white">
-                                FAST-C
-                            </h2>
-                        </Link>
-                        <p className="text-gray-300 text-sm leading-relaxed">
-                            Empowering Fernandinos with modern digital access,
-                            verified certificates, and smarter job
-                            opportunities.
-                        </p>
+                        <div className="flex flex-row items-center justify-center md:justify-start gap-4 mb-4">
+                            <Link to="/" className="cursor-pointer group">
+                                <img
+                                    src="/logo.png"
+                                    alt="FAST-C Logo"
+                                    className="h-16! w-auto sm:h-20 md:h-22 "
+                                />
+                            </Link>
+                            <Link
+                                to="https://cityofsanfernando.gov.ph/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="cursor-pointer group"
+                            >
+                                <img
+                                    src="/sf.png"
+                                    alt="San Fernando Logo"
+                                    className="h-16! w-auto sm:h-20 md:h-22"
+                                />
+                            </Link>
+                            <Link
+                                to="https://cityofsanfernando.gov.ph/cpeso/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="cursor-pointer group"
+                            >
+                                <img
+                                    src="/peso.png"
+                                    alt="PESO Logo"
+                                    className="h-18! w-auto sm:h-20 md:h-22"
+                                />
+                            </Link>
+                        </div>
                     </div>
 
                     {/* Quick Links */}

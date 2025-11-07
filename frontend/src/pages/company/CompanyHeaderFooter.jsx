@@ -10,6 +10,7 @@ import {
     ArrowUp,
     Settings,
     LogOut,
+    MapPin,
 } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 
@@ -152,12 +153,13 @@ const CompanyHeaderFooter = () => {
                             to="/company"
                             className="flex items-center cursor-pointer group"
                         >
-                            <Award
-                                size={28}
-                                className="text-blue-600 mr-2 group-hover:scale-110 transition-transform"
+                            <img
+                                src="/logo.png"
+                                alt="FAST-C Logo"
+                                className="h-11 w-auto mr-3"
                             />
                             <h1 className="text-xl font-bold text-gray-800">
-                                FAST-C Company
+                                FAST-C
                             </h1>
                         </Link>
 
@@ -325,29 +327,124 @@ const CompanyHeaderFooter = () => {
             </main>
 
             {/* FOOTER */}
-            <footer className="bg-gray-800 text-white mt-auto">
+            <footer className="bg-gray-800 text-white mt-auto relative">
                 <div className="container mx-auto px-4 py-8">
-                    <div className="text-center">
-                        <p className="text-sm opacity-80">
-                            Developed for Fernandino Assessment and Skills
-                            Training Center (FAST-C), City of San Fernando,
-                            Pampanga.
-                        </p>
-                        <div className="mt-4 flex justify-center space-x-6">
-                            <a
-                                href="mailto:cpesocsfp2023@gmail.com"
-                                className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                                aria-label="Email"
-                            >
-                                <Mail size={20} />
-                            </a>
-                            <a
-                                href="tel:0905-404-2950"
-                                className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                                aria-label="Phone"
-                            >
-                                <Phone size={20} />
-                            </a>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                        {/* Brand Section */}
+                        <div className="text-center md:text-left">
+                            <div className="flex flex-row items-center justify-center md:justify-start gap-4 mb-4">
+                                <Link to="/" className="cursor-pointer group">
+                                    <img
+                                        src="/logo.png"
+                                        alt="FAST-C Logo"
+                                        className="h-16! w-auto sm:h-20 md:h-22 "
+                                    />
+                                </Link>
+                                <Link
+                                    to="https://cityofsanfernando.gov.ph/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="cursor-pointer group"
+                                >
+                                    <img
+                                        src="/sf.png"
+                                        alt="San Fernando Logo"
+                                        className="h-16! w-auto sm:h-20 md:h-22"
+                                    />
+                                </Link>
+                                <Link
+                                    to="https://cityofsanfernando.gov.ph/cpeso/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="cursor-pointer group"
+                                >
+                                    <img
+                                        src="/peso.png"
+                                        alt="PESO Logo"
+                                        className="h-18! w-auto sm:h-20 md:h-22"
+                                    />
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* Admin Links */}
+                        <div className="text-center md:text-left">
+                            <h3 className="font-semibold text-white mb-4 text-lg">
+                                Company Portal
+                            </h3>
+                            <div className="flex flex-col space-y-2">
+                                <NavLink
+                                    to="/company"
+                                    className="text-gray-300 hover:text-white transition-colors duration-200 text-sm"
+                                >
+                                    Dashboard
+                                </NavLink>
+                                <NavLink
+                                    to="/company/profile"
+                                    className="text-gray-300 hover:text-white transition-colors duration-200 text-sm"
+                                >
+                                    Profile Settings
+                                </NavLink>
+                            </div>
+                        </div>
+
+                        {/* Contact Info */}
+                        <div className="text-center md:text-left">
+                            <h3 className="font-semibold text-white mb-4 text-lg">
+                                Support & Contact
+                            </h3>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-center md:justify-start text-gray-300 text-sm">
+                                    <MapPin
+                                        size={16}
+                                        className="mr-2 text-blue-400 shrink-0"
+                                    />
+                                    <span>
+                                        City College Building, San Fernando,
+                                        Pampanga
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-center md:justify-start text-gray-300 text-sm">
+                                    <Phone
+                                        size={16}
+                                        className="mr-2 text-blue-400 shrink-0"
+                                    />
+                                    <span>0905-404-2950</span>
+                                </div>
+                                <div className="flex items-center justify-center md:justify-start text-gray-300 text-sm">
+                                    <Mail
+                                        size={16}
+                                        className="mr-2 text-blue-400 shrink-0"
+                                    />
+                                    <span>cpesocsfp2023@gmail.com</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bottom Section */}
+                    <div className="border-t border-gray-700 pt-6">
+                        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                            <p className="text-gray-400 text-sm text-center md:text-left">
+                                © {new Date().getFullYear()} FAST-C Company
+                                Portal. All rights reserved.
+                            </p>
+                            <div className="flex space-x-4">
+                                <a
+                                    href="mailto:cpesocsfp2023@gmail.com"
+                                    className="text-gray-400 hover:text-white transition-colors duration-200 p-2 hover:bg-gray-700 rounded-lg cursor-pointer"
+                                    aria-label="Email Support"
+                                >
+                                    <Mail size={18} />
+                                </a>
+                                <a
+                                    href="tel:0905-404-2950"
+                                    className="text-gray-400 hover:text-white transition-colors duration-200 p-2 hover:bg-gray-700 rounded-lg cursor-pointer"
+                                    aria-label="Phone Support"
+                                >
+                                    <Phone size={18} />
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

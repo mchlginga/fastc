@@ -135,12 +135,13 @@ const AdminHeaderFooter = () => {
                             to="/admin"
                             className="flex items-center cursor-pointer group"
                         >
-                            <Award
-                                size={28}
-                                className="text-blue-600 mr-2 group-hover:scale-110 transition-transform"
+                            <img
+                                src="/logo.png"
+                                alt="FAST-C Logo"
+                                className="h-11 w-auto mr-3"
                             />
                             <h1 className="text-xl font-bold text-gray-800">
-                                FAST-C Admin
+                                FAST-C
                             </h1>
                         </Link>
 
@@ -419,20 +420,39 @@ const AdminHeaderFooter = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                         {/* Brand Section */}
                         <div className="text-center md:text-left">
-                            <div className="flex items-center justify-center md:justify-start mb-4 group">
-                                <Award
-                                    size={28}
-                                    className="text-blue-400 mr-2 group-hover:scale-110 transition-transform"
-                                />
-                                <h2 className="text-xl font-bold text-white">
-                                    FAST-C Admin
-                                </h2>
+                            <div className="flex flex-row items-center justify-center md:justify-start gap-4 mb-4">
+                                <Link to="/" className="cursor-pointer group">
+                                    <img
+                                        src="/logo.png"
+                                        alt="FAST-C Logo"
+                                        className="h-16! w-auto sm:h-20 md:h-22 "
+                                    />
+                                </Link>
+                                <Link
+                                    to="https://cityofsanfernando.gov.ph/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="cursor-pointer group"
+                                >
+                                    <img
+                                        src="/sf.png"
+                                        alt="San Fernando Logo"
+                                        className="h-16! w-auto sm:h-20 md:h-22"
+                                    />
+                                </Link>
+                                <Link
+                                    to="https://cityofsanfernando.gov.ph/cpeso/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="cursor-pointer group"
+                                >
+                                    <img
+                                        src="/peso.png"
+                                        alt="PESO Logo"
+                                        className="h-18! w-auto sm:h-20 md:h-22"
+                                    />
+                                </Link>
                             </div>
-                            <p className="text-gray-300 text-sm leading-relaxed">
-                                Advanced administration portal for managing
-                                Fernandino skills training, user profiles,
-                                course enrollments, and digital certifications.
-                            </p>
                         </div>
 
                         {/* Admin Links */}
