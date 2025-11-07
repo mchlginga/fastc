@@ -3,7 +3,7 @@ function CompanyProfileAlert({ user }) {
         return (
             <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
                 <div className="flex items-start">
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                         <svg
                             className="h-5 w-5 text-yellow-400"
                             fill="currentColor"
@@ -42,7 +42,7 @@ function CompanyProfileAlert({ user }) {
         return (
             <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
                 <div className="flex items-start">
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                         <svg
                             className="h-5 w-5 text-red-400"
                             fill="currentColor"

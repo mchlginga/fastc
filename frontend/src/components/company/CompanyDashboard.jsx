@@ -69,8 +69,10 @@ const CompanyDashboard = () => {
     const [toastNotification, setToastNotification] = useState(null);
 
     // 🆕 UPDATED: Check access based on role AND profile status
-    const hasAccess = user && (user.role === "company" || user.role === "superAdmin");
-    const isPendingCompany = user?.role === "company" && user?.profileStatus === "pending";
+    const hasAccess =
+        user && (user.role === "company" || user.role === "superAdmin");
+    const isPendingCompany =
+        user?.role === "company" && user?.profileStatus === "pending";
     const canExportCSV = !isPendingCompany; // 🆕 NEW: Block CSV export for pending companies
 
     useEffect(() => {
@@ -195,7 +197,8 @@ const CompanyDashboard = () => {
         // 🆕 NEW: Block CSV export for pending companies
         if (isPendingCompany) {
             setToastNotification({
-                message: "CSV export is disabled while your profile is under review",
+                message:
+                    "CSV export is disabled while your profile is under review",
                 type: "warning",
             });
             return;
@@ -381,7 +384,7 @@ const CompanyDashboard = () => {
                 {/* Main Content */}
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Filter Panel */}
-                    <div className="w-full lg:w-80 flex-shrink-0">
+                    <div className="w-full lg:w-80 shrink-0">
                         <JobMatchingFilters
                             filters={filters}
                             filterOptions={filterOptions}
