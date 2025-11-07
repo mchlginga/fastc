@@ -18,7 +18,6 @@ const ProfileSection = ({
     onUploadingProfilePicChange,
     onToastNotification,
     onUserUpdate,
-
     isFiltered = false,
 }) => {
     const [saving, setSaving] = useState(false);
@@ -169,7 +168,7 @@ const ProfileSection = ({
     if (isFiltered) {
         return (
             <section>
-                <div className="bg-white rounded-2xl shadow-md p-8 text-center">
+                <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-8 text-center">
                     <div className="bg-gray-100 rounded-full p-4 inline-flex mb-4">
                         <User size={32} className="text-gray-400" />
                     </div>
@@ -186,7 +185,7 @@ const ProfileSection = ({
     }
 
     return (
-        <section>
+        <section className="space-y-6">
             {/* Remove Profile Picture Confirmation Modal */}
             <ConfirmationModal
                 isOpen={showRemoveProfilePicModal}
@@ -200,9 +199,10 @@ const ProfileSection = ({
                 isLoading={removingProfilePic}
             />
 
-            <div className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition">
-                <div className="border-b border-gray-300 pb-4 mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800">
+            {/* Basic Information Card */}
+            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
+                <div className="border-b border-gray-200 pb-4 mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">
                         Basic Information
                     </h3>
                     <p className="text-gray-600 text-sm">
@@ -214,7 +214,7 @@ const ProfileSection = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label
-                                className="block text-gray-600 text-sm font-medium mb-2"
+                                className="block text-sm font-medium text-gray-700 mb-2"
                                 htmlFor="firstName"
                             >
                                 First Name *
@@ -224,22 +224,22 @@ const ProfileSection = ({
                                 type="text"
                                 value={profileData.firstName}
                                 onChange={handleInputChange}
-                                className={`w-full px-4 py-3 border ${
+                                className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                                     errors.firstName
-                                        ? "border-red-300"
+                                        ? "border-red-300 bg-red-50"
                                         : "border-gray-300"
-                                } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-600 transition`}
+                                }`}
                                 placeholder="Enter your first name"
                             />
                             {errors.firstName && (
-                                <p className="text-red-600 text-xs mt-1">
+                                <p className="mt-1 text-xs text-red-600">
                                     {errors.firstName}
                                 </p>
                             )}
                         </div>
                         <div>
                             <label
-                                className="block text-gray-600 text-sm font-medium mb-2"
+                                className="block text-sm font-medium text-gray-700 mb-2"
                                 htmlFor="surname"
                             >
                                 Last Name *
@@ -249,22 +249,22 @@ const ProfileSection = ({
                                 type="text"
                                 value={profileData.surname}
                                 onChange={handleInputChange}
-                                className={`w-full px-4 py-3 border ${
+                                className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                                     errors.surname
-                                        ? "border-red-300"
+                                        ? "border-red-300 bg-red-50"
                                         : "border-gray-300"
-                                } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-600 transition`}
+                                }`}
                                 placeholder="Enter your last name"
                             />
                             {errors.surname && (
-                                <p className="text-red-600 text-xs mt-1">
+                                <p className="mt-1 text-xs text-red-600">
                                     {errors.surname}
                                 </p>
                             )}
                         </div>
                         <div>
                             <label
-                                className="block text-gray-600 text-sm font-medium mb-2"
+                                className="block text-sm font-medium text-gray-700 mb-2"
                                 htmlFor="email"
                             >
                                 Email Address
@@ -274,7 +274,7 @@ const ProfileSection = ({
                                 type="email"
                                 value={profileData.email}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                                 readOnly
                             />
                             <p className="text-gray-500 text-xs mt-1">
@@ -283,7 +283,7 @@ const ProfileSection = ({
                         </div>
                         <div>
                             <label
-                                className="block text-gray-600 text-sm font-medium mb-2"
+                                className="block text-sm font-medium text-gray-700 mb-2"
                                 htmlFor="birthdate"
                             >
                                 Birthdate
@@ -293,12 +293,12 @@ const ProfileSection = ({
                                 type="date"
                                 value={profileData.birthdate}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-600 transition"
+                                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                             />
                         </div>
                         <div>
                             <label
-                                className="block text-gray-600 text-sm font-medium mb-2"
+                                className="block text-sm font-medium text-gray-700 mb-2"
                                 htmlFor="gender"
                             >
                                 Gender
@@ -307,7 +307,7 @@ const ProfileSection = ({
                                 id="gender"
                                 value={profileData.gender}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-600 transition cursor-pointer"
+                                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
                             >
                                 <option value="">Select Gender</option>
                                 <option value="male">Male</option>
@@ -317,7 +317,7 @@ const ProfileSection = ({
                         </div>
                         <div>
                             <label
-                                className="block text-gray-600 text-sm font-medium mb-2"
+                                className="block text-sm font-medium text-gray-700 mb-2"
                                 htmlFor="contactNumber"
                             >
                                 Contact Number
@@ -328,21 +328,21 @@ const ProfileSection = ({
                                 value={profileData.contactNumber}
                                 onChange={handleInputChange}
                                 placeholder="+09212754390"
-                                className={`w-full px-4 py-3 border ${
+                                className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                                     errors.contactNumber
-                                        ? "border-red-300"
+                                        ? "border-red-300 bg-red-50"
                                         : "border-gray-300"
-                                } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-600 transition`}
+                                }`}
                             />
                             {errors.contactNumber && (
-                                <p className="text-red-600 text-xs mt-1">
+                                <p className="mt-1 text-xs text-red-600">
                                     {errors.contactNumber}
                                 </p>
                             )}
                         </div>
                         <div className="md:col-span-2">
                             <label
-                                className="block text-gray-600 text-sm font-medium mb-2"
+                                className="block text-sm font-medium text-gray-700 mb-2"
                                 htmlFor="address"
                             >
                                 Address
@@ -352,16 +352,16 @@ const ProfileSection = ({
                                 rows="3"
                                 value={profileData.address}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-600 transition"
+                                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                 placeholder="Enter your full address"
                             ></textarea>
                         </div>
                     </div>
-                    <div className="mt-8 flex justify-end">
+                    <div className="mt-6 flex justify-end">
                         <button
                             type="submit"
                             disabled={saving}
-                            className={`bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition flex items-center cursor-pointer ${
+                            className={`px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center cursor-pointer ${
                                 saving ? "opacity-50 cursor-not-allowed" : ""
                             }`}
                         >
@@ -381,9 +381,10 @@ const ProfileSection = ({
                 </form>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition mt-6">
-                <div className="border-b border-gray-300 pb-4 mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800">
+            {/* Profile Picture Card */}
+            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
+                <div className="border-b border-gray-200 pb-4 mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">
                         Profile Picture
                     </h3>
                     <p className="text-gray-600 text-sm">
@@ -398,19 +399,19 @@ const ProfileSection = ({
                             <img
                                 src={user.profilePic}
                                 alt="Profile"
-                                className="w-24 h-24 rounded-full object-cover shadow-sm border-2 border-gray-200"
+                                className="w-20 h-20 rounded-xl object-cover shadow-sm border border-gray-200"
                                 onError={(e) => {
                                     // Fallback if Cloudinary URL fails
                                     e.target.style.display = "none";
                                 }}
                             />
                         ) : (
-                            <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center shadow-sm border-2 border-gray-200">
-                                <User size={32} className="text-gray-400" />
+                            <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center shadow-sm border border-gray-200">
+                                <User size={24} className="text-gray-400" />
                             </div>
                         )}
                         <button
-                            className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full shadow-md hover:bg-blue-700 transition cursor-pointer"
+                            className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-1.5 rounded-full shadow-md hover:bg-blue-700 transition cursor-pointer"
                             onClick={() =>
                                 document
                                     .getElementById("profile-pic-upload")
@@ -421,7 +422,7 @@ const ProfileSection = ({
                         </button>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3">
-                        <label className="cursor-pointer bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition flex items-center">
+                        <label className="cursor-pointer bg-white border border-gray-300 text-gray-600 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition flex items-center">
                             <input
                                 id="profile-pic-upload"
                                 type="file"
@@ -432,12 +433,12 @@ const ProfileSection = ({
                             />
                             {uploadingProfilePic ? (
                                 <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600 mr-2"></div>
                                     Uploading...
                                 </>
                             ) : (
                                 <>
-                                    <Upload size={16} className="mr-2" />
+                                    <Upload size={14} className="mr-2" />
                                     Upload New
                                 </>
                             )}
@@ -451,7 +452,7 @@ const ProfileSection = ({
                                     : ""
                             }`}
                         >
-                            <Trash2 size={16} className="mr-1" />
+                            <Trash2 size={14} className="mr-1" />
                             Remove
                         </button>
                     </div>

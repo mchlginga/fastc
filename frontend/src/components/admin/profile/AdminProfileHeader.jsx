@@ -44,6 +44,18 @@ function AdminProfileHeader({
 
     const profilePicUrl = user?.profilePic || null;
 
+    // Format date to "June 2, 2023" format
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    };
+
     const Info = ({ label, value, icon }) => (
         <div className="flex items-center space-x-3">
             {icon && <div className="text-gray-400">{icon}</div>}
@@ -151,13 +163,7 @@ function AdminProfileHeader({
                             />
                             <Info
                                 label="Joined"
-                                value={
-                                    user?.createdAt
-                                        ? new Date(
-                                              user.createdAt
-                                          ).toLocaleDateString()
-                                        : "N/A"
-                                }
+                                value={formatDate(user?.createdAt)}
                             />
                         </div>
                         <div className="flex space-x-3">

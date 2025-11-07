@@ -41,29 +41,27 @@ function AvailabilitySelector({ currentAvailability, onUpdate, loading }) {
 
     return (
         <div className="relative">
-            <p className="text-gray-500 text-sm mb-2">Availability</p>
-
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 disabled={loading}
-                className={`w-full flex items-center justify-between p-3 border border-gray-300 rounded-lg bg-white hover:border-blue-500 transition-colors text-left ${
+                className={`w-full flex items-center justify-between p-3 border border-gray-300 rounded-lg bg-white hover:border-gray-400 transition-colors text-left ${
                     loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                } ${isOpen ? "border-blue-500 ring-2 ring-blue-100" : ""}`}
+                } ${isOpen ? "border-blue-500 ring-1 ring-blue-500" : ""}`}
             >
-                <div>
-                    <p className="font-medium text-gray-800">
+                <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-800 text-sm truncate">
                         {currentOption.label}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-gray-500 truncate">
                         {currentOption.description}
                     </p>
                 </div>
                 {loading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 ml-2 shrink-0"></div>
                 ) : (
                     <ChevronDown
-                        size={16}
-                        className={`text-gray-400 transition-transform ${
+                        size={14}
+                        className={`text-gray-400 transition-transform ml-2 shrink-0 ${
                             isOpen ? "rotate-180" : ""
                         }`}
                     />
@@ -72,7 +70,7 @@ function AvailabilitySelector({ currentAvailability, onUpdate, loading }) {
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-200/50 ring-1 ring-black ring-opacity-5">
                     {options.map((option) => (
                         <button
                             key={option.value}
@@ -84,7 +82,7 @@ function AvailabilitySelector({ currentAvailability, onUpdate, loading }) {
                             }`}
                         >
                             <p
-                                className={`font-medium ${
+                                className={`font-medium text-sm ${
                                     option.value === currentAvailability
                                         ? "text-blue-600"
                                         : "text-gray-800"
@@ -92,7 +90,7 @@ function AvailabilitySelector({ currentAvailability, onUpdate, loading }) {
                             >
                                 {option.label}
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs text-gray-500 mt-0.5">
                                 {option.description}
                             </p>
                         </button>

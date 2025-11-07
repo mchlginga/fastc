@@ -2,20 +2,20 @@ function ProfileStatusBadge({ status }) {
     const getStatusConfig = (status) => {
         const configs = {
             approved: {
-                bg: "bg-green-100",
-                text: "text-green-800",
-                border: "border-green-200",
+                bg: "bg-emerald-50",
+                text: "text-emerald-700",
+                border: "border-emerald-200",
                 label: "Approved",
             },
             pending: {
-                bg: "bg-yellow-100",
-                text: "text-yellow-800",
-                border: "border-yellow-200",
+                bg: "bg-amber-50",
+                text: "text-amber-700",
+                border: "border-amber-200",
                 label: "Pending Review",
             },
             rejected: {
-                bg: "bg-red-100",
-                text: "text-red-800",
+                bg: "bg-red-50",
+                text: "text-red-700",
                 border: "border-red-200",
                 label: "Rejected",
             },
@@ -27,7 +27,7 @@ function ProfileStatusBadge({ status }) {
 
     return (
         <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border capitalize ${config.bg} ${config.text} ${config.border}`}
+            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${config.bg} ${config.text} ${config.border}`}
         >
             {config.label}
         </span>

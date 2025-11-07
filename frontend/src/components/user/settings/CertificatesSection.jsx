@@ -119,14 +119,14 @@ const CertificatesSection = ({
         return (
             <section>
                 <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800">
+                    <h3 className="text-lg font-semibold text-gray-900">
                         Certificates
                     </h3>
                     <p className="text-gray-600 text-sm">
                         Add your professional certifications and training
                     </p>
                 </div>
-                <div className="bg-white rounded-2xl shadow-md p-8 text-center">
+                <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-8 text-center">
                     <div className="bg-gray-100 rounded-full p-4 inline-flex mb-4">
                         <Award size={32} className="text-gray-400" />
                     </div>
@@ -145,7 +145,7 @@ const CertificatesSection = ({
     return (
         <section>
             <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-800">
+                <h3 className="text-lg font-semibold text-gray-900">
                     Certificates
                 </h3>
                 <p className="text-gray-600 text-sm">
@@ -153,14 +153,14 @@ const CertificatesSection = ({
                 </p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4">
                 {certificates.map((cert, index) => (
                     <div
                         key={cert.id}
-                        className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition"
+                        className="bg-white rounded-xl shadow-xs border border-gray-100 p-6 hover:border-gray-300 transition-colors"
                     >
                         <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-medium text-gray-800">
+                            <h4 className="font-medium text-gray-900">
                                 Certificate {index + 1}
                             </h4>
                             {certificates.length > 1 && (
@@ -168,15 +168,15 @@ const CertificatesSection = ({
                                     onClick={() =>
                                         handleRemoveCertificate(cert.id)
                                     }
-                                    className="text-red-600 hover:text-red-700 p-2 rounded-lg cursor-pointer"
+                                    className="text-red-600 hover:text-red-700 p-1.5 rounded-lg cursor-pointer hover:bg-red-50 transition-colors"
                                 >
                                     <X size={16} />
                                 </button>
                             )}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-gray-600 text-sm font-medium mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Certificate Name *
                                 </label>
                                 <input
@@ -189,13 +189,13 @@ const CertificatesSection = ({
                                             e.target.value
                                         )
                                     }
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-600 transition"
+                                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                     placeholder="Certificate name"
                                     required
                                 />
                             </div>
                             <div>
-                                <label className="block text-gray-600 text-sm font-medium mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Issuer/Organization *
                                 </label>
                                 <input
@@ -208,13 +208,13 @@ const CertificatesSection = ({
                                             e.target.value
                                         )
                                     }
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-600 transition"
+                                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                     placeholder="Issuing organization"
                                     required
                                 />
                             </div>
                             <div>
-                                <label className="block text-gray-600 text-sm font-medium mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Date Issued *
                                 </label>
                                 <input
@@ -227,12 +227,12 @@ const CertificatesSection = ({
                                             e.target.value
                                         )
                                     }
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-600 transition"
+                                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                     required
                                 />
                             </div>
                             <div>
-                                <label className="block text-gray-600 text-sm font-medium mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Expiration Date
                                 </label>
                                 <input
@@ -245,22 +245,22 @@ const CertificatesSection = ({
                                             e.target.value
                                         )
                                     }
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-600 transition"
+                                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                 />
                             </div>
                             <div className="md:col-span-2">
-                                <label className="block text-gray-600 text-sm font-medium mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Certificate File
                                 </label>
                                 <div className="space-y-2">
                                     {cert.existingProof && (
-                                        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                                             <div className="flex items-center">
                                                 <Award
-                                                    size={16}
-                                                    className="text-green-600 mr-2"
+                                                    size={14}
+                                                    className="text-emerald-600 mr-2"
                                                 />
-                                                <span className="text-sm text-green-800">
+                                                <span className="text-sm text-emerald-800">
                                                     Certificate file uploaded
                                                 </span>
                                             </div>
@@ -278,7 +278,7 @@ const CertificatesSection = ({
                                                     className="text-blue-600 hover:text-blue-800 p-1 cursor-pointer"
                                                     title="View certificate"
                                                 >
-                                                    <Eye size={16} />
+                                                    <Eye size={14} />
                                                 </button>
                                                 <button
                                                     onClick={() =>
@@ -289,14 +289,14 @@ const CertificatesSection = ({
                                                     className="text-red-600 hover:text-red-800 p-1 cursor-pointer"
                                                     title="Remove file"
                                                 >
-                                                    <X size={16} />
+                                                    <X size={14} />
                                                 </button>
                                             </div>
                                         </div>
                                     )}
                                     {!cert.existingProof && (
                                         <div className="flex items-center">
-                                            <label className="cursor-pointer bg-white border border-gray-300 text-gray-600 px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-100 transition flex-1 truncate">
+                                            <label className="cursor-pointer bg-white border border-gray-300 text-gray-600 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition flex-1 truncate">
                                                 <input
                                                     type="file"
                                                     className="hidden"
@@ -310,7 +310,7 @@ const CertificatesSection = ({
                                                 />
                                                 <div className="flex items-center">
                                                     <Upload
-                                                        size={16}
+                                                        size={14}
                                                         className="mr-2"
                                                     />
                                                     <span className="truncate">
@@ -327,9 +327,9 @@ const CertificatesSection = ({
                                                             cert.id
                                                         )
                                                     }
-                                                    className="ml-2 text-red-600 hover:text-red-700 p-2 rounded-lg cursor-pointer"
+                                                    className="ml-2 text-red-600 hover:text-red-700 p-1.5 rounded-lg cursor-pointer hover:bg-red-50 transition-colors"
                                                 >
-                                                    <X size={16} />
+                                                    <X size={14} />
                                                 </button>
                                             )}
                                         </div>
@@ -348,16 +348,16 @@ const CertificatesSection = ({
             <button
                 type="button"
                 onClick={handleAddCertificate}
-                className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:border-blue-400 hover:text-blue-600 transition duration-200 cursor-pointer mt-6"
+                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:border-blue-400 hover:text-blue-600 transition duration-200 cursor-pointer mt-4"
             >
                 + Add Another Certificate
             </button>
 
-            <div className="mt-8 flex justify-end">
+            <div className="mt-6 flex justify-end">
                 <button
                     onClick={handleSaveCertificates}
                     disabled={saving}
-                    className={`bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition flex items-center cursor-pointer ${
+                    className={`px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center cursor-pointer ${
                         saving ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                 >

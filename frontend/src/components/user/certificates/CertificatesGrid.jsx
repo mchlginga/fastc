@@ -1,20 +1,13 @@
 import { useState } from "react";
-import {
-    Calendar,
-    Download,
-    Clock,
-    Award,
-    ExternalLink,
-    Search,
-} from "react-feather";
+import { Award, Search } from "react-feather";
 import CertificateCard from "./CertificateCard";
-import EmptyState from "../courses/EmptyState";
 
 function CertificatesGrid({
     certificates,
-    searchQuery,
+    searchTerm,
     onDownloadCertificate,
     onViewCertificate,
+    loading = false,
 }) {
     const [downloadingId, setDownloadingId] = useState(null);
     const [viewingId, setViewingId] = useState(null);
@@ -52,7 +45,6 @@ function CertificatesGrid({
         try {
             setViewingId(certificateId);
 
-            // 🆕 FIXED: Get token from localStorage and pass it in URL
             const token = localStorage.getItem("token");
             if (!token) {
                 throw new Error(
@@ -60,7 +52,6 @@ function CertificatesGrid({
                 );
             }
 
-            // 🆕 FIXED: Use Vite environment variables with token parameter
             const backendUrl =
                 import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
             const viewUrl = `${backendUrl}/api/certificate/${certificateId}/view?token=${encodeURIComponent(
@@ -88,38 +79,96 @@ function CertificatesGrid({
         }
     };
 
+    if (loading) {
+        return (
+            <section>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, index) => (
+                        <div
+                            key={index}
+                            className="bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col"
+                        >
+                            {/* Header Skeleton */}
+                            <div className="bg-gray-300 p-6 rounded-t-2xl animate-pulse">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div className="h-6 bg-gray-400 rounded w-32 animate-pulse"></div>
+                                    <div className="h-6 bg-gray-400 rounded w-20 animate-pulse"></div>
+                                </div>
+                                <div className="h-4 bg-gray-400 rounded w-24 animate-pulse"></div>
+                            </div>
+
+                            {/* Body Skeleton */}
+                            <div className="p-6 flex-1 flex flex-col">
+                                <div className="mb-4">
+                                    <div className="h-5 bg-gray-300 rounded w-40 mb-2 animate-pulse"></div>
+                                    <div className="h-3 bg-gray-300 rounded w-full animate-pulse"></div>
+                                    <div className="h-3 bg-gray-300 rounded w-3/4 mt-1 animate-pulse"></div>
+                                </div>
+
+                                <div className="space-y-3 mb-4">
+                                    {[...Array(2)].map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className="flex items-center"
+                                        >
+                                            <div className="w-4 h-4 bg-gray-300 rounded mr-3 animate-pulse"></div>
+                                            <div className="space-y-1 flex-1">
+                                                <div className="h-3 bg-gray-300 rounded w-16 animate-pulse"></div>
+                                                <div className="h-4 bg-gray-300 rounded w-24 animate-pulse"></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                                    <div className="h-3 bg-gray-300 rounded w-20 mb-1 animate-pulse"></div>
+                                    <div className="h-4 bg-gray-300 rounded w-32 animate-pulse"></div>
+                                </div>
+
+                                <div className="flex space-x-2 mt-auto">
+                                    <div className="flex-1 h-10 bg-gray-300 rounded-lg animate-pulse"></div>
+                                    <div className="w-10 h-10 bg-gray-300 rounded-lg animate-pulse"></div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        );
+    }
+
     return (
         <section>
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-                <h3 className="text-xl font-semibold text-gray-800">
-                    Your Certificates
-                </h3>
-                <div className="flex items-center gap-4">
-                    {searchQuery && (
-                        <span className="text-gray-600 text-sm">
-                            {certificates.length} result
-                            {certificates.length !== 1 ? "s" : ""} found
-                        </span>
-                    )}
-                    <span className="text-gray-500 text-sm">
-                        {certificates.length} certificate
-                        {certificates.length !== 1 ? "s" : ""} earned
-                    </span>
+            {certificates.length === 0 ? (
+                <div className="text-center py-16">
+                    <div className="flex flex-col items-center justify-center">
+                        <Award size={48} className="text-gray-300 mb-4" />
+                        <p className="text-gray-500 font-medium mb-1">
+                            {searchTerm
+                                ? "No certificates found"
+                                : "No certificates yet"}
+                        </p>
+                        <p className="text-sm text-gray-400 max-w-sm">
+                            {searchTerm
+                                ? "Try adjusting your search criteria to find what you're looking for"
+                                : "Complete courses to earn certificates that showcase your skills"}
+                        </p>
+                    </div>
                 </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {certificates.map((certificate) => (
-                    <CertificateCard
-                        key={certificate.id}
-                        certificate={certificate}
-                        downloading={downloadingId === certificate.id}
-                        viewing={viewingId === certificate.id}
-                        onDownload={handleDownload}
-                        onView={handleView}
-                    />
-                ))}
-            </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {certificates.map((certificate) => (
+                        <CertificateCard
+                            key={certificate.id}
+                            certificate={certificate}
+                            downloading={downloadingId === certificate.id}
+                            viewing={viewingId === certificate.id}
+                            onDownload={handleDownload}
+                            onView={handleView}
+                        />
+                    ))}
+                </div>
+            )}
         </section>
     );
 }

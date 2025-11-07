@@ -3,7 +3,7 @@ import { Book } from "react-feather";
 
 const ProgressBar = ({ enrollment }) => (
     <div>
-        <div className="flex justify-between items-center mb-1">
+        <div className="flex justify-between items-center mb-2">
             <span className="text-gray-800 font-medium text-sm">
                 {enrollment.course?.title || "Untitled Course"}
             </span>
@@ -11,9 +11,9 @@ const ProgressBar = ({ enrollment }) => (
                 {enrollment.progress || 0}%
             </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{
                     width: `${enrollment.progress || 0}%`,
                 }}
@@ -28,9 +28,9 @@ function CourseProgress({ courses }) {
     );
 
     return (
-        <section className="mb-10">
-            <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
-                <div className="p-6 border-b border-gray-300 bg-gray-50">
+        <section className="mb-8">
+            <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-800">
                         Course Progress
                     </h3>
@@ -50,10 +50,12 @@ function CourseProgress({ courses }) {
                                 size={48}
                                 className="mx-auto text-gray-300 mb-3"
                             />
-                            <p className="text-sm">No active courses yet.</p>
+                            <p className="text-sm mb-2">
+                                No active courses yet.
+                            </p>
                             <Link
                                 to="/courses"
-                                className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 inline-block"
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center"
                             >
                                 Browse Courses
                             </Link>

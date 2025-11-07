@@ -50,7 +50,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileName }) => {
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-200">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex-shrink-0">{getFileIcon()}</div>
+                        <div className="shrink-0">{getFileIcon()}</div>
                         <div className="min-w-0 flex-1">
                             <h3 className="text-lg font-semibold text-gray-900 truncate">
                                 {fileName || "Document Preview"}
@@ -104,8 +104,11 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileName }) => {
                         ) : (
                             <div className="text-center p-8">
                                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-                                    {getFileIcon()}
-                                    <p className="text-gray-600 mt-4 mb-2">
+                                    {/* Centered Icon */}
+                                    <div className="flex justify-center mb-4">
+                                        {getFileIcon()}
+                                    </div>
+                                    <p className="text-gray-600 mb-2">
                                         Preview not available for this file type
                                     </p>
                                     <p className="text-sm text-gray-500 mb-4">
@@ -124,10 +127,10 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileName }) => {
                     ) : (
                         <div className="text-center p-8">
                             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-                                <File
-                                    size={48}
-                                    className="text-gray-400 mx-auto mb-4"
-                                />
+                                {/* Centered Icon */}
+                                <div className="flex justify-center mb-4">
+                                    <File size={48} className="text-gray-400" />
+                                </div>
                                 <p className="text-gray-600 mb-2">
                                     File not available
                                 </p>

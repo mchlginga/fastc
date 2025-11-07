@@ -1,21 +1,17 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Camera, User } from "react-feather";
-import { getProfilePicUrl } from "../../../utils/userUtils";
+import { Camera, User, Edit } from "react-feather";
 import AvailabilitySelector from "./AvailabilitySelector";
 import ProfileStatusBadge from "./ProfileStatusBadge";
+import ProfilePictureModal from "./ProfilePictureModal";
 
-function ProfileHeader({
-    user,
-    imageError,
-    uploading,
-    onProfilePicUpload,
-    onProfilePictureClick,
-    onImageError,
-    onAvailabilityUpdate,
-    updatingAvailability,
-}) {
+function ProfileHeader({ user, onProfilePicUpload, onAvailabilityUpdate }) {
     const fileInputRef = useRef(null);
+    const [uploading, setUploading] = useState(false);
+    const [imageError, setImageError] = useState(false);
+    const [updatingAvailability, setUpdatingAvailability] = useState(false);
+    const [showProfilePictureModal, setShowProfilePictureModal] =
+        useState(false);
 
     const handleFileSelect = (event) => {
         const file = event.target.files[0];
@@ -34,9 +30,9 @@ function ProfileHeader({
             return;
         }
 
-        onProfilePicUpload(file);
+        setUploading(true);
+        onProfilePicUpload(file).finally(() => setUploading(false));
 
-        // Reset file input
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -46,41 +42,110 @@ function ProfileHeader({
         fileInputRef.current?.click();
     };
 
+    const handleImageError = () => {
+        setImageError(true);
+    };
+
+    const handleProfilePictureClick = () => {
+        if (user?.profilePic && !imageError) {
+            setShowProfilePictureModal(true);
+        }
+    };
+
+    const handleAvailabilityUpdate = async (newAvailability) => {
+        setUpdatingAvailability(true);
+        try {
+            await onAvailabilityUpdate(newAvailability);
+        } finally {
+            setUpdatingAvailability(false);
+        }
+    };
+
     const profilePicUrl = user?.profilePic || null;
+
+    // Format date to "June 2, 2023" format
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    };
 
     const Info = ({ label, value }) => (
         <div>
             <p className="text-gray-500 text-sm">{label}</p>
-            <p className="text-gray-800 font-medium">{value}</p>
+            <p className="text-gray-800 font-medium">{value || "N/A"}</p>
         </div>
     );
 
+    const getRoleBadge = (role) => {
+        const roleConfigs = {
+            superAdmin: {
+                bg: "bg-purple-100",
+                text: "text-purple-800",
+                border: "border-purple-200",
+                label: "Super Administrator",
+            },
+            admin: {
+                bg: "bg-blue-100",
+                text: "text-blue-800",
+                border: "border-blue-200",
+                label: "Administrator",
+            },
+            company: {
+                bg: "bg-orange-100",
+                text: "text-orange-800",
+                border: "border-orange-200",
+                label: "Company",
+            },
+            user: {
+                bg: "bg-gray-100",
+                text: "text-gray-800",
+                border: "border-gray-200",
+                label: "Trainee",
+            },
+        };
+        const config = roleConfigs[role] || roleConfigs.user;
+
+        return (
+            <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${config.bg} ${config.text} ${config.border}`}
+            >
+                {config.label}
+            </span>
+        );
+    };
+
     return (
         <section className="mb-10">
-            <div className="bg-white rounded-2xl shadow-md p-8 hover:shadow-lg transition-all duration-300 border border-gray-100">
+            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
                 <div className="md:flex items-center gap-10">
                     <div className="md:w-1/3 flex flex-col items-center mb-6 md:mb-0">
                         <div className="relative">
                             <div
-                                className={`w-36 h-36 rounded-full shadow-md ring-4 ring-gray-200 transition overflow-hidden bg-gray-100 flex items-center justify-center ${
+                                className={`w-32 h-32 rounded-full shadow-sm ring-2 ring-gray-200 transition overflow-hidden bg-gray-100 flex items-center justify-center ${
                                     profilePicUrl
                                         ? "hover:scale-105 hover:ring-blue-400 cursor-pointer"
                                         : ""
                                 }`}
-                                onClick={onProfilePictureClick}
+                                onClick={handleProfilePictureClick}
                             >
-                                {profilePicUrl ? (
+                                {profilePicUrl && !imageError ? (
                                     <img
                                         src={profilePicUrl}
                                         alt="Profile"
                                         className="w-full h-full object-cover"
-                                        onError={onImageError}
+                                        onError={handleImageError}
                                         loading="lazy"
                                     />
                                 ) : (
                                     <div className="flex items-center justify-center w-full h-full">
                                         <User
-                                            size={48}
+                                            size={40}
                                             className="text-gray-400"
                                         />
                                     </div>
@@ -89,7 +154,7 @@ function ProfileHeader({
                             <button
                                 onClick={triggerFileInput}
                                 disabled={uploading}
-                                className="absolute bottom-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="absolute bottom-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                 title="Change profile picture"
                             >
                                 {uploading ? (
@@ -107,12 +172,10 @@ function ProfileHeader({
                                 disabled={uploading}
                             />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-800 mt-4">
+                        <h2 className="text-xl font-semibold text-gray-800 mt-4">
                             {user?.firstName || "User"} {user?.surname || ""}
                         </h2>
-                        <p className="text-sm text-gray-600 mt-1 capitalize">
-                            {user?.role || "User"}
-                        </p>
+                        <div className="mt-2">{getRoleBadge(user?.role)}</div>
 
                         {/* Skills Display */}
                         {user?.skills && user.skills.length > 0 && (
@@ -134,36 +197,31 @@ function ProfileHeader({
                         )}
                     </div>
 
-                    <div className="md:w-2/3 border-t md:border-t-0 md:border-l border-gray-300 md:pl-10 pt-6 md:pt-0">
+                    <div className="md:w-2/3 border-t md:border-t-0 md:border-l border-gray-200 md:pl-10 pt-6 md:pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <Info label="Email" value={user?.email || "N/A"} />
-                            <Info
-                                label="Phone"
-                                value={user?.contactNumber || "N/A"}
-                            />
-                            <Info
-                                label="Location"
-                                value={user?.address || "N/A"}
-                            />
+                            <Info label="Email" value={user?.email} />
+                            <Info label="Phone" value={user?.contactNumber} />
+                            <Info label="Location" value={user?.address} />
                             <Info
                                 label="Joined"
-                                value={
-                                    user?.createdAt
-                                        ? new Date(
-                                              user.createdAt
-                                          ).toLocaleDateString()
-                                        : "N/A"
-                                }
+                                value={formatDate(user?.createdAt)}
                             />
 
-                            <AvailabilitySelector
-                                currentAvailability={
-                                    user?.availability || "N/A"
-                                }
-                                onUpdate={onAvailabilityUpdate}
-                                loading={updatingAvailability}
-                            />
+                            {/* Availability Selector */}
+                            <div>
+                                <p className="text-gray-500 text-sm mb-2">
+                                    Availability
+                                </p>
+                                <AvailabilitySelector
+                                    currentAvailability={
+                                        user?.availability || "N/A"
+                                    }
+                                    onUpdate={handleAvailabilityUpdate}
+                                    loading={updatingAvailability}
+                                />
+                            </div>
 
+                            {/* Profile Status */}
                             <Info
                                 label="Profile Status"
                                 value={
@@ -175,13 +233,21 @@ function ProfileHeader({
                         </div>
                         <Link
                             to="/user/settings"
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors inline-flex items-center"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors inline-flex items-center shadow-xs"
                         >
-                            Edit Profile
+                            Settings
                         </Link>
                     </div>
                 </div>
             </div>
+
+            {/* Add the Profile Picture Modal */}
+            <ProfilePictureModal
+                isOpen={showProfilePictureModal}
+                onClose={() => setShowProfilePictureModal(false)}
+                profilePicUrl={user?.profilePic}
+                imageError={imageError}
+            />
         </section>
     );
 }

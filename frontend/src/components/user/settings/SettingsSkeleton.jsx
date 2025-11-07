@@ -1,6 +1,6 @@
 const SettingsSkeleton = () => {
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header Skeleton */}
                 <div className="mb-8">
@@ -13,8 +13,8 @@ const SettingsSkeleton = () => {
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Navigation Skeleton */}
-                    <div className="lg:w-64 flex-shrink-0">
-                        <div className="bg-white rounded-2xl shadow-md p-4">
+                    <div className="lg:w-64 shrink-0">
+                        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-4">
                             {[1, 2, 3, 4].map((item) => (
                                 <div key={item} className="mb-2 last:mb-0">
                                     <div className="w-full h-12 bg-gray-200 rounded-lg animate-pulse"></div>
@@ -25,8 +25,8 @@ const SettingsSkeleton = () => {
 
                     {/* Content Skeleton */}
                     <div className="flex-1">
-                        <div className="bg-white rounded-2xl shadow-md p-6">
-                            <div className="border-b border-gray-300 pb-4 mb-6">
+                        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
+                            <div className="border-b border-gray-200 pb-4 mb-6">
                                 <div className="h-6 bg-gray-300 rounded w-48 mb-2 animate-pulse"></div>
                                 <div className="h-4 bg-gray-300 rounded w-64 animate-pulse"></div>
                             </div>
@@ -42,7 +42,7 @@ const SettingsSkeleton = () => {
                             </div>
 
                             {/* Button skeleton */}
-                            <div className="mt-8 flex justify-end">
+                            <div className="mt-6 flex justify-end">
                                 <div className="h-12 bg-gray-300 rounded-lg w-40 animate-pulse"></div>
                             </div>
                         </div>

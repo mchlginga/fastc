@@ -143,7 +143,6 @@ function UserSettings() {
         );
     };
 
-    // FIXED: Enhanced file URL generation for different file types
     const getFileUrl = (filePath, fileType = "education") => {
         if (!filePath) {
             console.log(`❌ No file path provided for ${fileType}`);
@@ -262,7 +261,7 @@ function UserSettings() {
     const filteredData = getFilteredData();
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Profile Status Alert */}
                 {user?.profileStatus === "pending" && (
@@ -274,7 +273,7 @@ function UserSettings() {
                     </div>
                 )}
 
-                {/* Header with Search Bar - Always visible like in Certificates */}
+                {/* Header with Search Bar */}
                 <SettingsHeader
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
@@ -282,7 +281,7 @@ function UserSettings() {
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Navigation */}
-                    <div className="lg:w-64 flex-shrink-0">
+                    <div className="lg:w-64 shrink-0">
                         <SettingsNavigation
                             activeSection={activeSection}
                             onSectionChange={setActiveSection}
