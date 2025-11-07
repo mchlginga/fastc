@@ -13,6 +13,28 @@ const CertificatesSection = ({
 }) => {
     const [saving, setSaving] = useState(false);
 
+    // Format date for display
+    const formatDisplayDate = (dateString) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    };
+
+    // Format date for input (YYYY-MM-DD)
+    const formatInputDate = (dateString) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return "";
+
+        return date.toISOString().split("T")[0];
+    };
+
     const handleCertificateChange = (id, field, value) => {
         onCertificatesChange((prev) =>
             prev.map((cert) =>
@@ -219,7 +241,7 @@ const CertificatesSection = ({
                                 </label>
                                 <input
                                     type="date"
-                                    value={cert.date}
+                                    value={formatInputDate(cert.date)}
                                     onChange={(e) =>
                                         handleCertificateChange(
                                             cert.id,
@@ -230,6 +252,11 @@ const CertificatesSection = ({
                                     className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                     required
                                 />
+                                {cert.date && (
+                                    <p className="text-gray-500 text-xs mt-1">
+                                        {formatDisplayDate(cert.date)}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -237,7 +264,7 @@ const CertificatesSection = ({
                                 </label>
                                 <input
                                     type="date"
-                                    value={cert.expiration}
+                                    value={formatInputDate(cert.expiration)}
                                     onChange={(e) =>
                                         handleCertificateChange(
                                             cert.id,
@@ -247,6 +274,11 @@ const CertificatesSection = ({
                                     }
                                     className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                 />
+                                {cert.expiration && (
+                                    <p className="text-gray-500 text-xs mt-1">
+                                        {formatDisplayDate(cert.expiration)}
+                                    </p>
+                                )}
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">

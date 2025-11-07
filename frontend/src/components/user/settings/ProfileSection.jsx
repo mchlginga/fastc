@@ -25,6 +25,28 @@ const ProfileSection = ({
         useState(false);
     const [removingProfilePic, setRemovingProfilePic] = useState(false);
 
+    // Format date for display
+    const formatDisplayDate = (dateString) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    };
+
+    // Format date for input (YYYY-MM-DD)
+    const formatInputDate = (dateString) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return "";
+
+        return date.toISOString().split("T")[0];
+    };
+
     const handleInputChange = (e) => {
         const { id, value } = e.target;
         onProfileDataChange((prev) => ({ ...prev, [id]: value }));
@@ -291,10 +313,15 @@ const ProfileSection = ({
                             <input
                                 id="birthdate"
                                 type="date"
-                                value={profileData.birthdate}
+                                value={formatInputDate(profileData.birthdate)}
                                 onChange={handleInputChange}
                                 className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                             />
+                            {profileData.birthdate && (
+                                <p className="text-gray-500 text-xs mt-1">
+                                    {formatDisplayDate(profileData.birthdate)}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label

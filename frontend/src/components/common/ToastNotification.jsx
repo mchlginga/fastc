@@ -1,5 +1,11 @@
 import { useEffect } from "react";
-import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "react-feather";
+import {
+    X,
+    CheckCircle,
+    AlertCircle,
+    AlertTriangle,
+    Info,
+} from "react-feather";
 
 const ToastNotification = ({ message, type = "success", onClose }) => {
     useEffect(() => {
@@ -16,35 +22,30 @@ const ToastNotification = ({ message, type = "success", onClose }) => {
                     bg: "bg-emerald-50",
                     border: "border-emerald-200",
                     text: "text-emerald-800",
-                    icon: <CheckCircle size={20} className="text-emerald-600" />
                 };
             case "error":
                 return {
                     bg: "bg-red-50",
                     border: "border-red-200",
                     text: "text-red-800",
-                    icon: <AlertCircle size={20} className="text-red-600" />
                 };
             case "warning":
                 return {
                     bg: "bg-amber-50",
                     border: "border-amber-200",
                     text: "text-amber-800",
-                    icon: <AlertTriangle size={20} className="text-amber-600" />
                 };
             case "info":
                 return {
                     bg: "bg-blue-50",
                     border: "border-blue-200",
                     text: "text-blue-800",
-                    icon: <Info size={20} className="text-blue-600" />
                 };
             default:
                 return {
                     bg: "bg-blue-50",
                     border: "border-blue-200",
                     text: "text-blue-800",
-                    icon: <Info size={20} className="text-blue-600" />
                 };
         }
     };
@@ -56,9 +57,7 @@ const ToastNotification = ({ message, type = "success", onClose }) => {
             <div
                 className={`flex items-center gap-3 p-4 rounded-xl border shadow-lg ${styles.bg} ${styles.border} ${styles.text}`}
             >
-                <div className="flex-shrink-0">
-                    {styles.icon}
-                </div>
+                <div className="shrink-0">{styles.icon}</div>
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium leading-relaxed">
                         {message}
@@ -66,7 +65,7 @@ const ToastNotification = ({ message, type = "success", onClose }) => {
                 </div>
                 <button
                     onClick={onClose}
-                    className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer"
+                    className="shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer"
                 >
                     <X size={16} />
                 </button>

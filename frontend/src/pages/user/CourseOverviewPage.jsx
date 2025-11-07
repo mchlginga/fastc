@@ -112,10 +112,7 @@ function CourseOverviewPage() {
         }
 
         if (user.profileStatus === "pending") {
-            showToast(
-                "Your profile is under review. You cannot enroll in courses until approved.",
-                "warning"
-            );
+            showToast("Profile under review - enrollment disabled", "warning");
             return;
         }
 
@@ -124,10 +121,7 @@ function CourseOverviewPage() {
             await enrollInCourse(courseId);
             setEnrollmentSuccess(true);
 
-            showToast(
-                `Enrollment request submitted for "${course?.title}"! Waiting for admin approval.`,
-                "success"
-            );
+            showToast("Enrollment request submitted!", "success");
 
             // Refresh enrollments to show pending status
             const enrollmentsResponse = await getUserEnrollments();

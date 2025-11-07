@@ -44,7 +44,7 @@ const CertificateCelebrationModal = ({
             <div className="bg-white rounded-2xl shadow-xl max-w-md w-full transform transition-all duration-300 scale-100">
                 <div className="p-8 text-center">
                     {/* Celebration Animation */}
-                    <div className="w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+                    <div className="w-20 h-20 bg-linear-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
                         <Award size={32} className="text-white" />
                     </div>
 
@@ -974,7 +974,7 @@ function Lesson() {
                                                     }`}
                                                 >
                                                     <div
-                                                        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                                                        className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs ${
                                                             status ===
                                                             "completed"
                                                                 ? "bg-green-100 text-green-600"

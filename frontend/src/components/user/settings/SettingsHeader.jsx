@@ -6,7 +6,6 @@ const SettingsHeader = ({ searchQuery, onSearchChange }) => {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-blue-50 rounded-lg"></div>
                         <div>
                             <h1 className="text-2xl font-semibold text-gray-900">
                                 Account Settings

@@ -196,10 +196,7 @@ function UserCourses() {
                 [courseId]: "success",
             }));
 
-            showToast(
-                `Enrollment request submitted for "${courseTitle}"! Waiting for admin approval.`,
-                "success"
-            );
+            showToast(`Enrollment request submitted!`, "success");
 
             setTimeout(() => {
                 setEnrollmentStatus((prev) => ({
