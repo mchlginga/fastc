@@ -11,7 +11,7 @@ function CertificateCard({
     downloading,
     viewing,
     onDownload,
-    onView,
+    viewUrl,
 }) {
     const getStatusBadge = (status) => {
         const statusConfig = {
@@ -64,12 +64,6 @@ function CertificateCard({
 
     const daysUntilExpiry = getDaysUntilExpiry(certificate.expirationDate);
     const isExpiringSoon = daysUntilExpiry > 0 && daysUntilExpiry <= 30;
-
-    const handleViewClick = () => {
-        if (certificate.status === "active" && !viewing) {
-            onView(certificate.id, certificate.title);
-        }
-    };
 
     return (
         <div className="bg-white rounded-xl shadow-xs border border-gray-100 hover:shadow-sm transition-all duration-200 flex flex-col group">
@@ -181,22 +175,26 @@ function CertificateCard({
                         )}
                     </button>
 
-                    <button
-                        onClick={handleViewClick}
-                        disabled={certificate.status !== "active" || viewing}
-                        className={`min-h-11 px-4 rounded-lg text-sm font-medium transition flex items-center justify-center border ${
-                            certificate.status === "active" && !viewing
-                                ? "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white cursor-pointer"
-                                : "border-gray-300 text-gray-400 cursor-not-allowed"
-                        }`}
-                        title="View Certificate"
-                    >
-                        {viewing ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        ) : (
+                    {/* 🆕 UPDATED: Use direct link instead of button */}
+                    {viewUrl && certificate.status === "active" ? (
+                        <a
+                            href={viewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`min-h-11 px-4 rounded-lg text-sm font-medium transition flex items-center justify-center border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white cursor-pointer`}
+                            title="View Certificate"
+                        >
                             <ExternalLink size={16} />
-                        )}
-                    </button>
+                        </a>
+                    ) : (
+                        <button
+                            disabled
+                            className="min-h-11 px-4 rounded-lg text-sm font-medium border border-gray-300 text-gray-400 cursor-not-allowed flex items-center justify-center"
+                            title="View Certificate"
+                        >
+                            <ExternalLink size={16} />
+                        </button>
+                    )}
                 </div>
 
                 {/* Expiring Soon Warning */}

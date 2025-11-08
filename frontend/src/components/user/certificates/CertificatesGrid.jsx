@@ -42,42 +42,18 @@ function CertificatesGrid({
         }
     };
 
-    const handleView = async (certificateId, title) => {
-        try {
-            setViewingId(certificateId);
-
-            const token = localStorage.getItem("token");
-            if (!token) {
-                throw new Error(
-                    "Authentication token not found. Please log in again."
-                );
-            }
-
-            const backendUrl =
-                import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-            const viewUrl = `${backendUrl}/api/certificate/${certificateId}/view?token=${encodeURIComponent(
-                token
-            )}`;
-
-            console.log(`🔗 Opening certificate URL: ${viewUrl}`);
-
-            // Open in new tab
-            const newWindow = window.open(
-                viewUrl,
-                "_blank",
-                "noopener,noreferrer"
-            );
-
-            if (!newWindow) {
-                throw new Error(
-                    "Popup blocked. Please allow popups for this site."
-                );
-            }
-        } catch (err) {
-            console.error(`View error: ${err.message}`);
-            alert(`Failed to view certificate: ${err.message}`);
-            setViewingId(null);
+    const getCertificateViewUrl = (certificateId) => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            console.error("Authentication token not found");
+            return null;
         }
+
+        const backendUrl =
+            import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+        return `${backendUrl}/api/certificate/${certificateId}/view?token=${encodeURIComponent(
+            token
+        )}`;
     };
 
     if (loading) {
@@ -166,7 +142,7 @@ function CertificatesGrid({
                             downloading={downloadingId === certificate.id}
                             viewing={viewingId === certificate.id}
                             onDownload={handleDownload}
-                            onView={handleView}
+                            viewUrl={getCertificateViewUrl(certificate.id)}
                         />
                     ))}
                 </div>
