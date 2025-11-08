@@ -1,6 +1,5 @@
 export { default as CoursesHeader } from "./CoursesHeader";
 export { default as StatusTabs } from "./StatusTabs";
-export { default as ProfileAlert } from "./ProfileAlert";
 export { default as AvailableCoursesSection } from "./AvailableCoursesSection";
 export { default as ActiveCoursesSection } from "./ActiveCoursesSection";
 export { default as PendingCoursesSection } from "./PendingCoursesSection";

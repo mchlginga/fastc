@@ -11,15 +11,12 @@ import {
     PasswordChangeModal,
     DeleteAccountModal,
 } from "../../components/user/settings";
-import { ToastNotification, FileViewerModal } from "../../components/common";
+
 import {
-    updateUserProfile,
-    uploadProfilePic,
-    removeProfilePic,
-    updateEducation,
-    updateCertificates,
-    changePassword,
-} from "../../services/userService";
+    ToastNotification,
+    FileViewerModal,
+    ProfileAlerts,
+} from "../../components/common";
 
 function UserSettings() {
     const { user, setUser } = useAuth();
@@ -263,15 +260,8 @@ function UserSettings() {
     return (
         <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Profile Status Alert */}
-                {user?.profileStatus === "pending" && (
-                    <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
-                        <p className="text-sm">
-                            Your profile is under review. You cannot enroll in
-                            courses until approved.
-                        </p>
-                    </div>
-                )}
+                {/* Profile Status Alerts */}
+                <ProfileAlerts user={user} />
 
                 {/* Header with Search Bar */}
                 <SettingsHeader

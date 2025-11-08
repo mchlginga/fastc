@@ -1,10 +1,21 @@
 import { Link } from "react-router-dom";
 
-function EmptyState({ icon, title, message, subMessage, action }) {
+function EmptyState({
+    icon,
+    title,
+    message,
+    subMessage,
+    action,
+    className = "",
+}) {
     return (
-        <div className="bg-white rounded-2xl shadow-md p-8 text-center border border-gray-100">
-            <div className="mx-auto mb-4 flex justify-center">{icon}</div>
-            <h4 className="text-lg font-semibold text-gray-800 mb-2">
+        <div
+            className={`bg-white rounded-xl shadow-xs border border-gray-100 p-6 text-center ${className}`}
+        >
+            <div className="mx-auto mb-3 flex justify-center text-gray-300">
+                {icon}
+            </div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-2">
                 {title}
             </h4>
             <p className="text-gray-600 text-sm mb-2">{message}</p>
@@ -14,7 +25,7 @@ function EmptyState({ icon, title, message, subMessage, action }) {
             {action && (
                 <Link
                     to={action.path}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition inline-block"
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                     {action.label}
                 </Link>

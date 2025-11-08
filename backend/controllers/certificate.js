@@ -83,13 +83,19 @@ const generateCertificatePDF = (
             .lineWidth(1)
             .strokeColor("#93C5FD")
             .stroke();
+        doc.image("./assets/logo.png", 50, 50, {
+            width: 70,
+        });
+        doc.image("./assets/peso.png", doc.page.width - 120, 50, {
+            width: 70,
+        });
         doc.fontSize(120)
             .fillColor("#F3F4F6")
             .opacity(0.25)
             .rotate(-30, { origin: [400, 300] })
             .text("FAST-C", 100, 250, { align: "center", width: 600 });
         doc.rotate(30, { origin: [400, 300] }).opacity(1);
-        doc.font("Times-Bold").fontSize(24).fillColor("#1E3A8A");
+        doc.font("Times-Bold").fontSize(18).fillColor("#1E3A8A");
         centerText("FERNANDINO ASSESSMENT AND SKILLS TRAINING CENTER", 80);
         doc.font("Times-Roman").fontSize(18).fillColor("#374151");
         centerText("Certificate of Completion", 120);

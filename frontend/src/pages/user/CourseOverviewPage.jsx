@@ -6,24 +6,20 @@ import {
     enrollInCourse,
     getUserEnrollments,
 } from "../../services/enrollmentService";
-import {
-    Clock,
-    Users,
-    Calendar,
-    ArrowLeft,
-    Book,
-    CheckCircle,
-    Award,
-    BarChart2,
-} from "react-feather";
+import { CheckCircle, BarChart2 } from "react-feather";
+
 import {
     getEnrollmentDeadline,
     getCourseAccessType,
 } from "../../utils/courseUtils";
-import LoadingState from "../../components/common/LoadingState";
-import ErrorState from "../../components/common/ErrorState";
+
+import {
+    ErrorState,
+    ToastNotification,
+    ProfileAlerts,
+} from "../../components/common";
+
 import CourseOverviewSkeleton from "../../components/user/courses/CourseOverviewSkeleton";
-import ToastNotification from "../../components/common/ToastNotification";
 
 function CourseOverviewPage() {
     const { courseId } = useParams();
@@ -177,7 +173,10 @@ function CourseOverviewPage() {
 
     return (
         <div className="min-h-screen bg-gray-50/60 py-6">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Profile Alert */}
+                <ProfileAlerts user={user} />
+
                 {/* Toast Notification */}
                 {toast.show && (
                     <ToastNotification

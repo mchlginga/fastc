@@ -13,17 +13,19 @@ import { getUserCertificates } from "../../services/certificateService";
 import {
     CoursesHeader,
     StatusTabs,
-    ProfileAlert,
     AvailableCoursesSection,
     ActiveCoursesSection,
     PendingCoursesSection,
     CompletedCoursesSection,
 } from "../../components/user/courses";
 
-import LoadingState from "../../components/common/LoadingState";
-import ErrorState from "../../components/common/ErrorState";
-import ToastNotification from "../../components/common/ToastNotification";
-import ConfirmationModal from "../../components/common/ConfirmationModal";
+import {
+    LoadingState,
+    ErrorState,
+    ProfileAlerts,
+    ToastNotification,
+    ConfirmationModal,
+} from "../../components/common";
 
 // Debounce hook
 const useDebounce = (value, delay) => {
@@ -351,8 +353,8 @@ function UserCourses() {
                     isLoading={confirmationModal.isLoading}
                 />
 
-                {/* Profile Alert */}
-                <ProfileAlert user={user} />
+                {/* Profile Status Alerts */}
+                <ProfileAlerts user={user} />
 
                 {/* Header Section */}
                 <CoursesHeader

@@ -6,14 +6,16 @@ import { getUserCertificates } from "../../services/certificateService";
 // Components
 import {
     DashboardHeader,
-    ProfileAlerts,
     StatsGrid,
     ProgressOverview,
     ActiveCoursesSection,
 } from "../../components/user/dashboard";
 
-import LoadingState from "../../components/common/LoadingState";
-import ErrorState from "../../components/common/ErrorState";
+import {
+    LoadingState,
+    ErrorState,
+    ProfileAlerts,
+} from "../../components/common";
 
 function UserDashboard() {
     const { user } = useAuth();

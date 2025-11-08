@@ -21,6 +21,7 @@ import {
     LoadingState,
     ErrorState,
     ToastNotification,
+    ProfileAlerts,
 } from "../../components/common";
 
 // Skeleton Component
@@ -164,14 +165,7 @@ function UserCertificates() {
         <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Profile Alert */}
-                {user?.profileStatus === "pending" && (
-                    <div className="bg-yellow-50 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-lg mb-6 shadow-sm">
-                        <p className="text-sm">
-                            Your profile is under review. You cannot enroll in
-                            courses until approved.
-                        </p>
-                    </div>
-                )}
+                <ProfileAlerts user={user} />
 
                 {/* Header */}
                 <div className="mb-8">
@@ -221,13 +215,6 @@ function UserCertificates() {
                         />
                     </div>
                 </div>
-
-                {/* Empty State */}
-                {certificates.length === 0 && !loading && (
-                    <div className="mt-6">
-                        <CertificatesEmptyState />
-                    </div>
-                )}
 
                 {/* Information Banner */}
                 {certificates.length > 0 && (
