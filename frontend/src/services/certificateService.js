@@ -62,7 +62,6 @@ export const getUserCertificates = async () => {
     }
 };
 
-// 🆕 UPDATED: Main download function with better error handling
 export const downloadCertificate = async (
     certificateId,
     title = "Certificate"
@@ -136,7 +135,6 @@ export const downloadCertificate = async (
     }
 };
 
-// 🆕 UPDATED: Enhanced download handler with fallback
 export const downloadCertificateEnhanced = async (
     certificateId,
     title = "Certificate"
@@ -161,7 +159,6 @@ export const downloadCertificateEnhanced = async (
     }
 };
 
-// 🆕 UPDATED: Direct download function
 export const downloadCertificateDirect = async (
     certificateId,
     title = "Certificate"
@@ -208,7 +205,6 @@ export const viewCertificate = async (certificateId) => {
     }
 };
 
-// 🆕 ADD: Get certificate URL for preview
 export const getCertificateUrl = async (certificateId) => {
     try {
         const response = await api.get(`/certificate/${certificateId}/url`);

@@ -8,7 +8,6 @@ const AddCourseModal = ({ isOpen, onClose, onCourseAdded }) => {
         description: "",
         category: "",
         skillLevel: "beginner",
-        duration: "",
         isActive: true,
         tags: [],
         lessons: [],
@@ -17,7 +16,6 @@ const AddCourseModal = ({ isOpen, onClose, onCourseAdded }) => {
         enrollmentPeriod: 0,
         endDate: "",
         image: null,
-        primarySkill: "",
         skillsTaught: [],
     });
     const [loading, setLoading] = useState(false);
@@ -83,7 +81,6 @@ const AddCourseModal = ({ isOpen, onClose, onCourseAdded }) => {
             description: "",
             category: "",
             skillLevel: "beginner",
-            duration: "",
             isActive: true,
             tags: [],
             lessons: [],
@@ -92,7 +89,6 @@ const AddCourseModal = ({ isOpen, onClose, onCourseAdded }) => {
             enrollmentPeriod: 0,
             endDate: "",
             image: null,
-            primarySkill: "",
             skillsTaught: [],
         });
         setErrors({});
@@ -325,10 +321,6 @@ const AddCourseModal = ({ isOpen, onClose, onCourseAdded }) => {
             newErrors.category = "Category is required";
         }
 
-        if (!formData.duration?.trim()) {
-            newErrors.duration = "Duration is required";
-        }
-
         if (formData.enrollmentPeriod < 0) {
             newErrors.enrollmentPeriod = "Enrollment period cannot be negative";
         }
@@ -383,10 +375,8 @@ const AddCourseModal = ({ isOpen, onClose, onCourseAdded }) => {
                 }
             });
 
-            // 🆕 ADD: Debug log to see what's being sent
             console.log("📤 Submitting course data:", {
                 title: formData.title,
-                primarySkill: formData.primarySkill,
                 skillsTaught: formData.skillsTaught,
             });
 
@@ -676,77 +666,21 @@ const AddCourseModal = ({ isOpen, onClose, onCourseAdded }) => {
                                     <option value="advanced">Advanced</option>
                                 </select>
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Duration *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="duration"
-                                    value={formData.duration}
-                                    onChange={handleChange}
-                                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
-                                        errors.duration
-                                            ? "border-red-300 bg-red-50"
-                                            : "border-gray-300"
-                                    }`}
-                                    placeholder="e.g., 6 weeks, Self-paced"
-                                    disabled={loading}
-                                />
-                                {errors.duration && (
-                                    <p className="mt-2 text-sm text-red-600 animate-fadeIn">
-                                        {errors.duration}
-                                    </p>
-                                )}
-                            </div>
                         </div>
 
                         {/* Skills Section */}
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-medium text-gray-900">
-                                    Skills
+                                    Skills Taught
                                 </h3>
                                 <Award size={20} className="text-purple-600" />
-                            </div>
-
-                            {/* Primary Skill */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Primary Skill
-                                </label>
-                                <select
-                                    name="primarySkill"
-                                    value={formData.primarySkill}
-                                    onChange={handleChange}
-                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
-                                    disabled={loading || skillsLoading}
-                                >
-                                    <option value="">
-                                        Select Primary Skill
-                                    </option>
-                                    {availableSkills.map((skill) => (
-                                        <option
-                                            key={skill._id}
-                                            value={skill._id}
-                                        >
-                                            {skill.name}{" "}
-                                            {skill.category
-                                                ? `(${skill.category})`
-                                                : ""}
-                                        </option>
-                                    ))}
-                                </select>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    The main skill this course focuses on
-                                </p>
                             </div>
 
                             {/* Skills Taught */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Skills Taught in this Course
+                                    Add Skills Taught in this Course
                                 </label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                                     <div>
@@ -804,9 +738,6 @@ const AddCourseModal = ({ isOpen, onClose, onCourseAdded }) => {
                                             <option value="advanced">
                                                 Advanced
                                             </option>
-                                            <option value="expert">
-                                                Expert
-                                            </option>
                                         </select>
                                     </div>
                                 </div>
@@ -824,7 +755,7 @@ const AddCourseModal = ({ isOpen, onClose, onCourseAdded }) => {
                                 {formData.skillsTaught.length > 0 && (
                                     <div className="space-y-2">
                                         <h4 className="text-sm font-medium text-gray-700">
-                                            Added Skills:
+                                            Skills Taught in this Course:
                                         </h4>
                                         {formData.skillsTaught.map(
                                             (skillTaught, index) => {

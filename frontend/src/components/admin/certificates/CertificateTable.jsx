@@ -12,6 +12,7 @@ const CertificateTable = ({
     onRegenerateCertificate,
     onDeleteCertificate,
     onDownloadCertificate,
+    onActivate,
     statusFilter,
     setStatusFilter,
     stats,
@@ -133,6 +134,9 @@ const CertificateTable = ({
                                     }
                                     onDownload={() =>
                                         onDownloadCertificate(certificate._id)
+                                    }
+                                    onActivate={() =>
+                                        onActivate(certificate._id)
                                     }
                                     rowIndex={index}
                                 />

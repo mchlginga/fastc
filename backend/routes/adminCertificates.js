@@ -36,9 +36,12 @@ router.get("/certificates/:id/download", downloadCertificate);
 // Verify certificate (admin version)
 router.get("/certificates/verify", verifyCertificate);
 
+// Create certificate
 router.post("/certificates", createCertificate);
 
 router.post("/certificates/bulk/regenerate", bulkRegenerateCertificates);
+router.patch("/certificates/bulk/expire", bulkExpireCertificates);
+router.patch("/certificates/bulk/status", bulkUpdateCertificateStatus);
 
 // Update certificate status
 router.patch("/certificates/:id/status", updateCertificateStatus);
@@ -46,13 +49,8 @@ router.patch("/certificates/:id/status", updateCertificateStatus);
 // Revoke certificate
 router.patch("/certificates/:id/revoke", revokeCertificate);
 
-router.patch("/certificates/bulk/expire", bulkExpireCertificates);
-
 // Regenerate certificate
 router.post("/certificates/:id/regenerate", regenerateCertificate);
-
-// Bulk update certificate status
-router.patch("/certificates/bulk/status", bulkUpdateCertificateStatus);
 
 // Delete certificate
 router.delete("/certificates/:id", deleteCertificate);

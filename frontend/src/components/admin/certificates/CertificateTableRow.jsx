@@ -23,9 +23,11 @@ const CertificateTableRow = ({
     onRegenerate,
     onDelete,
     onDownload,
+    onActivate,
     rowIndex,
 }) => {
     const [showActions, setShowActions] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
     const actionsRef = useRef(null);
 
     // Close actions when clicking outside
@@ -43,6 +45,32 @@ const CertificateTableRow = ({
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    // Handle revoke with loading state
+    const handleRevoke = async () => {
+        setIsUpdating(true);
+        try {
+            await onRevoke();
+            setShowActions(false);
+        } catch (error) {
+            console.error("Revoke error:", error);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    //  Handle activate with loading state
+    const handleActivate = async () => {
+        setIsUpdating(true);
+        try {
+            await onActivate();
+            setShowActions(false);
+        } catch (error) {
+            console.error("Activate error:", error);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
 
     const getStatusConfig = (status) => {
         const configs = {
@@ -149,7 +177,7 @@ const CertificateTableRow = ({
                 isSelected
                     ? "bg-blue-50 hover:bg-blue-100"
                     : "hover:bg-gray-50/80"
-            }`}
+            } ${isUpdating ? "opacity-60" : ""}`}
         >
             {/* Checkbox */}
             <td className="pl-6 pr-4 py-4 whitespace-nowrap">
@@ -158,6 +186,7 @@ const CertificateTableRow = ({
                     checked={isSelected}
                     onChange={onSelect}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-blue-500 focus:ring-2 focus:ring-offset-1 transition-colors"
+                    disabled={isUpdating}
                 />
             </td>
 
@@ -214,7 +243,6 @@ const CertificateTableRow = ({
                 <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
                 >
-                    {statusConfig.icon}
                     {statusConfig.label}
                     {isExpired && certificate.status === "active" && (
                         <AlertCircle size={10} className="ml-1" />
@@ -253,6 +281,7 @@ const CertificateTableRow = ({
                     {/* Quick View Button - Always Visible */}
                     <button
                         onClick={onView}
+                        disabled={isUpdating}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 active:scale-95"
                         title="View Details"
                     >
@@ -263,7 +292,8 @@ const CertificateTableRow = ({
                     <div className="relative">
                         <button
                             onClick={() => setShowActions(!showActions)}
-                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer hover:scale-110 active:scale-95"
+                            disabled={isUpdating}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 active:scale-95"
                         >
                             <MoreVertical size={16} />
                         </button>
@@ -276,7 +306,8 @@ const CertificateTableRow = ({
                                         handleDownload();
                                         setShowActions(false);
                                     }}
-                                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 transition-all duration-150 hover:bg-gray-50 cursor-pointer group"
+                                    disabled={isUpdating}
+                                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 transition-all duration-150 hover:bg-gray-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                                 >
                                     <Download
                                         size={14}
@@ -292,7 +323,8 @@ const CertificateTableRow = ({
                                             handleVerify();
                                             setShowActions(false);
                                         }}
-                                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 transition-all duration-150 hover:bg-gray-50 cursor-pointer group"
+                                        disabled={isUpdating}
+                                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 transition-all duration-150 hover:bg-gray-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                                     >
                                         <ExternalLink
                                             size={14}
@@ -305,32 +337,32 @@ const CertificateTableRow = ({
                                 {/* Status Updates */}
                                 {certificate.status !== "active" && (
                                     <button
-                                        onClick={() => {
-                                            // Handle activate
-                                            setShowActions(false);
-                                        }}
-                                        className="flex items-center w-full px-3 py-2 text-sm text-green-700 transition-all duration-150 hover:bg-green-50 cursor-pointer group"
+                                        onClick={handleActivate}
+                                        disabled={isUpdating}
+                                        className="flex items-center w-full px-3 py-2 text-sm text-green-700 transition-all duration-150 hover:bg-green-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                                     >
                                         <Check
                                             size={14}
                                             className="mr-2 group-hover:scale-110 transition-transform"
                                         />
-                                        Activate
+                                        {isUpdating
+                                            ? "Activating..."
+                                            : "Activate"}
                                     </button>
                                 )}
+
+                                {/* Show Revoke only for non-revoked certificates */}
                                 {certificate.status !== "revoked" && (
                                     <button
-                                        onClick={() => {
-                                            onRevoke();
-                                            setShowActions(false);
-                                        }}
-                                        className="flex items-center w-full px-3 py-2 text-sm text-red-700 transition-all duration-150 hover:bg-red-50 cursor-pointer group"
+                                        onClick={handleRevoke}
+                                        disabled={isUpdating}
+                                        className="flex items-center w-full px-3 py-2 text-sm text-red-700 transition-all duration-150 hover:bg-red-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                                     >
                                         <X
                                             size={14}
                                             className="mr-2 group-hover:scale-110 transition-transform"
                                         />
-                                        Revoke
+                                        {isUpdating ? "Revoking..." : "Revoke"}
                                     </button>
                                 )}
 
@@ -340,7 +372,8 @@ const CertificateTableRow = ({
                                         onRegenerate();
                                         setShowActions(false);
                                     }}
-                                    className="flex items-center w-full px-3 py-2 text-sm text-blue-700 transition-all duration-150 hover:bg-blue-50 cursor-pointer group"
+                                    disabled={isUpdating}
+                                    className="flex items-center w-full px-3 py-2 text-sm text-blue-700 transition-all duration-150 hover:bg-blue-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                                 >
                                     <RotateCcw
                                         size={14}
@@ -356,7 +389,8 @@ const CertificateTableRow = ({
                                         onDelete();
                                         setShowActions(false);
                                     }}
-                                    className="flex items-center w-full px-3 py-2 text-sm text-red-700 transition-all duration-150 hover:bg-red-50 cursor-pointer group"
+                                    disabled={isUpdating}
+                                    className="flex items-center w-full px-3 py-2 text-sm text-red-700 transition-all duration-150 hover:bg-red-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                                 >
                                     <Trash2
                                         size={14}

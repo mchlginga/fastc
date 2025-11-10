@@ -57,7 +57,6 @@ const ToastNotification = ({ message, type = "success", onClose }) => {
             <div
                 className={`flex items-center gap-3 p-4 rounded-xl border shadow-lg ${styles.bg} ${styles.border} ${styles.text}`}
             >
-                <div className="shrink-0">{styles.icon}</div>
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium leading-relaxed">
                         {message}

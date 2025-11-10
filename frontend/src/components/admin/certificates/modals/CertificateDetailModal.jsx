@@ -25,7 +25,17 @@ const CertificateDetailModal = ({
     onDownload,
 }) => {
     const [activeTab, setActiveTab] = useState("details");
+    const [isLoading, setIsLoading] = useState(false);
+    const [currentAction, setCurrentAction] = useState(null); // 'revoke' or 'regenerate'
+    const [currentCertificate, setCurrentCertificate] = useState(certificate);
     const modalRef = useRef(null);
+
+    // Update local state when certificate prop changes
+    useEffect(() => {
+        if (certificate) {
+            setCurrentCertificate(certificate);
+        }
+    }, [certificate]);
 
     // Handle click outside to close
     useEffect(() => {
@@ -48,17 +58,25 @@ const CertificateDetailModal = ({
 
     // Reset to details tab when certificate changes
     useEffect(() => {
-        if (certificate) {
+        if (currentCertificate) {
             setActiveTab("details");
         }
-    }, [certificate]);
+    }, [currentCertificate]);
 
-    if (!isOpen || !certificate) return null;
+    // Reset loading state when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            setIsLoading(false);
+            setCurrentAction(null);
+        }
+    }, [isOpen]);
 
-    // Safe user data access with fallbacks
-    const user = certificate.user || {};
-    const course = certificate.course || {};
-    const enrollment = certificate.enrollment || {};
+    if (!isOpen || !currentCertificate) return null;
+
+    // Safe user data access with fallbacks - use currentCertificate instead of certificate
+    const user = currentCertificate.user || {};
+    const course = currentCertificate.course || {};
+    const enrollment = currentCertificate.enrollment || {};
 
     const getStatusConfig = (status) => {
         const configs = {
@@ -67,30 +85,27 @@ const CertificateDetailModal = ({
                 text: "text-green-800",
                 border: "border-green-200",
                 label: "Active",
-                icon: <CheckCircle size={14} className="mr-1" />,
             },
             expired: {
                 bg: "bg-yellow-100",
                 text: "text-yellow-800",
                 border: "border-yellow-200",
                 label: "Expired",
-                icon: <Clock size={14} className="mr-1" />,
             },
             revoked: {
                 bg: "bg-red-100",
                 text: "text-red-800",
                 border: "border-red-200",
                 label: "Revoked",
-                icon: <XCircle size={14} className="mr-1" />,
             },
         };
         return configs[status] || configs.active;
     };
 
     const statusConfig = getStatusConfig(
-        certificate.effectiveStatus || certificate.status
+        currentCertificate.effectiveStatus || currentCertificate.status
     );
-    const isExpired = new Date() > new Date(certificate.expirationDate);
+    const isExpired = new Date() > new Date(currentCertificate.expirationDate);
     const profilePicUrl = user?.profilePic || null;
 
     const formatDate = (dateString) => {
@@ -122,7 +137,7 @@ const CertificateDetailModal = ({
     const handleDownload = async () => {
         try {
             if (onDownload) {
-                await onDownload(certificate._id);
+                await onDownload(currentCertificate._id);
             }
         } catch (error) {
             console.error("Download error:", error);
@@ -130,14 +145,50 @@ const CertificateDetailModal = ({
     };
 
     const handleVerify = () => {
-        if (!certificate.verificationCode) {
+        if (!currentCertificate.verificationCode) {
             console.error("No verification code available");
             return;
         }
 
         // Use the public verification service instead of admin service
-        const verifyUrl = `${window.location.origin}/verify?code=${certificate.verificationCode}`;
+        const verifyUrl = `${window.location.origin}/verify?code=${currentCertificate.verificationCode}`;
         window.open(verifyUrl, "_blank");
+    };
+
+    const handleRevoke = async () => {
+        if (!onRevoke) return;
+
+        setIsLoading(true);
+        setCurrentAction("revoke");
+        try {
+            await onRevoke();
+            // The parent component should handle closing the modal
+        } catch (error) {
+            console.error("Revoke error:", error);
+        } finally {
+            setIsLoading(false);
+            setCurrentAction(null);
+        }
+    };
+
+    const handleRegenerate = async () => {
+        if (!onRegenerate) return;
+
+        setIsLoading(true);
+        setCurrentAction("regenerate");
+        try {
+            await onRegenerate();
+            // The parent component should handle closing the modal
+        } catch (error) {
+            console.error("Regenerate error:", error);
+        } finally {
+            setIsLoading(false);
+            setCurrentAction(null);
+        }
+    };
+
+    const isActionLoading = (action = null) => {
+        return isLoading && (action ? currentAction === action : true);
     };
 
     return (
@@ -184,7 +235,8 @@ const CertificateDetailModal = ({
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                        disabled={isLoading}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <X size={20} />
                     </button>
@@ -204,11 +256,12 @@ const CertificateDetailModal = ({
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
+                                disabled={isLoading}
                                 className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200 cursor-pointer ${
                                     activeTab === tab.id
                                         ? "border-blue-500 text-blue-600"
                                         : "border-transparent text-gray-500 hover:text-gray-700"
-                                }`}
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
                                 <tab.icon size={16} className="mr-2" />
                                 {tab.label}
@@ -267,10 +320,9 @@ const CertificateDetailModal = ({
                                                 <span
                                                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
                                                 >
-                                                    {statusConfig.icon}
                                                     {statusConfig.label}
                                                     {isExpired &&
-                                                        certificate.status ===
+                                                        currentCertificate.status ===
                                                             "active" && (
                                                             <AlertCircle
                                                                 size={10}
@@ -283,19 +335,20 @@ const CertificateDetailModal = ({
                                         <InfoField
                                             label="Completion Date"
                                             value={formatDate(
-                                                certificate.completionDate
+                                                currentCertificate.completionDate
                                             )}
                                         />
                                         <InfoField
                                             label="Expiration Date"
                                             value={formatDate(
-                                                certificate.expirationDate
+                                                currentCertificate.expirationDate
                                             )}
                                         />
                                         <InfoField
                                             label="Issued By"
                                             value={
-                                                certificate.issuedBy || "FAST-C"
+                                                currentCertificate.issuedBy ||
+                                                "FAST-C"
                                             }
                                         />
                                     </div>
@@ -354,8 +407,9 @@ const CertificateDetailModal = ({
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-blue-600">
-                                                {certificate.daysUntilExpiry > 0
-                                                    ? certificate.daysUntilExpiry
+                                                {currentCertificate.daysUntilExpiry >
+                                                0
+                                                    ? currentCertificate.daysUntilExpiry
                                                     : 0}
                                             </div>
                                             <div className="text-gray-600 text-xs">
@@ -372,7 +426,7 @@ const CertificateDetailModal = ({
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-purple-600">
-                                                {certificate.verificationCode
+                                                {currentCertificate.verificationCode
                                                     ? "Yes"
                                                     : "No"}
                                             </div>
@@ -382,9 +436,9 @@ const CertificateDetailModal = ({
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-gray-600">
-                                                {certificate.createdAt
+                                                {currentCertificate.createdAt
                                                     ? new Date(
-                                                          certificate.createdAt
+                                                          currentCertificate.createdAt
                                                       ).toLocaleDateString()
                                                     : "N/A"}
                                             </div>
@@ -408,10 +462,10 @@ const CertificateDetailModal = ({
                                     <InfoField
                                         label="Verification Code"
                                         value={
-                                            certificate.verificationCode ? (
+                                            currentCertificate.verificationCode ? (
                                                 <code className="bg-gray-100 px-3 py-2 rounded text-sm font-mono border border-gray-200">
                                                     {
-                                                        certificate.verificationCode
+                                                        currentCertificate.verificationCode
                                                     }
                                                 </code>
                                             ) : (
@@ -422,14 +476,14 @@ const CertificateDetailModal = ({
                                     <InfoField
                                         label="Verification URL"
                                         value={
-                                            certificate.verificationCode ? (
+                                            currentCertificate.verificationCode ? (
                                                 <a
-                                                    href={`${window.location.origin}/verify?code=${certificate.verificationCode}`}
+                                                    href={`${window.location.origin}/verify?code=${currentCertificate.verificationCode}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-blue-600 hover:text-blue-800 break-all underline"
                                                 >
-                                                    {`${window.location.origin}/verify?code=${certificate.verificationCode}`}
+                                                    {`${window.location.origin}/verify?code=${currentCertificate.verificationCode}`}
                                                 </a>
                                             ) : (
                                                 "N/A"
@@ -440,7 +494,8 @@ const CertificateDetailModal = ({
                                         label="Certificate ID"
                                         value={
                                             <code className="bg-gray-100 px-3 py-2 rounded text-sm font-mono border border-gray-200">
-                                                {certificate._id || "N/A"}
+                                                {currentCertificate._id ||
+                                                    "N/A"}
                                             </code>
                                         }
                                     />
@@ -455,9 +510,13 @@ const CertificateDetailModal = ({
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <button
                                         onClick={handleVerify}
-                                        disabled={!certificate.verificationCode}
+                                        disabled={
+                                            !currentCertificate.verificationCode ||
+                                            isLoading
+                                        }
                                         className={`flex items-center justify-center p-3 border rounded-lg transition-all duration-200 cursor-pointer ${
-                                            certificate.verificationCode
+                                            currentCertificate.verificationCode &&
+                                            !isLoading
                                                 ? "border-green-600 text-green-600 hover:bg-green-50"
                                                 : "border-gray-300 text-gray-400 cursor-not-allowed"
                                         }`}
@@ -470,28 +529,50 @@ const CertificateDetailModal = ({
                                     </button>
                                     <button
                                         onClick={handleDownload}
-                                        className="flex items-center justify-center p-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-200 cursor-pointer"
+                                        disabled={isLoading}
+                                        className="flex items-center justify-center p-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <Download size={16} className="mr-2" />
                                         Download PDF
                                     </button>
                                     <button
-                                        onClick={onRegenerate}
-                                        className="flex items-center justify-center p-3 border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-50 transition-all duration-200 cursor-pointer"
+                                        onClick={handleRegenerate}
+                                        disabled={
+                                            isActionLoading("regenerate") ||
+                                            currentCertificate.status ===
+                                                "revoked"
+                                        }
+                                        className="flex items-center justify-center p-3 border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-50 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <RotateCcw size={16} className="mr-2" />
-                                        Regenerate
+                                        {isActionLoading("regenerate") ? (
+                                            <span className="flex items-center gap-1">
+                                                <div className="w-3 h-3 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
+                                                Regenerating...
+                                            </span>
+                                        ) : (
+                                            "Regenerate"
+                                        )}
                                     </button>
-                                    {certificate.status !== "revoked" && (
+                                    {currentCertificate.status !==
+                                        "revoked" && (
                                         <button
-                                            onClick={onRevoke}
-                                            className="flex items-center justify-center p-3 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-all duration-200 cursor-pointer"
+                                            onClick={handleRevoke}
+                                            disabled={isActionLoading("revoke")}
+                                            className="flex items-center justify-center p-3 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <XCircle
                                                 size={16}
                                                 className="mr-2"
                                             />
-                                            Revoke Certificate
+                                            {isActionLoading("revoke") ? (
+                                                <span className="flex items-center gap-1">
+                                                    <div className="w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                                                    Revoking...
+                                                </span>
+                                            ) : (
+                                                "Revoke Certificate"
+                                            )}
                                         </button>
                                     )}
                                 </div>
@@ -536,12 +617,12 @@ const CertificateDetailModal = ({
                                             </span>
                                             <span
                                                 className={`font-medium ${
-                                                    certificate.verificationCode
+                                                    currentCertificate.verificationCode
                                                         ? "text-green-600"
                                                         : "text-red-600"
                                                 }`}
                                             >
-                                                {certificate.verificationCode
+                                                {currentCertificate.verificationCode
                                                     ? "Verifiable"
                                                     : "Not Verifiable"}
                                             </span>
@@ -557,26 +638,43 @@ const CertificateDetailModal = ({
                 <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer"
+                        disabled={isLoading}
+                        className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Close
                     </button>
-                    {certificate.status !== "revoked" && (
+                    {currentCertificate.status !== "revoked" && (
                         <button
-                            onClick={onRegenerate}
-                            className="px-4 py-2.5 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer flex items-center"
+                            onClick={handleRegenerate}
+                            disabled={isActionLoading("regenerate")}
+                            className="px-4 py-2.5 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <RotateCcw size={14} className="mr-2" />
-                            Regenerate
+                            {isActionLoading("regenerate") ? (
+                                <span className="flex items-center gap-1">
+                                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    Regenerating...
+                                </span>
+                            ) : (
+                                "Regenerate"
+                            )}
                         </button>
                     )}
-                    {certificate.status !== "revoked" && (
+                    {currentCertificate.status !== "revoked" && (
                         <button
-                            onClick={onRevoke}
-                            className="px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer flex items-center"
+                            onClick={handleRevoke}
+                            disabled={isActionLoading("revoke")}
+                            className="px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <XCircle size={14} className="mr-2" />
-                            Revoke
+                            {isActionLoading("revoke") ? (
+                                <span className="flex items-center gap-1">
+                                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    Revoking...
+                                </span>
+                            ) : (
+                                "Revoke"
+                            )}
                         </button>
                     )}
                 </div>

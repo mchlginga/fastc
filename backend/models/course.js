@@ -98,7 +98,6 @@ const courseSchema = new mongoose.Schema(
             },
         ],
 
-        // 🆕 NEW: Link to Skills Taxonomy
         skillsTaught: [
             {
                 skill: {
@@ -113,12 +112,6 @@ const courseSchema = new mongoose.Schema(
                 },
             },
         ],
-
-        // 🆕 NEW: Primary skill for this course
-        primarySkill: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Skill",
-        },
     },
     {
         timestamps: true,

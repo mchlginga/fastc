@@ -106,6 +106,9 @@ function AdminCertificates() {
     const [bulkDelete, setBulkDelete] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
+    // Add refresh trigger for modal updates
+    const [refreshModal, setRefreshModal] = useState(false);
+
     // Fetch certificates and stats with optimized dependencies
     const fetchCertificates = useCallback(async () => {
         try {
@@ -229,17 +232,99 @@ function AdminCertificates() {
         }
     };
 
+    const handleActivateCertificate = async (certificateId) => {
+        try {
+            await adminCertificateService.updateCertificateStatus(
+                certificateId,
+                "active"
+            );
+
+            // Refresh the certificates list
+            await fetchCertificates();
+
+            // If the certificate detail modal is open, update the selected certificate
+            if (
+                selectedCertificate &&
+                selectedCertificate._id === certificateId
+            ) {
+                // Find the updated certificate from the current list
+                const updatedCert = certificates.find(
+                    (c) => c._id === certificateId
+                );
+                if (updatedCert) {
+                    setSelectedCertificate(updatedCert);
+                }
+            }
+
+            setToastNotification({
+                message: "Certificate activated successfully",
+                type: "success",
+            });
+
+            return true;
+        } catch (err) {
+            setToastNotification({
+                message: err.message || "Failed to activate certificate",
+                type: "error",
+            });
+            throw err;
+        }
+    };
+
     const handleBulkStatusUpdate = async (newStatus) => {
         try {
+            // Validate certificate IDs before making the request
+            const certificateIds = Array.from(selectedCertificates);
+
+            // Filter out any invalid IDs
+            const validCertificateIds = certificateIds.filter((id) => {
+                // Check if it's a valid 24-character hex string (MongoDB ObjectId)
+                return (
+                    id && typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id)
+                );
+            });
+
+            if (validCertificateIds.length === 0) {
+                setToastNotification({
+                    message: "No valid certificates selected",
+                    type: "error",
+                });
+                return;
+            }
+
             await adminCertificateService.bulkUpdateCertificateStatus(
-                Array.from(selectedCertificates),
+                validCertificateIds,
                 newStatus
             );
 
             setCertificates((prev) =>
                 prev.map((certificate) =>
                     selectedCertificates.has(certificate._id)
-                        ? { ...certificate, status: newStatus }
+                        ? {
+                              ...certificate,
+                              status: newStatus,
+                              effectiveStatus:
+                                  newStatus === "expired"
+                                      ? "expired"
+                                      : newStatus,
+                              isExpired: newStatus === "expired",
+                          }
+                        : certificate
+                )
+            );
+
+            setFilteredCertificates((prev) =>
+                prev.map((certificate) =>
+                    selectedCertificates.has(certificate._id)
+                        ? {
+                              ...certificate,
+                              status: newStatus,
+                              effectiveStatus:
+                                  newStatus === "expired"
+                                      ? "expired"
+                                      : newStatus,
+                              isExpired: newStatus === "expired",
+                          }
                         : certificate
                 )
             );
@@ -247,14 +332,18 @@ function AdminCertificates() {
             setSelectedCertificates(new Set());
             setSelectAll(false);
 
+            // Trigger modal refresh
+            setRefreshModal((prev) => !prev);
+
             // Refresh stats
             fetchCertificateStats();
 
             setToastNotification({
-                message: `Updated ${selectedCertificates.size} certificates to ${newStatus}`,
+                message: `Updated ${validCertificateIds.length} certificates to ${newStatus}`,
                 type: "success",
             });
         } catch (err) {
+            console.error("Bulk status update error:", err);
             setToastNotification({
                 message: err.message || "Failed to update certificates",
                 type: "error",
@@ -266,21 +355,28 @@ function AdminCertificates() {
         try {
             await adminCertificateService.revokeCertificate(certificateId);
 
-            setCertificates((prev) =>
-                prev.map((certificate) =>
-                    certificate._id === certificateId
-                        ? { ...certificate, status: "revoked" }
-                        : certificate
-                )
-            );
+            // Refresh the certificates list
+            await fetchCertificates();
 
-            // Refresh stats
-            fetchCertificateStats();
+            // Update selected certificate if modal is open
+            if (
+                selectedCertificate &&
+                selectedCertificate._id === certificateId
+            ) {
+                const updatedCert = certificates.find(
+                    (c) => c._id === certificateId
+                );
+                if (updatedCert) {
+                    setSelectedCertificate(updatedCert);
+                }
+            }
 
             setToastNotification({
                 message: "Certificate revoked successfully",
                 type: "success",
             });
+
+            return true;
         } catch (err) {
             setToastNotification({
                 message: err.message || "Failed to revoke certificate",
@@ -297,18 +393,34 @@ function AdminCertificates() {
                     certificateId
                 );
 
-            // Update the specific certificate in state with the new data
             setCertificates((prev) =>
                 prev.map((certificate) =>
                     certificate._id === certificateId
                         ? {
                               ...response.certificate,
+                              status: "active",
                               effectiveStatus: "active",
                               isExpired: false,
                           }
                         : certificate
                 )
             );
+
+            setFilteredCertificates((prev) =>
+                prev.map((certificate) =>
+                    certificate._id === certificateId
+                        ? {
+                              ...response.certificate,
+                              status: "active",
+                              effectiveStatus: "active",
+                              isExpired: false,
+                          }
+                        : certificate
+                )
+            );
+
+            // Trigger modal refresh
+            setRefreshModal((prev) => !prev);
 
             // Refresh stats
             fetchCertificateStats();
@@ -342,17 +454,32 @@ function AdminCertificates() {
                 (result) => result.status === "rejected"
             ).length;
 
-            // Update certificates state with regenerated ones
             const updatedCertificates = [...certificates];
+            const updatedFilteredCertificates = [...filteredCertificates];
+
             results.forEach((result, index) => {
                 if (result.status === "fulfilled") {
                     const certificateId = certificateIds[index];
                     const certificateIndex = updatedCertificates.findIndex(
                         (c) => c._id === certificateId
                     );
+                    const filteredIndex = updatedFilteredCertificates.findIndex(
+                        (c) => c._id === certificateId
+                    );
+
                     if (certificateIndex !== -1) {
                         updatedCertificates[certificateIndex] = {
                             ...result.value.certificate,
+                            status: "active", // 🆕 Ensure status is set to active
+                            effectiveStatus: "active",
+                            isExpired: false,
+                        };
+                    }
+
+                    if (filteredIndex !== -1) {
+                        updatedFilteredCertificates[filteredIndex] = {
+                            ...result.value.certificate,
+                            status: "active",
                             effectiveStatus: "active",
                             isExpired: false,
                         };
@@ -361,6 +488,10 @@ function AdminCertificates() {
             });
 
             setCertificates(updatedCertificates);
+            setFilteredCertificates(updatedFilteredCertificates);
+
+            // Trigger modal refresh
+            setRefreshModal((prev) => !prev);
 
             // Refresh stats
             fetchCertificateStats();
@@ -410,8 +541,23 @@ function AdminCertificates() {
                 )
             );
 
+            setFilteredCertificates((prev) =>
+                prev.map((certificate) =>
+                    selectedCertificates.has(certificate._id)
+                        ? {
+                              ...certificate,
+                              status: "expired",
+                              expirationDate: new Date().toISOString(),
+                          }
+                        : certificate
+                )
+            );
+
             setSelectedCertificates(new Set());
             setSelectAll(false);
+
+            // Trigger modal refresh
+            setRefreshModal((prev) => !prev);
 
             // Refresh stats
             fetchCertificateStats();
@@ -431,9 +577,17 @@ function AdminCertificates() {
     const handleDeleteCertificate = async (certificateId) => {
         try {
             await adminCertificateService.deleteCertificate(certificateId);
+
             setCertificates((prev) =>
                 prev.filter((certificate) => certificate._id !== certificateId)
             );
+
+            setFilteredCertificates((prev) =>
+                prev.filter((certificate) => certificate._id !== certificateId)
+            );
+
+            // Trigger modal refresh
+            setRefreshModal((prev) => !prev);
 
             // Refresh stats
             fetchCertificateStats();
@@ -466,8 +620,18 @@ function AdminCertificates() {
                     (certificate) => !selectedCertificates.has(certificate._id)
                 )
             );
+
+            setFilteredCertificates((prev) =>
+                prev.filter(
+                    (certificate) => !selectedCertificates.has(certificate._id)
+                )
+            );
+
             setSelectedCertificates(new Set());
             setSelectAll(false);
+
+            // Trigger modal refresh
+            setRefreshModal((prev) => !prev);
 
             // Refresh stats
             fetchCertificateStats();
@@ -503,11 +667,13 @@ function AdminCertificates() {
     };
 
     const confirmRevokeCertificate = (certificate) => {
+        console.log("Revoke certificate:", certificate);
         setSelectedCertificate(certificate);
         setShowRevokeModal(true);
     };
 
     const confirmRegenerateCertificate = (certificate) => {
+        console.log("Regenerate certificate:", certificate);
         setSelectedCertificate(certificate);
         setShowRegenerateModal(true);
     };
@@ -670,6 +836,8 @@ function AdminCertificates() {
                             onSelectCertificate={handleSelectCertificate}
                             onViewCertificate={(certificate) => {
                                 setSelectedCertificate(certificate);
+                                setShowRevokeModal(false);
+                                setShowRegenerateModal(false);
                                 setShowCertificateModal(true);
                             }}
                             onRevokeCertificate={confirmRevokeCertificate}
@@ -678,6 +846,7 @@ function AdminCertificates() {
                             }
                             onDeleteCertificate={confirmDeleteCertificate}
                             onDownloadCertificate={handleDownloadCertificate}
+                            onActivate={handleActivateCertificate}
                             statusFilter={statusFilter}
                             setStatusFilter={setStatusFilter}
                             stats={stats}
@@ -707,10 +876,23 @@ function AdminCertificates() {
                         setShowCertificateModal(false);
                         setSelectedCertificate(null);
                     }}
-                    certificate={selectedCertificate}
-                    onRevoke={confirmRevokeCertificate}
-                    onRegenerate={confirmRegenerateCertificate}
+                    certificate={
+                        selectedCertificate
+                            ? certificates.find(
+                                  (c) => c._id === selectedCertificate._id
+                              ) || selectedCertificate
+                            : null
+                    }
+                    onRevoke={() => {
+                        setShowRevokeModal(true);
+                        setShowCertificateModal(false);
+                    }}
+                    onRegenerate={() => {
+                        setShowRegenerateModal(true);
+                        setShowCertificateModal(false);
+                    }}
                     onDownload={handleDownloadCertificate}
+                    refreshTrigger={refreshModal}
                 />
 
                 <RevokeCertificateModal
@@ -720,7 +902,17 @@ function AdminCertificates() {
                         setSelectedCertificate(null);
                     }}
                     certificate={selectedCertificate}
-                    onRevoke={handleRevokeCertificate}
+                    onRevoke={async () => {
+                        try {
+                            await handleRevokeCertificate(
+                                selectedCertificate._id
+                            );
+                            setShowRevokeModal(false);
+                            setSelectedCertificate(null);
+                        } catch (error) {
+                            // Error is already handled in handleRevokeCertificate
+                        }
+                    }}
                 />
 
                 <RegenerateCertificateModal
@@ -730,7 +922,17 @@ function AdminCertificates() {
                         setSelectedCertificate(null);
                     }}
                     certificate={selectedCertificate}
-                    onRegenerate={handleRegenerateCertificate}
+                    onRegenerate={async () => {
+                        try {
+                            await handleRegenerateCertificate(
+                                selectedCertificate._id
+                            );
+                            setShowRegenerateModal(false);
+                            setSelectedCertificate(null);
+                        } catch (error) {
+                            // Error is already handled in handleRegenerateCertificate
+                        }
+                    }}
                 />
 
                 <BulkRegenerateCertificateModal
