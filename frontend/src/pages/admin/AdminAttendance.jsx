@@ -9,6 +9,7 @@ import {
     AttendanceStats,
     AttendanceFilters,
     AttendanceTable,
+    AttendanceDetailsModal,
 } from "../../components/admin/attendance";
 
 // Common Components
@@ -46,6 +47,17 @@ function AdminAttendance() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [toastNotification, setToastNotification] = useState(null);
+    const [selectedRecord, setSelectedRecord] = useState(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+    // NEW: Add stats state to store total statistics
+    const [stats, setStats] = useState({
+        total: 0,
+        today: 0,
+        verified: 0,
+        pending: 0,
+        failed: 0,
+    });
 
     // Filters and search
     const [searchTerm, setSearchTerm] = useState("");
@@ -114,10 +126,23 @@ function AdminAttendance() {
         pagination.recordsPerPage,
     ]);
 
+    // NEW: Fetch total statistics separately
+    const fetchAttendanceStats = useCallback(async () => {
+        try {
+            const response = await adminAttendanceService.getAttendanceStats();
+            setStats(response.stats);
+        } catch (err) {
+            console.error("Error fetching attendance stats:", err);
+            // Don't set error state for stats failure, just log it
+        }
+    }, []);
+
     // Initial fetch and when filters change
     useEffect(() => {
         fetchAttendanceRecords();
-    }, [fetchAttendanceRecords]);
+        // Fetch stats whenever filters change to get updated totals
+        fetchAttendanceStats();
+    }, [fetchAttendanceRecords, fetchAttendanceStats]);
 
     // Reset to page 1 when filters change
     useEffect(() => {
@@ -150,6 +175,20 @@ function AdminAttendance() {
         setSearchParams,
     ]);
 
+    const handleViewDetails = async (recordId) => {
+        try {
+            const response =
+                await adminAttendanceService.getAttendanceRecordById(recordId);
+            setSelectedRecord(response.record);
+            setShowDetailsModal(true);
+        } catch (err) {
+            setToastNotification({
+                message: err.message || "Failed to load record details",
+                type: "error",
+            });
+        }
+    };
+
     const handleManualVerification = async (recordId) => {
         try {
             await adminAttendanceService.verifyAttendance(recordId);
@@ -161,6 +200,9 @@ function AdminAttendance() {
                         : record
                 )
             );
+
+            // Refresh stats after manual verification
+            fetchAttendanceStats();
 
             setToastNotification({
                 message: "Attendance manually verified",
@@ -199,7 +241,7 @@ function AdminAttendance() {
             window.URL.revokeObjectURL(url);
 
             setToastNotification({
-                message: "Attendance data exported successfully",
+                message: "Preparing your download...",
                 type: "success",
             });
         } catch (err) {
@@ -225,33 +267,7 @@ function AdminAttendance() {
         }));
     };
 
-    const getStats = () => {
-        const total = pagination.totalRecords;
-        const today = attendanceRecords.filter(
-            (record) =>
-                new Date(record.verifiedAt).toDateString() ===
-                new Date().toDateString()
-        ).length;
-        const verified = attendanceRecords.filter(
-            (record) => record.status === "verified"
-        ).length;
-        const pending = attendanceRecords.filter(
-            (record) => record.status === "pending"
-        ).length;
-        const failed = attendanceRecords.filter(
-            (record) => record.status === "failed"
-        ).length;
-
-        return {
-            total,
-            today,
-            verified,
-            pending,
-            failed,
-        };
-    };
-
-    const stats = getStats();
+    // REMOVED: The old getStats function since we're now fetching stats from the backend
 
     if (loading && attendanceRecords.length === 0) {
         return <AdminAttendanceSkeleton />;
@@ -317,6 +333,7 @@ function AdminAttendance() {
                         <AttendanceTable
                             records={attendanceRecords}
                             onManualVerification={handleManualVerification}
+                            onViewDetails={handleViewDetails}
                             statusFilter={statusFilter}
                             stats={stats}
                             loading={loading && attendanceRecords.length > 0}
@@ -340,6 +357,17 @@ function AdminAttendance() {
                     )}
                 </div>
 
+                {showDetailsModal && (
+                    <AttendanceDetailsModal
+                        record={selectedRecord}
+                        onClose={() => {
+                            setShowDetailsModal(false);
+                            setSelectedRecord(null);
+                        }}
+                        onManualVerify={handleManualVerification}
+                    />
+                )}
+
                 {/* Toast Notifications */}
                 {toastNotification && (
                     <ToastNotification
@@ -353,7 +381,7 @@ function AdminAttendance() {
     );
 }
 
-// Pagination Component
+// Pagination Component (keep the same as before)
 const Pagination = ({
     pagination,
     onPageChange,

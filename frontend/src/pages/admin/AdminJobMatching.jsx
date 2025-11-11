@@ -299,7 +299,7 @@ const AdminJobMatching = () => {
             });
 
             setToastNotification({
-                message: `Exported ${filteredTrainees.length} trainees successfully`,
+                message: "Preparing your download...",
                 type: "success",
             });
         } catch (error) {

@@ -9,7 +9,12 @@ import {
     Check,
 } from "react-feather";
 
-const AttendanceTableRow = ({ record, onManualVerification, rowIndex }) => {
+const AttendanceTableRow = ({
+    record,
+    onManualVerification,
+    onViewDetails,
+    rowIndex,
+}) => {
     const [showActions, setShowActions] = useState(false);
     const actionsRef = useRef(null);
 
@@ -36,21 +41,18 @@ const AttendanceTableRow = ({ record, onManualVerification, rowIndex }) => {
                 text: "text-emerald-700",
                 border: "border-emerald-200",
                 label: "Verified",
-                icon: <CheckCircle size={14} className="text-emerald-600" />,
             },
             pending: {
                 bg: "bg-amber-50",
                 text: "text-amber-700",
                 border: "border-amber-200",
                 label: "Pending",
-                icon: <Clock size={14} className="text-amber-600" />,
             },
             failed: {
                 bg: "bg-red-50",
                 text: "text-red-700",
                 border: "border-red-200",
                 label: "Failed",
-                icon: <Clock size={14} className="text-red-600" />,
             },
         };
         return configs[status] || configs.pending;
@@ -102,11 +104,15 @@ const AttendanceTableRow = ({ record, onManualVerification, rowIndex }) => {
     };
 
     return (
-        <tr className="border-b border-gray-100 transition-all duration-200 hover:bg-gray-50/80">
+        <tr
+            className={`border-b border-gray-100 transition-all duration-200 ${
+                rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+            } hover:bg-gray-50/80`}
+        >
             {/* Trainee Info */}
             <td className="pl-6 pr-4 py-4 whitespace-nowrap">
-                <div className="flex items-center group">
-                    <div className="shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 group-hover:shadow-xs transition-shadow">
+                <div className="flex items-center">
+                    <div className="shrink-0 w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200">
                         {record.user?.profilePic ? (
                             <img
                                 src={record.user.profilePic}
@@ -121,7 +127,7 @@ const AttendanceTableRow = ({ record, onManualVerification, rowIndex }) => {
                         )}
                     </div>
                     <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900 truncate max-w-160 group-hover:text-gray-700 transition-colors">
+                        <div className="text-sm font-medium text-gray-900 truncate max-w-160">
                             {record.user?.firstName} {record.user?.surname}
                         </div>
                         <div className="text-sm text-gray-500 truncate max-w-160">
@@ -131,28 +137,19 @@ const AttendanceTableRow = ({ record, onManualVerification, rowIndex }) => {
                 </div>
             </td>
 
-            {/* Course & Lesson */}
+            {/* Course */}
             <td className="px-4 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                    <Book size={14} className="text-gray-400 mr-2" />
-                    <div>
-                        <div className="text-sm font-medium text-gray-900">
-                            {record.course?.title}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                            Lesson {record.lesson?.order}:{" "}
-                            {record.lesson?.title}
-                        </div>
-                    </div>
+                <div className="text-sm text-gray-900">
+                    {record.course?.title || "N/A"}
                 </div>
             </td>
 
             {/* Clock-in Time */}
             <td className="px-4 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900 font-medium">
+                <div className="text-sm text-gray-900">
                     {formatTime(record.verifiedAt)}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-sm text-gray-500">
                     {formatDate(record.verifiedAt)}
                 </div>
             </td>
@@ -160,17 +157,16 @@ const AttendanceTableRow = ({ record, onManualVerification, rowIndex }) => {
             {/* Status */}
             <td className="px-4 py-4 whitespace-nowrap">
                 <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
                 >
-                    {statusConfig.icon}
-                    <span className="ml-1">{statusConfig.label}</span>
+                    <span>{statusConfig.label}</span>
                 </span>
             </td>
 
             {/* Verification Method */}
             <td className="px-4 py-4 whitespace-nowrap">
                 <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${methodConfig.bg} ${methodConfig.text} ${methodConfig.border}`}
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${methodConfig.bg} ${methodConfig.text} ${methodConfig.border}`}
                 >
                     {methodConfig.label}
                 </span>
@@ -182,29 +178,28 @@ const AttendanceTableRow = ({ record, onManualVerification, rowIndex }) => {
                     className="flex items-center justify-end gap-1"
                     ref={actionsRef}
                 >
-                    {/* View Details Button */}
+                    {/* Quick View Button */}
                     <button
-                        onClick={() => {
-                            /* TODO: Implement view details */
-                        }}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer hover:scale-110 active:scale-95"
+                        onClick={() => onViewDetails(record._id)}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         title="View Details"
                     >
                         <Eye size={16} />
                     </button>
 
                     {/* Actions Dropdown */}
-                    {record.status === "pending" && (
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowActions(!showActions)}
-                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer hover:scale-110 active:scale-95"
-                            >
-                                <MoreVertical size={16} />
-                            </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowActions(!showActions)}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer"
+                        >
+                            <MoreVertical size={16} />
+                        </button>
 
-                            {showActions && (
-                                <div className="absolute right-0 z-20 w-48 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-200/50 ring-1 ring-black ring-opacity-5 py-1 animate-in fade-in-0 zoom-in-95">
+                        {showActions && (
+                            <div className="absolute right-0 z-20 w-48 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-200/50 ring-1 ring-black ring-opacity-5 py-1 animate-in fade-in-0 zoom-in-95">
+                                {/* Manual Verification for pending records */}
+                                {record.status === "pending" && (
                                     <button
                                         onClick={() => {
                                             onManualVerification(record._id);
@@ -218,10 +213,25 @@ const AttendanceTableRow = ({ record, onManualVerification, rowIndex }) => {
                                         />
                                         Manually Verify
                                     </button>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                )}
+
+                                {/* View Details Option */}
+                                <button
+                                    onClick={() => {
+                                        onViewDetails(record._id);
+                                        setShowActions(false);
+                                    }}
+                                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 transition-all duration-150 hover:bg-gray-50 cursor-pointer group"
+                                >
+                                    <Eye
+                                        size={14}
+                                        className="mr-2 group-hover:scale-110 transition-transform"
+                                    />
+                                    View Details
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </td>
         </tr>

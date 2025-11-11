@@ -1,9 +1,10 @@
-import { Clock, User, Book } from "react-feather";
+import { Clock } from "react-feather";
 import AttendanceTableRow from "./AttendanceTableRow";
 
 const AttendanceTable = ({
     records,
     onManualVerification,
+    onViewDetails, // Add this prop
     statusFilter,
     stats,
     loading = false,
@@ -52,21 +53,22 @@ const AttendanceTable = ({
 
     return (
         <div className="overflow-hidden">
-            {/* Table Container */}
             <div className="overflow-x-auto">
                 <div className="min-w-full">
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 {/* Trainee Info */}
-                                <th className="pl-6 pr-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[200px]">
+                                <th className="pl-6 pr-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[180px]">
                                     Trainee
                                 </th>
 
-                                {/* Regular Columns */}
-                                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[150px]">
-                                    Course & Lesson
+                                {/* Course Info */}
+                                <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[200px]">
+                                    Course
                                 </th>
+
+                                {/* Regular Columns */}
                                 <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[120px]">
                                     Clock-in Time
                                 </th>
@@ -78,7 +80,7 @@ const AttendanceTable = ({
                                 </th>
 
                                 {/* Actions */}
-                                <th className="pr-6 pl-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[100px]">
+                                <th className="pr-6 pl-4 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left min-w-[120px]">
                                     Actions
                                 </th>
                             </tr>
@@ -90,6 +92,7 @@ const AttendanceTable = ({
                                     key={record._id}
                                     record={record}
                                     onManualVerification={onManualVerification}
+                                    onViewDetails={onViewDetails} // Pass this down
                                     rowIndex={index}
                                 />
                             ))}

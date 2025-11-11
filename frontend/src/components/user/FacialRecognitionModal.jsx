@@ -631,22 +631,6 @@ const FacialRecognitionModal = ({
                                 </button>
                             </>
                         )}
-
-                        {status === "processing" && (
-                            <div className="flex-1 bg-gray-400 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center">
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                {isEnrollment ? "Enrolling..." : "Verifying..."}
-                            </div>
-                        )}
-
-                        {status === "success" && (
-                            <div className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center">
-                                <CheckCircle size={18} className="mr-2" />
-                                {isEnrollment
-                                    ? "Enrollment Complete"
-                                    : "Verification Complete"}
-                            </div>
-                        )}
                     </div>
 
                     {/* Help Text */}
