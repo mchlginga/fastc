@@ -9,7 +9,6 @@ import {
     AlertTriangle,
     Image,
     Check,
-    ExternalLink,
 } from "react-feather";
 
 const AttendanceDetailsModal = ({ record, onClose, onManualVerify }) => {
