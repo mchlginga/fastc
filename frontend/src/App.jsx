@@ -44,6 +44,7 @@ import AdminJob from "./pages/admin/AdminJobMatching";
 import AdminProfile from "./pages/admin/AdminProfile";
 import AdminSettings from "./pages/admin/AdminSettings";
 import VerifyCertificate from "./pages/admin/VerifyCertificate";
+import AdminAttendance from "./pages/admin/AdminAttendance";
 
 /* company */
 import CompanyHeaderFooter from "./pages/company/CompanyHeaderFooter";
@@ -144,6 +145,7 @@ function App() {
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="settings" element={<AdminSettings />} />
                     <Route path="enrollments" element={<AdminEnrollments />} />
+                    <Route path="attendance" element={<AdminAttendance />} />
                 </Route>
 
                 {/* Company Routes */}

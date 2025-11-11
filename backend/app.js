@@ -40,12 +40,7 @@ const {
     match,
     statistics,
     skills,
-    // upload,
-    // certificate,
-    // completion,
-    // course,
-    // match,
-    // ,
+    adminAttendance,
 } = require("./routes/index");
 
 const app = express();
@@ -91,12 +86,7 @@ app.use("/api/admin", adminCertificates);
 app.use("/api/match", match);
 app.use("/api/statistics", statistics);
 app.use("/api/admin/skills", skills);
-
-// app.use("/api/upload", upload);
-// app.use("/api/certificates", certificate);
-// app.use("/api/completion", completion);
-// app.use("/api/courses", course);
-// app.use("/api/match", match);
+app.use("/api/admin", adminAttendance);
 
 // invalid route destination
 app.use((req, res) => {

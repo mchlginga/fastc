@@ -200,6 +200,19 @@ const AdminHeaderFooter = () => {
                                 Certificates
                             </NavLink>
                             <NavLink
+                                to="/admin/attendance"
+                                end
+                                className={({ isActive }) =>
+                                    `font-medium transition-all duration-200 px-3 py-2 rounded-lg ${
+                                        isActive
+                                            ? "text-blue-600 bg-blue-50"
+                                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+                                    }`
+                                }
+                            >
+                                Attendance
+                            </NavLink>
+                            <NavLink
                                 to="/admin/job-match"
                                 end
                                 className={({ isActive }) =>
@@ -357,6 +370,20 @@ const AdminHeaderFooter = () => {
                                 }
                             >
                                 Certificates
+                            </NavLink>
+                            <NavLink
+                                to="/admin/attendance"
+                                end
+                                onClick={closeMenu}
+                                className={({ isActive }) =>
+                                    `block px-4 py-3 rounded-lg font-medium transition-colors ${
+                                        isActive
+                                            ? "text-blue-600 bg-blue-50"
+                                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+                                    }`
+                                }
+                            >
+                                Attendance
                             </NavLink>
                             <NavLink
                                 to="/admin/job-match"

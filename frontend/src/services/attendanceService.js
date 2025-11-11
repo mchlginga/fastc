@@ -157,3 +157,81 @@ export const isFaceDetectionSupported = () => {
         typeof WebGLRenderingContext !== "undefined"
     );
 };
+
+export const adminAttendanceService = {
+    // Get all attendance records with filters
+    getAttendanceRecords: async (filters = {}) => {
+        try {
+            const response = await api.get("/admin/attendance", {
+                params: filters,
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching attendance records:", error);
+            throw new Error(
+                error.response?.data?.message ||
+                    "Failed to fetch attendance records"
+            );
+        }
+    },
+
+    // Get attendance record by ID
+    getAttendanceRecordById: async (recordId) => {
+        try {
+            const response = await api.get(`/admin/attendance/${recordId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching attendance record:", error);
+            throw new Error(
+                error.response?.data?.message ||
+                    "Failed to fetch attendance record"
+            );
+        }
+    },
+
+    // Manually verify attendance
+    verifyAttendance: async (recordId) => {
+        try {
+            const response = await api.patch(
+                `/admin/attendance/${recordId}/verify`
+            );
+            return response.data;
+        } catch (error) {
+            console.error("Error verifying attendance:", error);
+            throw new Error(
+                error.response?.data?.message || "Failed to verify attendance"
+            );
+        }
+    },
+
+    // Export attendance data as CSV
+    exportAttendance: async (filters = {}) => {
+        try {
+            const response = await api.get("/admin/attendance/export", {
+                params: filters,
+                responseType: "blob",
+            });
+            return response;
+        } catch (error) {
+            console.error("Error exporting attendance:", error);
+            throw new Error(
+                error.response?.data?.message ||
+                    "Failed to export attendance data"
+            );
+        }
+    },
+
+    // Get attendance statistics
+    getAttendanceStats: async () => {
+        try {
+            const response = await api.get("/admin/attendance/stats");
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching attendance stats:", error);
+            throw new Error(
+                error.response?.data?.message ||
+                    "Failed to fetch attendance statistics"
+            );
+        }
+    },
+};
