@@ -267,8 +267,6 @@ function AdminAttendance() {
         }));
     };
 
-    // REMOVED: The old getStats function since we're now fetching stats from the backend
-
     if (loading && attendanceRecords.length === 0) {
         return <AdminAttendanceSkeleton />;
     }
