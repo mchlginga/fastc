@@ -57,6 +57,7 @@ function UserCourses() {
     const [loadingError, setLoadingError] = useState(null);
     const [enrollmentStatus, setEnrollmentStatus] = useState({});
     const [cancellingEnrollment, setCancellingEnrollment] = useState(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("");
@@ -146,6 +147,12 @@ function UserCourses() {
     // Handle course card click
     const handleCourseClick = (courseId) => {
         navigate(`/user/courses/${courseId}/overview`);
+    };
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await fetchData();
+        setRefreshing(false);
     };
 
     // Filter courses based on search query
@@ -361,6 +368,8 @@ function UserCourses() {
                     statusFilter={statusFilter}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
+                    onRefresh={handleRefresh}
+                    refreshing={refreshing}
                 />
 
                 {/* Status Tabs */}

@@ -142,6 +142,10 @@ function AdminCourses() {
         }
     }, []);
 
+    const handleRefresh = async () => {
+        await fetchCourses();
+    };
+
     // Initial fetch and when filters change
     useEffect(() => {
         fetchCourses();
@@ -463,6 +467,7 @@ function AdminCourses() {
                             onBulkStatusUpdate={handleBulkStatusUpdate}
                             onBulkDelete={confirmBulkDelete}
                             stats={stats}
+                            onRefresh={handleRefresh}
                             loading={loading && courses.length > 0}
                         />
                     </div>

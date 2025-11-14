@@ -9,6 +9,7 @@ import {
     Trash2,
     RotateCcw,
     Clock,
+    RefreshCw,
 } from "react-feather";
 import { useState, useEffect } from "react";
 import { adminCourseService } from "../../../services/userService";
@@ -33,11 +34,13 @@ const CertificateFilters = ({
     onBulkDelete,
     stats,
     loading = false,
+    onRefresh,
 }) => {
     const [courses, setCourses] = useState([]);
     const [users, setUsers] = useState([]);
     const [loadingData, setLoadingData] = useState(false);
     const [showBulkActions, setShowBulkActions] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
     // Fetch courses and users for filters
     useEffect(() => {
@@ -45,6 +48,15 @@ const CertificateFilters = ({
             fetchFilterData();
         }
     }, [showFilters]);
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        try {
+            await onRefresh();
+        } finally {
+            setRefreshing(false);
+        }
+    };
 
     const fetchFilterData = async () => {
         try {
@@ -123,6 +135,19 @@ const CertificateFilters = ({
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2">
+                    {/* Refresh Button */}
+                    <button
+                        onClick={handleRefresh}
+                        disabled={loading || refreshing}
+                        className="flex items-center px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Refresh certificates"
+                    >
+                        <RefreshCw
+                            size={16}
+                            className={`${refreshing ? "animate-spin" : ""}`}
+                        />
+                    </button>
+
                     {/* Add Certificate Button */}
                     <button
                         onClick={onAddCertificate}

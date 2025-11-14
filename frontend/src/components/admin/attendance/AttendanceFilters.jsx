@@ -1,4 +1,11 @@
-import { Search, Filter, ChevronDown, X, Download } from "react-feather";
+import {
+    Search,
+    Filter,
+    ChevronDown,
+    X,
+    Download,
+    RefreshCw,
+} from "react-feather";
 import { useState } from "react";
 
 const AttendanceFilters = ({
@@ -19,7 +26,19 @@ const AttendanceFilters = ({
     onExportCSV,
     stats,
     loading = false,
+    onRefresh,
 }) => {
+    const [refreshing, setRefreshing] = useState(false);
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        try {
+            await onRefresh();
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
     const handleClearSearch = () => {
         setSearchTerm("");
     };
@@ -85,7 +104,20 @@ const AttendanceFilters = ({
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2">
-                    {/* Export CSV Button - Updated to blue */}
+                    {/* Refresh Button */}
+                    <button
+                        onClick={handleRefresh}
+                        disabled={loading || refreshing}
+                        className="flex items-center px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Refresh attendance"
+                    >
+                        <RefreshCw
+                            size={16}
+                            className={`${refreshing ? "animate-spin" : ""}`}
+                        />
+                    </button>
+
+                    {/* Export CSV Button */}
                     <button
                         onClick={onExportCSV}
                         disabled={loading}
@@ -161,7 +193,6 @@ const AttendanceFilters = ({
                                 </option>
                                 <option value="hospitality">Hospitality</option>
                                 <option value="technology">Technology</option>
-                                {/* Add more courses as needed */}
                             </select>
                         </div>
 

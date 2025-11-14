@@ -63,7 +63,7 @@ function AdminAttendance() {
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
     const [dateFilter, setDateFilter] = useState(
-        searchParams.get("date") || "today"
+        searchParams.get("date") || "all"
     );
     const [courseFilter, setCourseFilter] = useState(
         searchParams.get("course") || "all"
@@ -136,6 +136,11 @@ function AdminAttendance() {
             // Don't set error state for stats failure, just log it
         }
     }, []);
+
+    const handleRefresh = async () => {
+        await fetchAttendanceRecords();
+        await fetchAttendanceStats();
+    };
 
     // Initial fetch and when filters change
     useEffect(() => {
@@ -322,6 +327,7 @@ function AdminAttendance() {
                             setShowFilters={setShowFilters}
                             onExportCSV={handleExportCSV}
                             stats={stats}
+                            onRefresh={handleRefresh}
                             loading={loading && attendanceRecords.length > 0}
                         />
                     </div>

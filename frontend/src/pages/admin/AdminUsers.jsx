@@ -122,6 +122,10 @@ function AdminUsers() {
         pagination.usersPerPage,
     ]);
 
+    const handleRefresh = async () => {
+        await fetchUsers();
+    };
+
     // Initial fetch and when filters change
     useEffect(() => {
         fetchUsers();
@@ -444,6 +448,7 @@ function AdminUsers() {
                             onBulkStatusUpdate={handleBulkStatusUpdate}
                             onBulkDelete={confirmBulkDelete}
                             stats={stats}
+                            onRefresh={handleRefresh}
                             loading={loading && users.length > 0}
                         />
                     </div>

@@ -33,6 +33,8 @@ function CourseOverviewPage() {
     const [enrolling, setEnrolling] = useState(false);
     const [enrollmentSuccess, setEnrollmentSuccess] = useState(false);
     const [userEnrollments, setUserEnrollments] = useState([]);
+    const [hasPendingEnrollment, setHasPendingEnrollment] = useState(false);
+    const [hasActiveEnrollment, setHasActiveEnrollment] = useState(false);
 
     // Toast notification state
     const [toast, setToast] = useState({
@@ -77,12 +79,35 @@ function CourseOverviewPage() {
         }
     }, [courseId]);
 
-    // Check if user has pending enrollment for this course
-    const hasPendingEnrollment = userEnrollments.some(
-        (enrollment) =>
-            enrollment.course?.id === courseId &&
-            enrollment.status === "pending"
-    );
+    // Check enrollment status after userEnrollments is updated
+    useEffect(() => {
+        if (userEnrollments.length > 0 && courseId) {
+            // Check if user has active enrollment for this course
+            const activeEnrollment = userEnrollments.find(
+                (enrollment) =>
+                    enrollment.course?.id === courseId &&
+                    enrollment.status === "active"
+            );
+
+            if (activeEnrollment) {
+                setHasActiveEnrollment(true);
+                // Redirect to course detail page (active tab)
+                navigate(`/user/courses/${courseId}`, {
+                    state: { from: "overview" },
+                    replace: true, // Replace in history so they can't go back to overview
+                });
+                return;
+            }
+
+            // Check for pending enrollment
+            const pendingEnrollment = userEnrollments.find(
+                (enrollment) =>
+                    enrollment.course?.id === courseId &&
+                    enrollment.status === "pending"
+            );
+            setHasPendingEnrollment(!!pendingEnrollment);
+        }
+    }, [userEnrollments, courseId, navigate]);
 
     // Toast notification helper
     const showToast = (message, type = "success") => {
@@ -109,6 +134,13 @@ function CourseOverviewPage() {
 
         if (user.profileStatus === "pending") {
             showToast("Profile under review - enrollment disabled", "warning");
+            return;
+        }
+
+        // Prevent enrolling if already has active enrollment (shouldn't happen due to redirect, but just in case)
+        if (hasActiveEnrollment) {
+            showToast("You are already enrolled in this course", "info");
+            navigate(`/user/courses/${courseId}`);
             return;
         }
 

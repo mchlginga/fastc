@@ -62,7 +62,7 @@ const AttendanceStats = ({ stats, loading = false }) => {
     }
 
     return (
-        <section className="grid grid-cols-1 gap-5 mb-8 sm:grid-cols-2 lg:grid-cols-5">
+        <section className="grid grid-cols-1 gap-5 mb-8  lg:grid-cols-3">
             <StatCard
                 title="Total Records"
                 value={stats.total}
@@ -80,20 +80,6 @@ const AttendanceStats = ({ stats, loading = false }) => {
                 value={stats.verified}
                 icon={<CheckCircle size={20} className="text-green-600" />}
                 bg="bg-green-50"
-            />
-            <StatCard
-                title="Pending"
-                value={stats.pending}
-                icon={<Users size={20} className="text-amber-600" />}
-                bg="bg-amber-50"
-                type="warning"
-            />
-            <StatCard
-                title="Failed"
-                value={stats.failed}
-                icon={<AlertTriangle size={20} className="text-red-600" />}
-                bg="bg-red-50"
-                type="danger"
             />
         </section>
     );

@@ -159,6 +159,11 @@ function AdminCertificates() {
         }
     };
 
+    const handleRefresh = async () => {
+        await fetchCertificates();
+        await fetchCertificateStats();
+    };
+
     // Initial fetch
     useEffect(() => {
         fetchCertificates();
@@ -822,6 +827,7 @@ function AdminCertificates() {
                             onBulkExpire={handleBulkExpire}
                             onBulkDelete={confirmBulkDelete}
                             stats={stats}
+                            onRefresh={handleRefresh}
                             loading={loading && certificates.length > 0}
                         />
                     </div>

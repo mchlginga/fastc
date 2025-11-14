@@ -6,6 +6,7 @@ import {
     Check,
     X,
     Trash2,
+    RefreshCw,
 } from "react-feather";
 import { useState } from "react";
 
@@ -24,8 +25,19 @@ const CourseFilters = ({
     onBulkDelete,
     stats,
     loading = false,
+    onRefresh,
 }) => {
     const [showBulkActions, setShowBulkActions] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        try {
+            await onRefresh();
+        } finally {
+            setRefreshing(false);
+        }
+    };
 
     const handleClearSearch = () => {
         setSearchTerm("");
@@ -87,6 +99,19 @@ const CourseFilters = ({
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2">
+                    {/* Refresh Button */}
+                    <button
+                        onClick={handleRefresh}
+                        disabled={loading || refreshing}
+                        className="flex items-center px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Refresh courses"
+                    >
+                        <RefreshCw
+                            size={16}
+                            className={`${refreshing ? "animate-spin" : ""}`}
+                        />
+                    </button>
+
                     {/* Add Course Button */}
                     <button
                         onClick={onAddCourse}
