@@ -1,19 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
-    ChevronLeft,
-    ChevronRight,
-    Check,
     Clock,
+    Book,
+    ChevronLeft,
+    Check,
     Play,
     Lock,
-    Book,
     Award,
-    Download,
-    X,
-    Users,
-    Calendar,
     BarChart2,
+    CheckCircle,
+    ChevronRight,
+    Download,
 } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import { getCourseById } from "../../services/courseService";
@@ -27,7 +25,11 @@ import ToastNotification from "../../components/common/ToastNotification";
 import LoadingState from "../../components/common/LoadingState";
 import ErrorState from "../../components/common/ErrorState";
 import LessonSkeleton from "../../components/user/courses/LessonSkeleton";
-import { markAttendance } from "../../services/attendanceService";
+
+// Import your new lesson components
+import YouTubeVideoPlayer from "../../components/user/lesson/VideoPlayer";
+import QuizComponent from "../../components/user/lesson/Quiz";
+import ReadingMaterialComponent from "../../components/user/lesson/ReadingMaterial";
 
 // Certificate Celebration Modal
 const CertificateCelebrationModal = ({
@@ -41,49 +43,49 @@ const CertificateCelebrationModal = ({
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full transform transition-all duration-300 scale-100">
-                <div className="p-8 text-center">
+            <div className="bg-white rounded-xl shadow-xs border border-gray-100 max-w-md w-full">
+                <div className="p-6 text-center">
                     {/* Celebration Animation */}
-                    <div className="w-20 h-20 bg-linear-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-                        <Award size={32} className="text-white" />
+                    <div className="w-16 h-16 bg-linear-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Award size={24} className="text-white" />
                     </div>
 
-                    <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
                         Congratulations! 🎉
                     </h3>
 
-                    <p className="text-gray-600 mb-2">
+                    <p className="text-gray-600 text-sm mb-2">
                         You've successfully completed
                     </p>
-                    <p className="text-lg font-semibold text-blue-600 mb-6">
+                    <p className="text-base font-semibold text-blue-600 mb-4">
                         {courseTitle}
                     </p>
 
-                    <p className="text-gray-500 text-sm mb-6">
+                    <p className="text-gray-500 text-xs mb-4">
                         Your certificate has been generated and is ready to view
                         and download.
                     </p>
 
-                    <div className="flex flex-col space-y-3">
+                    <div className="flex flex-col space-y-2">
                         <button
                             onClick={onViewCertificate}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center cursor-pointer"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center cursor-pointer text-sm"
                         >
-                            <Award size={18} className="mr-2" />
+                            <Award size={16} className="mr-2" />
                             View My Certificate
                         </button>
 
                         <button
                             onClick={onDownloadCertificate}
-                            className="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center cursor-pointer"
+                            className="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center cursor-pointer text-sm"
                         >
-                            <Download size={18} className="mr-2" />
+                            <Download size={16} className="mr-2" />
                             Download Certificate
                         </button>
 
                         <button
                             onClick={onClose}
-                            className="w-full text-gray-600 hover:text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors cursor-pointer"
+                            className="w-full text-gray-600 hover:text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors cursor-pointer text-sm"
                         >
                             Continue Learning
                         </button>
@@ -106,7 +108,7 @@ function Lesson() {
     const [error, setError] = useState(null);
     const [completing, setCompleting] = useState(false);
 
-    // 🆕 State for certificate generation
+    // State for certificate generation
     const [showCertificateModal, setShowCertificateModal] = useState(false);
     const [toastNotification, setToastNotification] = useState(null);
     const [newlyGeneratedCertificate, setNewlyGeneratedCertificate] =
@@ -196,28 +198,6 @@ function Lesson() {
         }
     }, [user, courseId, lessonId, fetchLessonData]);
 
-    const handleMarkAttendance = async () => {
-        try {
-            await markAttendance(courseId, lessonId);
-            setToastNotification({
-                message: "Attendance marked successfully!",
-                type: "success",
-            });
-        } catch (error) {
-            // Don't show error for already marked attendance
-            if (error.response?.status === 409) {
-                console.log("Attendance already marked for today");
-                // Don't show error toast for this case
-                return;
-            }
-            console.error("Error marking attendance:", error);
-            setToastNotification({
-                message: "Failed to mark attendance. Please try again.",
-                type: "error",
-            });
-        }
-    };
-
     const handleCourseCompletion = async () => {
         try {
             console.log("🎉 Course completed! Checking for certificate...");
@@ -237,7 +217,7 @@ function Lesson() {
                 console.log("📜 Certificates response:", certificatesResponse);
                 console.log("🔍 Looking for certificate for course:", courseId);
 
-                // 🆕 FIXED: Better certificate detection logic
+                // FIXED: Better certificate detection logic
                 const newCertificate = certificatesResponse.certificates?.find(
                     (cert) => {
                         console.log("🔍 Checking certificate:", {
@@ -269,7 +249,7 @@ function Lesson() {
                         certificatesResponse.certificates
                     );
 
-                    // 🆕 IMPROVED: Try alternative detection methods
+                    // IMPROVED: Try alternative detection methods
                     const alternativeCert =
                         certificatesResponse.certificates?.find((cert) =>
                             cert.title?.includes(course?.title)
@@ -290,7 +270,7 @@ function Lesson() {
                             type: "success",
                         });
 
-                        // 🆕 IMPROVED: Check again with more detailed logging
+                        // IMPROVED: Check again with more detailed logging
                         setTimeout(async () => {
                             try {
                                 console.log("🔄 Retrying certificate check...");
@@ -346,7 +326,7 @@ function Lesson() {
     const handleViewCertificate = () => {
         if (newlyGeneratedCertificate) {
             try {
-                // 🆕 FIXED: Get token from localStorage and pass it in URL
+                // FIXED: Get token from localStorage and pass it in URL
                 const token = localStorage.getItem("token");
                 if (!token) {
                     throw new Error(
@@ -393,7 +373,7 @@ function Lesson() {
                     course?.title
                 );
 
-                // 🆕 FIX: Only create download link if we have a valid blob
+                // FIX: Only create download link if we have a valid blob
                 if (blob && blob.size > 0) {
                     const url = window.URL.createObjectURL(blob);
                     const link = document.createElement("a");
@@ -454,6 +434,65 @@ function Lesson() {
         setShowCertificateModal(false);
     };
 
+    const handleQuizComplete = async (score, totalQuestions) => {
+        console.log(`🎯 Quiz completed: ${score}/${totalQuestions}`);
+
+        // Auto-complete the lesson when quiz is finished
+        if (!isLessonCompleted()) {
+            try {
+                setCompleting(true);
+
+                // Call API to complete lesson
+                await completeLesson(enrollment.id, lessonId);
+
+                // Update local state immediately without full refresh
+                const updatedCompletedLessons = new Set(
+                    completionState.completedLessons
+                );
+                updatedCompletedLessons.add(lessonId);
+                setCompletionState({
+                    completedLessons: updatedCompletedLessons,
+                    isInitialized: true,
+                });
+
+                // Update enrollment progress locally
+                const totalLessons = course.lessons?.length || 0;
+                const newCompletedCount = updatedCompletedLessons.size;
+                const newProgress = Math.round(
+                    (newCompletedCount / totalLessons) * 100
+                );
+
+                setEnrollment((prev) => ({
+                    ...prev,
+                    progress: newProgress,
+                    completedLessons: Array.from(updatedCompletedLessons),
+                }));
+
+                // Show success message without score
+                setToastNotification({
+                    message: "Quiz completed! Lesson marked as complete.",
+                    type: "success",
+                });
+
+                // Only refresh if course might be completed
+                if (newCompletedCount === totalLessons) {
+                    await fetchLessonData(); // Full refresh for certificate check
+                }
+            } catch (err) {
+                console.error("Error completing lesson after quiz:", err);
+                setToastNotification({
+                    message:
+                        "Quiz completed but failed to mark lesson as complete. Please try again.",
+                    type: "error",
+                });
+                // Refresh data on error
+                await fetchLessonData();
+            } finally {
+                setCompleting(false);
+            }
+        }
+    };
+
     const handleCompleteLesson = async () => {
         if (!enrollment || !completionState.isInitialized) {
             setError("Enrollment data not available");
@@ -466,9 +505,6 @@ function Lesson() {
 
         try {
             setCompleting(true);
-
-            // 🆕 FIX: Remove duplicate attendance marking - it's already done via face verification
-            // await handleMarkAttendance(); // REMOVED - Attendance already marked during face verification
 
             // Call API to complete lesson
             await completeLesson(enrollment.id, lessonId);
@@ -494,7 +530,7 @@ function Lesson() {
                     isInitialized: true,
                 });
 
-                // 🆕 ENHANCED: Check if course is completed and handle certificate
+                // ENHANCED: Check if course is completed and handle certificate
                 if (updatedEnrollment.status === "completed") {
                     await handleCourseCompletion();
                 } else {
@@ -573,7 +609,7 @@ function Lesson() {
             const currentIndex =
                 course.lessons?.findIndex((l) => l._id === lessonId) ?? -1;
             const lessonIndex =
-                course.lessons?.findIndex((l) => l._d === lesson._id) ?? -1;
+                course.lessons?.findIndex((l) => l._id === lesson._id) ?? -1;
 
             if (lessonIndex <= currentIndex) {
                 return "available";
@@ -599,13 +635,134 @@ function Lesson() {
         [courseId, navigate]
     );
 
+    const renderLessonContent = () => {
+        if (!currentLesson) return null;
+
+        const lessonType = currentLesson.lessonType || "text";
+
+        // If lesson is completed, show completion message instead of quiz
+        if (isLessonCompleted() && lessonType === "quiz") {
+            return (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Award size={24} className="text-green-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-green-800 mb-2">
+                        Quiz Completed!
+                    </h3>
+                    <p className="text-green-600 text-lg mb-4">
+                        You have already completed this quiz.
+                    </p>
+                </div>
+            );
+        }
+
+        switch (lessonType) {
+            case "video":
+                return currentLesson.videoUrl ? (
+                    <div className="aspect-w-16 aspect-h-9 bg-gray-900 rounded-lg overflow-hidden">
+                        <YouTubeVideoPlayer videoUrl={currentLesson.videoUrl} />
+                    </div>
+                ) : (
+                    <div className="w-full h-64 flex items-center justify-center bg-gray-100 rounded-lg">
+                        <div className="text-center">
+                            <Play
+                                size={32}
+                                className="text-gray-400 mx-auto mb-2"
+                            />
+                            <p className="text-gray-600 text-sm">
+                                No video content available
+                            </p>
+                        </div>
+                    </div>
+                );
+
+            case "quiz":
+                return currentLesson.quizQuestions &&
+                    currentLesson.quizQuestions.length > 0 ? (
+                    <QuizComponent
+                        quizQuestions={currentLesson.quizQuestions}
+                        onQuizComplete={handleQuizComplete}
+                    />
+                ) : (
+                    <div className="w-full h-64 flex items-center justify-center bg-gray-100 rounded-lg">
+                        <div className="text-center">
+                            <p className="text-gray-600 text-sm">
+                                No quiz questions available for this lesson.
+                            </p>
+                        </div>
+                    </div>
+                );
+
+            case "reading":
+                return currentLesson.attachmentUrl ? (
+                    <ReadingMaterialComponent
+                        attachmentUrl={currentLesson.attachmentUrl}
+                        attachmentName={currentLesson.attachmentName}
+                    />
+                ) : (
+                    <div className="w-full h-64 flex items-center justify-center bg-gray-100 rounded-lg">
+                        <div className="text-center">
+                            <p className="text-gray-600 text-sm">
+                                No reading material available for this lesson.
+                            </p>
+                        </div>
+                    </div>
+                );
+
+            default:
+                // Default text lesson
+                return currentLesson.content ? (
+                    <div className="prose max-w-none">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <Book size={18} className="mr-2 text-blue-600" />
+                            Learning Materials
+                        </h3>
+                        <div className="text-gray-600 text-sm leading-relaxed">
+                            {currentLesson.content}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="w-full h-64 flex items-center justify-center bg-gray-100 rounded-lg">
+                        <div className="text-center">
+                            <p className="text-gray-600 text-sm">
+                                No content available for this lesson.
+                            </p>
+                        </div>
+                    </div>
+                );
+        }
+    };
+
+    // NEW: Get lesson type badge color
+    const getLessonTypeBadge = () => {
+        const lessonType = currentLesson?.lessonType || "text";
+
+        const badgeConfig = {
+            video: { color: "bg-red-100 text-red-800", label: "VIDEO" },
+            quiz: { color: "bg-purple-100 text-purple-800", label: "QUIZ" },
+            reading: { color: "bg-blue-100 text-blue-800", label: "READING" },
+            text: { color: "bg-gray-100 text-gray-800", label: "TEXT" },
+        };
+
+        const config = badgeConfig[lessonType] || badgeConfig.text;
+
+        return (
+            <span
+                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}
+            >
+                {config.label}
+            </span>
+        );
+    };
+
     const renderCompletionSection = () => {
         if (!completionState.isInitialized) {
             return (
-                <div className="mt-8 pt-6 border-t border-gray-200">
+                <div className="mt-6 pt-6 border-t border-gray-200">
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                        <p className="text-gray-600 text-sm">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                        <p className="text-gray-600 text-xs">
                             Loading completion status...
                         </p>
                     </div>
@@ -614,18 +771,19 @@ function Lesson() {
         }
 
         const isCompleted = isLessonCompleted();
+        const lessonType = currentLesson?.lessonType || "text";
 
         if (isCompleted) {
             return (
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Check size={24} className="text-green-600" />
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Check size={20} className="text-green-600" />
                         </div>
-                        <p className="text-green-800 font-semibold text-lg mb-2">
+                        <p className="text-green-800 font-semibold text-sm mb-1">
                             Lesson Completed
                         </p>
-                        <p className="text-green-600 text-sm">
+                        <p className="text-green-600 text-xs">
                             You've successfully completed this lesson
                         </p>
                     </div>
@@ -633,20 +791,37 @@ function Lesson() {
             );
         }
 
+        // Don't show completion button for quiz lessons - they must complete via the quiz
+        if (lessonType === "quiz") {
+            return (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                        <p className="text-blue-800 font-semibold text-sm mb-1">
+                            Complete the Quiz
+                        </p>
+                        <p className="text-blue-600 text-xs">
+                            Finish the quiz above to complete this lesson
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        // Show completion button for other lesson types (video, reading, text)
         return (
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200">
                 <button
                     onClick={handleCompleteLesson}
                     disabled={completing}
-                    className={`w-full py-4 px-6 rounded-xl text-base font-semibold transition-all duration-200 ${
+                    className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition ${
                         completing
                             ? "bg-green-600 text-white cursor-not-allowed"
-                            : "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                            : "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs"
                     }`}
                 >
                     {completing ? (
                         <div className="flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                             Marking as Complete...
                         </div>
                     ) : (
@@ -663,31 +838,31 @@ function Lesson() {
         const isCompleted = isLessonCompleted();
 
         return (
-            <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+            <div className="flex justify-between mt-6 pt-6 border-t border-gray-200">
                 <button
                     onClick={() => handleNavigateToLesson(previousLesson?._id)}
                     disabled={!previousLesson}
-                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                         previousLesson
-                            ? "bg-gray-100 hover:bg-gray-200 text-gray-800 cursor-pointer shadow-md hover:shadow-lg"
+                            ? "bg-gray-100 hover:bg-gray-200 text-gray-800 cursor-pointer"
                             : "bg-gray-100 text-gray-400 cursor-not-allowed"
                     }`}
                 >
-                    <ChevronLeft size={18} className="mr-2" />
-                    Previous Lesson
+                    <ChevronLeft size={16} className="mr-2" />
+                    Previous
                 </button>
 
                 <button
                     onClick={() => handleNavigateToLesson(nextLesson?._id)}
                     disabled={!nextLesson || !isCompleted}
-                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                         nextLesson && isCompleted
-                            ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                            ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs"
                             : "bg-gray-100 text-gray-400 cursor-not-allowed"
                     }`}
                 >
-                    Next Lesson
-                    <ChevronRight size={18} className="ml-2" />
+                    Next
+                    <ChevronRight size={16} className="ml-2" />
                 </button>
             </div>
         );
@@ -699,7 +874,7 @@ function Lesson() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gray-50 py-6">
+            <div className="min-h-screen bg-gray-50/60 py-6">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <ErrorState
                         message={error}
@@ -712,7 +887,7 @@ function Lesson() {
 
     if (!course || !currentLesson || !enrollment) {
         return (
-            <div className="min-h-screen bg-gray-50 py-6">
+            <div className="min-h-screen bg-gray-50/60 py-6">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <ErrorState
                         message="Lesson not found"
@@ -731,53 +906,60 @@ function Lesson() {
 
     return (
         <>
-            <div className="min-h-screen bg-gray-50 py-6">
+            <div className="min-h-screen bg-gray-50/60 py-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    {/* Back Button */}
+                    {/* Header Section */}
                     <div className="mb-6">
-                        <Link
-                            to={`/user/courses/${courseId}`}
-                            className="flex items-center text-gray-600 hover:text-gray-800 transition"
-                        >
-                            <ChevronLeft size={20} className="mr-2" />
-                            Back to {course.title}
-                        </Link>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-xl font-semibold text-gray-900">
+                                    Learning Session
+                                </h1>
+                                <p className="text-gray-600 text-xs mt-1">
+                                    Continue your learning journey
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                         {/* Main Content */}
                         <div className="lg:col-span-3 space-y-6">
-                            {/* Lesson Header */}
-                            <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8">
-                                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+                            {/* Lesson Header Card */}
+                            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
+                                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-3">
-                                            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                            <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                                                 Lesson {currentLessonIndex} of{" "}
                                                 {sortedLessons.length}
                                             </span>
+                                            {getLessonTypeBadge()}
                                             {isCompleted && (
-                                                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center">
+                                                <span className="px-2.5 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center">
                                                     <Check
-                                                        size={14}
+                                                        size={12}
                                                         className="mr-1"
                                                     />
                                                     Completed
                                                 </span>
                                             )}
                                         </div>
-                                        <h1 className="text-3xl font-bold text-gray-800 mb-4">
+                                        <h1 className="text-xl font-semibold text-gray-800 mb-3">
                                             {currentLesson.title}
                                         </h1>
-                                        <p className="text-gray-600 text-lg leading-relaxed">
+                                        <p className="text-gray-600 text-sm leading-relaxed">
                                             {currentLesson.description ||
                                                 "No description available for this lesson."}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                                        <div className="flex items-center bg-gray-50 px-3 py-2 rounded-lg">
-                                            <Clock size={16} className="mr-2" />
-                                            <span>
+                                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                                        <div className="flex items-center bg-gray-50 px-3 py-1.5 rounded-lg">
+                                            <Clock
+                                                size={14}
+                                                className="mr-1.5"
+                                            />
+                                            <span className="text-xs">
                                                 {currentLesson.duration ||
                                                     "Self-paced"}
                                             </span>
@@ -786,7 +968,7 @@ function Lesson() {
                                 </div>
 
                                 {/* Progress Bar */}
-                                <div className="mb-6">
+                                <div className="mb-4">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-sm font-medium text-gray-700">
                                             Course Progress
@@ -795,9 +977,9 @@ function Lesson() {
                                             {enrollment.progress || 0}%
                                         </span>
                                     </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-3">
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5">
                                         <div
-                                            className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                                            className="bg-blue-600 h-1.5 rounded-full transition-all duration-500"
                                             style={{
                                                 width: `${
                                                     enrollment.progress || 0
@@ -809,7 +991,7 @@ function Lesson() {
                                         <span>
                                             {completionState.completedLessons
                                                 .size || 0}{" "}
-                                            lessons completed
+                                            completed
                                         </span>
                                         <span>
                                             {sortedLessons.length -
@@ -822,49 +1004,11 @@ function Lesson() {
                                 </div>
                             </div>
 
-                            {/* Lesson Content */}
-                            <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-                                {/* Video/Content Area */}
-                                <div className="aspect-w-16 aspect-h-9 bg-gray-900">
-                                    {currentLesson.videoUrl ? (
-                                        <iframe
-                                            src={currentLesson.videoUrl}
-                                            className="w-full h-96"
-                                            frameBorder="0"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                            allowFullScreen
-                                        ></iframe>
-                                    ) : (
-                                        <div className="w-full h-96 flex items-center justify-center bg-gray-100">
-                                            <div className="text-center">
-                                                <Play
-                                                    size={48}
-                                                    className="text-gray-400 mx-auto mb-4"
-                                                />
-                                                <p className="text-gray-600 text-sm">
-                                                    No video content available
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Lesson Content Details */}
-                                <div className="p-8">
-                                    {currentLesson.content && (
-                                        <div className="prose max-w-none">
-                                            <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                                                <Book
-                                                    size={20}
-                                                    className="mr-2 text-blue-600"
-                                                />
-                                                Learning Materials
-                                            </h3>
-                                            <div className="text-gray-600 leading-relaxed text-lg">
-                                                {currentLesson.content}
-                                            </div>
-                                        </div>
-                                    )}
+                            {/* Lesson Content Card */}
+                            <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
+                                {/* Lesson Type Content */}
+                                <div className="p-6">
+                                    {renderLessonContent()}
 
                                     {/* Completion Section */}
                                     {renderCompletionSection()}
@@ -878,12 +1022,12 @@ function Lesson() {
                         {/* Sidebar */}
                         <div className="lg:col-span-1 space-y-6">
                             {/* Course Info */}
-                            <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                    <BarChart2 size={18} className="mr-2" />
+                            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-4">
+                                <h3 className="font-semibold text-gray-800 mb-3 flex items-center text-sm">
+                                    <BarChart2 size={14} className="mr-2" />
                                     Course Details
                                 </h3>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">
                                             Status
@@ -936,14 +1080,14 @@ function Lesson() {
                             </div>
 
                             {/* Lesson Navigation */}
-                            <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-                                <div className="p-4 border-b border-gray-200">
-                                    <h3 className="font-semibold text-gray-800 flex items-center">
-                                        <Book size={16} className="mr-2" />
+                            <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
+                                <div className="p-3 border-b border-gray-200">
+                                    <h3 className="font-semibold text-gray-800 flex items-center text-sm">
+                                        <Book size={14} className="mr-2" />
                                         Course Lessons
                                     </h3>
                                 </div>
-                                <div className="max-h-96 overflow-y-auto">
+                                <div className="max-h-80 overflow-y-auto">
                                     {sortedLessons.map((lesson, index) => {
                                         const status = getLessonStatus(lesson);
                                         const isCurrent =
@@ -954,7 +1098,7 @@ function Lesson() {
                                                 key={lesson._id}
                                                 className={`p-3 border-b border-gray-100 last:border-b-0 transition ${
                                                     isCurrent
-                                                        ? "bg-blue-50 border-l-4 border-l-blue-600"
+                                                        ? "bg-blue-50 border-l-2 border-l-blue-600"
                                                         : "hover:bg-gray-50"
                                                 }`}
                                             >
@@ -974,7 +1118,7 @@ function Lesson() {
                                                     }`}
                                                 >
                                                     <div
-                                                        className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                                                        className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs ${
                                                             status ===
                                                             "completed"
                                                                 ? "bg-green-100 text-green-600"
@@ -989,20 +1133,20 @@ function Lesson() {
                                                     >
                                                         {status ===
                                                         "completed" ? (
-                                                            <Check size={14} />
+                                                            <Check size={12} />
                                                         ) : status ===
                                                           "current" ? (
-                                                            <Play size={14} />
+                                                            <Play size={12} />
                                                         ) : status ===
                                                           "available" ? (
                                                             index + 1
                                                         ) : (
-                                                            <Lock size={14} />
+                                                            <Lock size={12} />
                                                         )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <p
-                                                            className={`text-sm font-medium truncate ${
+                                                            className={`text-xs font-medium truncate ${
                                                                 status ===
                                                                 "locked"
                                                                     ? "text-gray-400"
@@ -1027,7 +1171,7 @@ function Lesson() {
                 </div>
             </div>
 
-            {/* 🆕 Certificate Celebration Modal */}
+            {/* Certificate Celebration Modal */}
             <CertificateCelebrationModal
                 isOpen={showCertificateModal}
                 onClose={() => setShowCertificateModal(false)}
@@ -1036,7 +1180,7 @@ function Lesson() {
                 onDownloadCertificate={handleDownloadCertificate}
             />
 
-            {/* 🆕 Toast Notifications */}
+            {/* Toast Notifications */}
             {toastNotification && (
                 <ToastNotification
                     message={toastNotification.message}

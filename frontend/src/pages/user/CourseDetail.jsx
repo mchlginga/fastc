@@ -42,6 +42,7 @@ function CourseDetail() {
     const [showAttendanceModal, setShowAttendanceModal] = useState(false);
 
     const cameFrom = location.state?.from || "available";
+    const isSuperAdmin = user?.role === "superAdmin";
 
     // Add this function to check if attendance was already marked today
     const checkTodayAttendance = async () => {
@@ -56,6 +57,14 @@ function CourseDetail() {
 
     // Update handleContinueLearning to skip face verification if already marked today
     const handleContinueLearning = async () => {
+        if (isSuperAdmin) {
+            const nextLesson = getNextAvailableLesson();
+            if (nextLesson) {
+                navigate(`/user/courses/${courseId}/lesson/${nextLesson._id}`);
+            }
+            return;
+        }
+
         if (!hasEnrolledFace) {
             // Show face enrollment modal first
             setShowFaceModal(true);
@@ -202,6 +211,11 @@ function CourseDetail() {
 
     const handleStartLesson = async (lessonId) => {
         console.log("🎯 Starting lesson:", lessonId);
+
+        if (isSuperAdmin) {
+            navigate(`/user/courses/${courseId}/lesson/${lessonId}`);
+            return;
+        }
 
         if (!hasEnrolledFace) {
             // Show face enrollment modal first

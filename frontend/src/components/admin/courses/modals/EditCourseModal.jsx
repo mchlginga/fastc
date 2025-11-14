@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Plus, Upload, Tag, Award } from "react-feather";
+import { X, Plus, Upload, Tag, Award, Save, Book, Eye } from "react-feather";
 import { adminCourseService } from "../../../../services/userService";
 
 const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
@@ -8,7 +8,6 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         description: "",
         category: "",
         skillLevel: "beginner",
-        duration: "",
         isActive: true,
         tags: [],
         lessons: [],
@@ -17,10 +16,10 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         enrollmentPeriod: 0,
         endDate: "",
         image: null,
-        primarySkill: "",
         skillsTaught: [],
     });
     const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState({});
     const [newTag, setNewTag] = useState("");
     const [newRequirement, setNewRequirement] = useState("");
@@ -67,7 +66,6 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
     const fetchAvailableSkills = async () => {
         try {
             setSkillsLoading(true);
-            // You'll need to implement this service method
             const response = await adminCourseService.getAvailableSkills();
             setAvailableSkills(response.skills || []);
         } catch (error) {
@@ -82,11 +80,35 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         if (course) {
             console.log("📝 Editing course:", course);
 
-            // 🆕 FIX: Properly handle skills data
             const skillsTaught =
                 course.skillsTaught?.map((st) => ({
-                    skill: st.skill?._id || st.skill, // Handle both populated and unpopulated
+                    skill: st.skill?._id || st.skill,
                     level: st.level || "beginner",
+                })) || [];
+
+            // 🆕 FIXED: Ensure each lesson has proper independent data
+            const lessons =
+                course.lessons?.map((lesson, index) => ({
+                    id: lesson._id || `lesson-${Date.now()}-${index}`,
+                    title: lesson.title || "",
+                    duration: lesson.duration || "",
+                    order: lesson.order || index + 1,
+                    content: lesson.content || "",
+                    isRequired:
+                        lesson.isRequired !== undefined
+                            ? lesson.isRequired
+                            : true,
+                    lessonType: lesson.lessonType || "text",
+                    videoUrl: lesson.videoUrl || "",
+                    quizQuestions:
+                        lesson.quizQuestions?.map((q, qIndex) => ({
+                            id: q._id || `question-${Date.now()}-${qIndex}`,
+                            question: q.question || "",
+                            options: q.options || ["", "", "", ""],
+                            correctAnswer: q.correctAnswer || 0,
+                        })) || [],
+                    attachmentUrl: lesson.attachmentUrl || "",
+                    attachmentName: lesson.attachmentName || "",
                 })) || [];
 
             setFormData({
@@ -94,11 +116,10 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                 description: course.description || "",
                 category: course.category || "",
                 skillLevel: course.skillLevel || "beginner",
-                duration: course.duration || "",
                 isActive:
                     course.isActive !== undefined ? course.isActive : true,
                 tags: course.tags || [],
-                lessons: course.lessons || [],
+                lessons: lessons,
                 requirements: course.requirements || [],
                 outcomes: course.outcomes || [],
                 enrollmentPeriod: course.enrollmentPeriod || 0,
@@ -106,16 +127,10 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                     ? new Date(course.endDate).toISOString().split("T")[0]
                     : "",
                 image: course.image || null,
-                primarySkill:
-                    course.primarySkill?._id || course.primarySkill || "", // 🆕 FIX
-                skillsTaught: skillsTaught, // 🆕 FIX
-            });
-
-            // 🆕 ADD: Debug log for skills
-            console.log("🔄 Loaded skills data:", {
-                primarySkill: course.primarySkill?._id || course.primarySkill,
                 skillsTaught: skillsTaught,
             });
+
+            console.log("🔄 Loaded lessons data:", lessons);
 
             if (course.image) {
                 console.log("🖼️ Course image:", course.image);
@@ -143,14 +158,14 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
     }, [course]);
 
     const handleClose = useCallback(() => {
-        if (loading) return;
+        if (loading || saving) return;
         setErrors({});
         setImagePreview(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
         onClose();
-    }, [loading, onClose]);
+    }, [loading, saving, onClose]);
 
     const handleChange = useCallback(
         (e) => {
@@ -227,63 +242,22 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         console.log("✅ Image removed from form data");
     };
 
-    const handleAddTag = () => {
-        if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+    // Cleaner array item management
+    const handleAddItem = (arrayName, newItem, setNewItem) => {
+        if (newItem.trim() && !formData[arrayName].includes(newItem.trim())) {
             setFormData((prev) => ({
                 ...prev,
-                tags: [...prev.tags, newTag.trim()],
+                [arrayName]: [...prev[arrayName], newItem.trim()],
             }));
-            setNewTag("");
+            setNewItem("");
         }
     };
 
-    const handleRemoveTag = (tagToRemove) => {
+    const handleRemoveItem = (arrayName, itemToRemove) => {
         setFormData((prev) => ({
             ...prev,
-            tags: prev.tags.filter((tag) => tag !== tagToRemove),
-        }));
-    };
-
-    const handleAddRequirement = () => {
-        if (
-            newRequirement.trim() &&
-            !formData.requirements.includes(newRequirement.trim())
-        ) {
-            setFormData((prev) => ({
-                ...prev,
-                requirements: [...prev.requirements, newRequirement.trim()],
-            }));
-            setNewRequirement("");
-        }
-    };
-
-    const handleRemoveRequirement = (reqToRemove) => {
-        setFormData((prev) => ({
-            ...prev,
-            requirements: prev.requirements.filter(
-                (req) => req !== reqToRemove
-            ),
-        }));
-    };
-
-    const handleAddOutcome = () => {
-        if (
-            newOutcome.trim() &&
-            !formData.outcomes.includes(newOutcome.trim())
-        ) {
-            setFormData((prev) => ({
-                ...prev,
-                outcomes: [...prev.outcomes, newOutcome.trim()],
-            }));
-            setNewOutcome("");
-        }
-    };
-
-    const handleRemoveOutcome = (outcomeToRemove) => {
-        setFormData((prev) => ({
-            ...prev,
-            outcomes: prev.outcomes.filter(
-                (outcome) => outcome !== outcomeToRemove
+            [arrayName]: prev[arrayName].filter(
+                (item) => item !== itemToRemove
             ),
         }));
     };
@@ -323,35 +297,154 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         }));
     };
 
+    // 🆕 FIXED: Lesson management with proper state isolation
     const handleAddLesson = () => {
+        const newLessonId = Date.now();
         setFormData((prev) => ({
             ...prev,
             lessons: [
                 ...prev.lessons,
                 {
+                    id: newLessonId,
                     title: "",
                     duration: "",
                     order: prev.lessons.length + 1,
                     content: "",
                     isRequired: true,
+                    lessonType: "text",
                     videoUrl: "",
+                    quizQuestions: [],
+                    attachmentUrl: "",
+                    attachmentName: "",
                 },
             ],
         }));
     };
 
-    const handleRemoveLesson = (index) => {
+    const handleRemoveLesson = (id) => {
+        if (formData.lessons.length > 1) {
+            setFormData((prev) => ({
+                ...prev,
+                lessons: prev.lessons.filter((lesson) => lesson.id !== id),
+            }));
+        }
+    };
+
+    // 🆕 FIXED: Proper lesson change without affecting other lessons
+    const handleLessonChange = (id, field, value) => {
+        console.log(`🔄 Changing lesson ${id}, field: ${field}, value:`, value);
+
         setFormData((prev) => ({
             ...prev,
-            lessons: prev.lessons.filter((_, i) => i !== index),
+            lessons: prev.lessons.map((lesson) => {
+                if (lesson.id === id) {
+                    const updatedLesson = { ...lesson, [field]: value };
+
+                    // Reset dependent fields when lesson type changes
+                    if (field === "lessonType") {
+                        console.log(
+                            `🎯 Resetting fields for lesson type change to: ${value}`
+                        );
+                        updatedLesson.videoUrl = value === "video" ? "" : "";
+                        updatedLesson.quizQuestions =
+                            value === "quiz" ? [] : [];
+                        updatedLesson.attachmentUrl =
+                            value === "reading" ? "" : "";
+                        updatedLesson.attachmentName =
+                            value === "reading" ? "" : "";
+                        updatedLesson.content =
+                            value === "text" ? lesson.content : "";
+                    }
+
+                    return updatedLesson;
+                }
+                return lesson;
+            }),
         }));
     };
 
-    const handleLessonChange = (index, field, value) => {
+    // Quiz question management
+    const handleAddQuizQuestion = (lessonId) => {
         setFormData((prev) => ({
             ...prev,
-            lessons: prev.lessons.map((lesson, i) =>
-                i === index ? { ...lesson, [field]: value } : lesson
+            lessons: prev.lessons.map((lesson) =>
+                lesson.id === lessonId
+                    ? {
+                          ...lesson,
+                          quizQuestions: [
+                              ...(lesson.quizQuestions || []),
+                              {
+                                  id: Date.now(),
+                                  question: "",
+                                  options: ["", "", "", ""],
+                                  correctAnswer: 0,
+                              },
+                          ],
+                      }
+                    : lesson
+            ),
+        }));
+    };
+
+    const handleRemoveQuizQuestion = (lessonId, questionId) => {
+        setFormData((prev) => ({
+            ...prev,
+            lessons: prev.lessons.map((lesson) =>
+                lesson.id === lessonId
+                    ? {
+                          ...lesson,
+                          quizQuestions: lesson.quizQuestions.filter(
+                              (q) => q.id !== questionId
+                          ),
+                      }
+                    : lesson
+            ),
+        }));
+    };
+
+    const handleQuizQuestionChange = (lessonId, questionId, field, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            lessons: prev.lessons.map((lesson) =>
+                lesson.id === lessonId
+                    ? {
+                          ...lesson,
+                          quizQuestions: lesson.quizQuestions.map((q) =>
+                              q.id === questionId ? { ...q, [field]: value } : q
+                          ),
+                      }
+                    : lesson
+            ),
+        }));
+    };
+
+    const handleQuizOptionChange = (
+        lessonId,
+        questionId,
+        optionIndex,
+        value
+    ) => {
+        setFormData((prev) => ({
+            ...prev,
+            lessons: prev.lessons.map((lesson) =>
+                lesson.id === lessonId
+                    ? {
+                          ...lesson,
+                          quizQuestions: lesson.quizQuestions.map((q) =>
+                              q.id === questionId
+                                  ? {
+                                        ...q,
+                                        options: q.options.map(
+                                            (opt, optIndex) =>
+                                                optIndex === optionIndex
+                                                    ? value
+                                                    : opt
+                                        ),
+                                    }
+                                  : q
+                          ),
+                      }
+                    : lesson
             ),
         }));
     };
@@ -378,10 +471,6 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
             newErrors.category = "Category is required";
         }
 
-        if (!formData.duration?.trim()) {
-            newErrors.duration = "Duration is required";
-        }
-
         if (formData.enrollmentPeriod < 0) {
             newErrors.enrollmentPeriod = "Enrollment period cannot be negative";
         }
@@ -399,14 +488,29 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         if (formData.lessons.length > 0) {
             formData.lessons.forEach((lesson, index) => {
                 if (!lesson.title?.trim()) {
-                    newErrors[`lesson_${index}_title`] = `Lesson ${
+                    newErrors[`lesson_${lesson.id}_title`] = `Lesson ${
                         index + 1
                     } title is required`;
                 }
                 if (!lesson.duration?.trim()) {
-                    newErrors[`lesson_${index}_duration`] = `Lesson ${
+                    newErrors[`lesson_${lesson.id}_duration`] = `Lesson ${
                         index + 1
                     } duration is required`;
+                }
+
+                if (lesson.lessonType === "quiz" && lesson.quizQuestions) {
+                    lesson.quizQuestions.forEach((question, qIndex) => {
+                        if (!question.question?.trim()) {
+                            newErrors[
+                                `lesson_${lesson.id}_quiz_${question.id}_question`
+                            ] = `Question ${qIndex + 1} is required`;
+                        }
+                        if (question.options.some((opt) => !opt.trim())) {
+                            newErrors[
+                                `lesson_${lesson.id}_quiz_${question.id}_options`
+                            ] = `All options must be filled`;
+                        }
+                    });
                 }
             });
         }
@@ -419,7 +523,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         e.preventDefault();
         if (!validateForm()) return;
 
-        setLoading(true);
+        setSaving(true);
         try {
             const submitData = new FormData();
 
@@ -441,11 +545,9 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                 }
             });
 
-            // 🆕 ADD: Debug log for skills
-            console.log("📤 Submitting course update:", {
+            console.log("📤 Submitting course update with lessons:", {
                 title: formData.title,
-                primarySkill: formData.primarySkill,
-                skillsTaught: formData.skillsTaught,
+                lessons: formData.lessons,
             });
 
             console.log("🔄 Updating course:", course._id);
@@ -457,7 +559,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
             console.error("❌ Error updating course:", error);
             setErrors({ submit: error.message || "Failed to update course" });
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
 
@@ -467,13 +569,13 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 cursor-pointer">
             <div
                 ref={modalRef}
-                className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col cursor-auto transform transition-all duration-200 scale-100"
+                className="bg-white rounded-xl shadow-xl w-full max-w-6xl max-h-[95vh] flex flex-col cursor-auto transform transition-all duration-200 scale-100"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-200">
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-900">
+                        <h2 className="text-xl font-semibold text-gray-900">
                             Edit Course
                         </h2>
                         <p className="text-sm text-gray-600 mt-1">
@@ -483,26 +585,21 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                     <button
                         onClick={handleClose}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                        disabled={loading}
+                        disabled={saving}
                     >
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Form Content */}
+                {/* Form Content - Improved scrolling */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-8">
                         {/* Course Image Upload */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
+                        <div className="bg-white rounded-xl border border-gray-100 p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">
                                 Course Image
-                                {formData.image && (
-                                    <span className="text-xs text-gray-500 ml-2">
-                                        (Click X to remove)
-                                    </span>
-                                )}
-                            </label>
-                            <div className="flex items-center space-x-4">
+                            </h3>
+                            <div className="flex items-center space-x-6">
                                 <div className="flex-1">
                                     <div className="flex items-center justify-center w-full">
                                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
@@ -525,7 +622,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                                 accept="image/jpeg,image/jpg,image/png,image/webp"
                                                 onChange={handleImageUpload}
                                                 disabled={
-                                                    loading || imageUploading
+                                                    saving || imageUploading
                                                 }
                                             />
                                         </label>
@@ -549,7 +646,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                             type="button"
                                             onClick={handleRemoveImage}
                                             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors cursor-pointer"
-                                            disabled={loading}
+                                            disabled={saving}
                                         >
                                             <X size={14} />
                                         </button>
@@ -569,168 +666,117 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                         </div>
 
                         {/* Basic Information */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
+                        <div className="bg-white rounded-xl border border-gray-100 p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                                Basic Information
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
+                                        Course Title *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="title"
+                                        value={formData.title}
+                                        onChange={handleChange}
+                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
+                                            errors.title
+                                                ? "border-red-300 bg-red-50"
+                                                : "border-gray-300"
+                                        }`}
+                                        placeholder="Enter course title"
+                                        disabled={saving}
+                                    />
+                                    {errors.title && (
+                                        <p className="mt-2 text-sm text-red-600 animate-fadeIn">
+                                            {errors.title}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
+                                        Category *
+                                    </label>
+                                    <select
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleChange}
+                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50 ${
+                                            errors.category
+                                                ? "border-red-300 bg-red-50"
+                                                : "border-gray-300"
+                                        }`}
+                                        disabled={saving}
+                                    >
+                                        <option value="">
+                                            Select Category
+                                        </option>
+                                        <option value="Programming">
+                                            Programming
+                                        </option>
+                                        <option value="Data Science">
+                                            Data Science
+                                        </option>
+                                        <option value="Business">
+                                            Business
+                                        </option>
+                                        <option value="Design">Design</option>
+                                        <option value="Marketing">
+                                            Marketing
+                                        </option>
+                                        <option value="Welding">Welding</option>
+                                        <option value="Beauty Care">
+                                            Beauty Care
+                                        </option>
+                                        <option value="Massage Therapy">
+                                            Massage Therapy
+                                        </option>
+                                        <option value="Housekeeping">
+                                            Housekeeping
+                                        </option>
+                                        <option value="Carpentry">
+                                            Carpentry
+                                        </option>
+                                        <option value="Masonry">Masonry</option>
+                                        <option value="Food Services">
+                                            Food Services
+                                        </option>
+                                    </select>
+                                    {errors.category && (
+                                        <p className="mt-2 text-sm text-red-600 animate-fadeIn">
+                                            {errors.category}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Course Title *
+                                    Description *
                                 </label>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    value={formData.title}
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
                                     onChange={handleChange}
+                                    rows={3}
                                     className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
-                                        errors.title
+                                        errors.description
                                             ? "border-red-300 bg-red-50"
                                             : "border-gray-300"
                                     }`}
-                                    placeholder="Enter course title"
-                                    disabled={loading}
+                                    placeholder="Enter course description"
+                                    disabled={saving}
                                 />
-                                {errors.title && (
+                                {errors.description && (
                                     <p className="mt-2 text-sm text-red-600 animate-fadeIn">
-                                        {errors.title}
+                                        {errors.description}
                                     </p>
                                 )}
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Category *
-                                </label>
-                                <select
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleChange}
-                                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50 ${
-                                        errors.category
-                                            ? "border-red-300 bg-red-50"
-                                            : "border-gray-300"
-                                    }`}
-                                    disabled={loading}
-                                >
-                                    <option value="">Select Category</option>
-                                    <option value="Programming">
-                                        Programming
-                                    </option>
-                                    <option value="Data Science">
-                                        Data Science
-                                    </option>
-                                    <option value="Business">Business</option>
-                                    <option value="Design">Design</option>
-                                    <option value="Marketing">Marketing</option>
-                                    <option value="Welding">Welding</option>
-                                    <option value="Beauty Care">
-                                        Beauty Care
-                                    </option>
-                                    <option value="Massage Therapy">
-                                        Massage Therapy
-                                    </option>
-                                    <option value="Housekeeping">
-                                        Housekeeping
-                                    </option>
-                                    <option value="Carpentry">Carpentry</option>
-                                    <option value="Masonry">Masonry</option>
-                                    <option value="Food Services">
-                                        Food Services
-                                    </option>
-                                </select>
-                                {errors.category && (
-                                    <p className="mt-2 text-sm text-red-600 animate-fadeIn">
-                                        {errors.category}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                Description *
-                            </label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                rows={3}
-                                className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
-                                    errors.description
-                                        ? "border-red-300 bg-red-50"
-                                        : "border-gray-300"
-                                }`}
-                                placeholder="Enter course description"
-                                disabled={loading}
-                            />
-                            {errors.description && (
-                                <p className="mt-2 text-sm text-red-600 animate-fadeIn">
-                                    {errors.description}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Enrollment Period and End Date */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Enrollment Period (Days)
-                                </label>
-                                <input
-                                    type="number"
-                                    name="enrollmentPeriod"
-                                    value={formData.enrollmentPeriod}
-                                    onChange={handleChange}
-                                    min="0"
-                                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
-                                        errors.enrollmentPeriod
-                                            ? "border-red-300 bg-red-50"
-                                            : "border-gray-300"
-                                    }`}
-                                    placeholder="0 for self-paced"
-                                    disabled={loading}
-                                />
-                                {errors.enrollmentPeriod && (
-                                    <p className="mt-2 text-sm text-red-600 animate-fadeIn">
-                                        {errors.enrollmentPeriod}
-                                    </p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-2">
-                                    {formData.enrollmentPeriod === 0
-                                        ? "Self-paced course (no time limit)"
-                                        : `${formData.enrollmentPeriod} days access`}
-                                </p>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Course End Date
-                                </label>
-                                <input
-                                    type="date"
-                                    name="endDate"
-                                    value={formData.endDate}
-                                    onChange={handleChange}
-                                    min={new Date().toISOString().split("T")[0]}
-                                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
-                                        errors.endDate
-                                            ? "border-red-300 bg-red-50"
-                                            : "border-gray-300"
-                                    }`}
-                                    disabled={loading}
-                                />
-                                {errors.endDate && (
-                                    <p className="mt-2 text-sm text-red-600 animate-fadeIn">
-                                        {errors.endDate}
-                                    </p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-2">
-                                    Last day students can enroll
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Level and Duration */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
+                            <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
                                     Skill Level
                                 </label>
@@ -739,7 +785,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                     value={formData.skillLevel}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
-                                    disabled={loading}
+                                    disabled={saving}
                                 >
                                     <option value="beginner">Beginner</option>
                                     <option value="intermediate">
@@ -748,81 +794,90 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                     <option value="advanced">Advanced</option>
                                 </select>
                             </div>
+                        </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Duration *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="duration"
-                                    value={formData.duration}
-                                    onChange={handleChange}
-                                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
-                                        errors.duration
-                                            ? "border-red-300 bg-red-50"
-                                            : "border-gray-300"
-                                    }`}
-                                    placeholder="e.g., 6 weeks, Self-paced"
-                                    disabled={loading}
-                                />
-                                {errors.duration && (
-                                    <p className="mt-2 text-sm text-red-600 animate-fadeIn">
-                                        {errors.duration}
+                        {/* Course Settings */}
+                        <div className="bg-white rounded-xl border border-gray-100 p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                                Course Settings
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
+                                        Enrollment Period (Days)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="enrollmentPeriod"
+                                        value={formData.enrollmentPeriod}
+                                        onChange={handleChange}
+                                        min="0"
+                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
+                                            errors.enrollmentPeriod
+                                                ? "border-red-300 bg-red-50"
+                                                : "border-gray-300"
+                                        }`}
+                                        placeholder="0 for self-paced"
+                                        disabled={saving}
+                                    />
+                                    {errors.enrollmentPeriod && (
+                                        <p className="mt-2 text-sm text-red-600 animate-fadeIn">
+                                            {errors.enrollmentPeriod}
+                                        </p>
+                                    )}
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        {formData.enrollmentPeriod === 0
+                                            ? "Self-paced course (no time limit)"
+                                            : `${formData.enrollmentPeriod} days access`}
                                     </p>
-                                )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
+                                        Course End Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        name="endDate"
+                                        value={formData.endDate}
+                                        onChange={handleChange}
+                                        min={
+                                            new Date()
+                                                .toISOString()
+                                                .split("T")[0]
+                                        }
+                                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
+                                            errors.endDate
+                                                ? "border-red-300 bg-red-50"
+                                                : "border-gray-300"
+                                        }`}
+                                        disabled={saving}
+                                    />
+                                    {errors.endDate && (
+                                        <p className="mt-2 text-sm text-red-600 animate-fadeIn">
+                                            {errors.endDate}
+                                        </p>
+                                    )}
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Last day students can enroll
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
                         {/* Skills Section */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Skills
+                        <div className="bg-white rounded-xl border border-gray-100 p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    Skills Taught
                                 </h3>
                                 <Award size={20} className="text-purple-600" />
                             </div>
 
-                            {/* Primary Skill */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Primary Skill
-                                </label>
-                                <select
-                                    name="primarySkill"
-                                    value={formData.primarySkill}
-                                    onChange={handleChange}
-                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
-                                    disabled={loading || skillsLoading}
-                                >
-                                    <option value="">
-                                        Select Primary Skill
-                                    </option>
-                                    {availableSkills.map((skill) => (
-                                        <option
-                                            key={skill._id}
-                                            value={skill._id}
-                                        >
-                                            {skill.name}{" "}
-                                            {skill.category
-                                                ? `(${skill.category})`
-                                                : ""}
-                                        </option>
-                                    ))}
-                                </select>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    The main skill this course focuses on
-                                </p>
-                            </div>
-
-                            {/* Skills Taught */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Skills Taught in this Course
-                                </label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-xs text-gray-600 mb-2">
+                                        <label className="block text-sm text-gray-700 mb-2">
                                             Skill
                                         </label>
                                         <select
@@ -833,8 +888,8 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                                     e.target.value
                                                 )
                                             }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
-                                            disabled={loading || skillsLoading}
+                                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
+                                            disabled={saving || skillsLoading}
                                         >
                                             <option value="">
                                                 Select Skill
@@ -853,7 +908,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-gray-600 mb-2">
+                                        <label className="block text-sm text-gray-700 mb-2">
                                             Proficiency Level
                                         </label>
                                         <select
@@ -864,8 +919,8 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                                     e.target.value
                                                 )
                                             }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
-                                            disabled={loading}
+                                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
+                                            disabled={saving}
                                         >
                                             <option value="beginner">
                                                 Beginner
@@ -876,27 +931,23 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                             <option value="advanced">
                                                 Advanced
                                             </option>
-                                            <option value="expert">
-                                                Expert
-                                            </option>
                                         </select>
                                     </div>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={handleAddSkillTaught}
-                                    disabled={!newSkillTaught.skill || loading}
-                                    className="flex items-center px-4 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+                                    disabled={!newSkillTaught.skill || saving}
+                                    className="flex items-center px-4 py-2.5 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    <Plus size={14} className="mr-2" />
+                                    <Plus size={16} className="mr-2" />
                                     Add Skill
                                 </button>
 
-                                {/* Skills Taught List */}
                                 {formData.skillsTaught.length > 0 && (
                                     <div className="space-y-2">
                                         <h4 className="text-sm font-medium text-gray-700">
-                                            Added Skills:
+                                            Skills in this Course:
                                         </h4>
                                         {formData.skillsTaught.map(
                                             (skillTaught, index) => {
@@ -941,7 +992,7 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                                                 )
                                                             }
                                                             className="text-purple-600 hover:text-purple-800 cursor-pointer disabled:opacity-50"
-                                                            disabled={loading}
+                                                            disabled={saving}
                                                         >
                                                             <X size={14} />
                                                         </button>
@@ -954,236 +1005,292 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                             </div>
                         </div>
 
-                        {/* Tags */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                Tags
-                            </label>
-                            <div className="flex gap-2 mb-3">
-                                <input
-                                    type="text"
-                                    value={newTag}
-                                    onChange={(e) => setNewTag(e.target.value)}
-                                    onKeyPress={(e) =>
-                                        handleKeyPress(e, handleAddTag)
-                                    }
-                                    className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
-                                    placeholder="Add a tag"
-                                    disabled={loading}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleAddTag}
-                                    className="px-4 py-2.5 text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={loading}
-                                >
-                                    <Plus size={16} />
-                                </button>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {formData.tags.map((tag, index) => (
-                                    <span
-                                        key={index}
-                                        className="inline-flex items-center px-3 py-1.5 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-200"
-                                    >
-                                        {tag}
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveTag(tag)}
-                                            className="ml-2 text-blue-600 hover:text-blue-800 cursor-pointer disabled:opacity-50"
-                                            disabled={loading}
-                                        >
-                                            <X size={12} />
-                                        </button>
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Requirements */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                Requirements
-                            </label>
-                            <div className="flex gap-2 mb-3">
-                                <input
-                                    type="text"
-                                    value={newRequirement}
-                                    onChange={(e) =>
-                                        setNewRequirement(e.target.value)
-                                    }
-                                    onKeyPress={(e) =>
-                                        handleKeyPress(e, handleAddRequirement)
-                                    }
-                                    className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
-                                    placeholder="Add a requirement"
-                                    disabled={loading}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleAddRequirement}
-                                    className="px-4 py-2.5 text-white bg-green-600 rounded-lg hover:bg-green-700 cursor-pointer transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={loading}
-                                >
-                                    <Plus size={16} />
-                                </button>
-                            </div>
-                            <div className="space-y-2">
-                                {formData.requirements.map(
-                                    (requirement, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                                        >
-                                            <span className="text-sm text-gray-700">
-                                                {requirement}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    handleRemoveRequirement(
-                                                        requirement
+                        {/* Tags, Requirements & Outcomes */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Tags */}
+                            <div className="bg-white rounded-xl border border-gray-100 p-6">
+                                <h4 className="text-md font-semibold text-gray-900 mb-4">
+                                    Tags
+                                </h4>
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={newTag}
+                                            onChange={(e) =>
+                                                setNewTag(e.target.value)
+                                            }
+                                            onKeyPress={(e) =>
+                                                handleKeyPress(e, () =>
+                                                    handleAddItem(
+                                                        "tags",
+                                                        newTag,
+                                                        setNewTag
                                                     )
-                                                }
-                                                className="text-red-600 hover:text-red-800 cursor-pointer disabled:opacity-50"
-                                                disabled={loading}
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Learning Outcomes */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                Learning Outcomes
-                            </label>
-                            <div className="flex gap-2 mb-3">
-                                <input
-                                    type="text"
-                                    value={newOutcome}
-                                    onChange={(e) =>
-                                        setNewOutcome(e.target.value)
-                                    }
-                                    onKeyPress={(e) =>
-                                        handleKeyPress(e, handleAddOutcome)
-                                    }
-                                    className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
-                                    placeholder="Add a learning outcome"
-                                    disabled={loading}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleAddOutcome}
-                                    className="px-4 py-2.5 text-white bg-purple-600 rounded-lg hover:bg-purple-700 cursor-pointer transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={loading}
-                                >
-                                    <Plus size={16} />
-                                </button>
-                            </div>
-                            <div className="space-y-2">
-                                {formData.outcomes.map((outcome, index) => (
-                                    <div
-                                        key={index}
-                                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                                    >
-                                        <span className="text-sm text-gray-700">
-                                            {outcome}
-                                        </span>
+                                                )
+                                            }
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                            placeholder="Add a tag"
+                                            disabled={saving}
+                                        />
                                         <button
                                             type="button"
                                             onClick={() =>
-                                                handleRemoveOutcome(outcome)
+                                                handleAddItem(
+                                                    "tags",
+                                                    newTag,
+                                                    setNewTag
+                                                )
                                             }
-                                            className="text-red-600 hover:text-red-800 cursor-pointer disabled:opacity-50"
-                                            disabled={loading}
+                                            className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={saving}
                                         >
-                                            <X size={14} />
+                                            <Plus size={16} />
                                         </button>
                                     </div>
-                                ))}
+                                    <div className="flex flex-wrap gap-2">
+                                        {formData.tags.map((tag, index) => (
+                                            <span
+                                                key={index}
+                                                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-200"
+                                            >
+                                                {tag}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleRemoveItem(
+                                                            "tags",
+                                                            tag
+                                                        )
+                                                    }
+                                                    className="ml-2 text-blue-600 hover:text-blue-800 cursor-pointer disabled:opacity-50"
+                                                    disabled={saving}
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Requirements */}
+                            <div className="bg-white rounded-xl border border-gray-100 p-6">
+                                <h4 className="text-md font-semibold text-gray-900 mb-4">
+                                    Requirements
+                                </h4>
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={newRequirement}
+                                            onChange={(e) =>
+                                                setNewRequirement(
+                                                    e.target.value
+                                                )
+                                            }
+                                            onKeyPress={(e) =>
+                                                handleKeyPress(e, () =>
+                                                    handleAddItem(
+                                                        "requirements",
+                                                        newRequirement,
+                                                        setNewRequirement
+                                                    )
+                                                )
+                                            }
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                            placeholder="Add a requirement"
+                                            disabled={saving}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleAddItem(
+                                                    "requirements",
+                                                    newRequirement,
+                                                    setNewRequirement
+                                                )
+                                            }
+                                            className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 cursor-pointer transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={saving}
+                                        >
+                                            <Plus size={16} />
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {formData.requirements.map(
+                                            (requirement, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                                                >
+                                                    <span className="text-sm text-gray-700">
+                                                        {requirement}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleRemoveItem(
+                                                                "requirements",
+                                                                requirement
+                                                            )
+                                                        }
+                                                        className="text-red-600 hover:text-red-800 cursor-pointer disabled:opacity-50"
+                                                        disabled={saving}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Outcomes */}
+                            <div className="bg-white rounded-xl border border-gray-100 p-6">
+                                <h4 className="text-md font-semibold text-gray-900 mb-4">
+                                    Learning Outcomes
+                                </h4>
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={newOutcome}
+                                            onChange={(e) =>
+                                                setNewOutcome(e.target.value)
+                                            }
+                                            onKeyPress={(e) =>
+                                                handleKeyPress(e, () =>
+                                                    handleAddItem(
+                                                        "outcomes",
+                                                        newOutcome,
+                                                        setNewOutcome
+                                                    )
+                                                )
+                                            }
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                            placeholder="Add an outcome"
+                                            disabled={saving}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleAddItem(
+                                                    "outcomes",
+                                                    newOutcome,
+                                                    setNewOutcome
+                                                )
+                                            }
+                                            className="px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 cursor-pointer transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={saving}
+                                        >
+                                            <Plus size={16} />
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {formData.outcomes.map(
+                                            (outcome, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                                                >
+                                                    <span className="text-sm text-gray-700">
+                                                        {outcome}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleRemoveItem(
+                                                                "outcomes",
+                                                                outcome
+                                                            )
+                                                        }
+                                                        className="text-red-600 hover:text-red-800 cursor-pointer disabled:opacity-50"
+                                                        disabled={saving}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Lessons */}
-                        <div>
-                            <div className="flex justify-between items-center mb-3">
-                                <label className="block text-sm font-medium text-gray-700 cursor-pointer">
-                                    Lessons
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={handleAddLesson}
-                                    className="flex items-center px-4 py-2.5 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={loading}
-                                >
-                                    <Plus size={14} className="mr-2" />
-                                    Add Lesson
-                                </button>
+                        {/* 🆕 FIXED: Lessons Section with proper state isolation */}
+                        <div className="bg-white rounded-xl border border-gray-100 p-6">
+                            <div className="mb-6">
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    Course Lessons
+                                </h3>
+                                <p className="text-gray-600 text-sm mt-1">
+                                    Add and organize your course content
+                                </p>
                             </div>
+
                             <div className="space-y-4">
                                 {formData.lessons.map((lesson, index) => (
                                     <div
-                                        key={index}
-                                        className="p-4 border border-gray-200 rounded-lg bg-gray-50/50"
+                                        key={lesson.id}
+                                        className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-300 transition-colors"
                                     >
-                                        <div className="flex justify-between items-start mb-3">
-                                            <h4 className="font-medium text-gray-800">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className="font-medium text-gray-900">
                                                 Lesson {index + 1}
                                             </h4>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    handleRemoveLesson(index)
-                                                }
-                                                className="text-red-600 hover:text-red-800 cursor-pointer disabled:opacity-50"
-                                                disabled={loading}
-                                            >
-                                                <X size={16} />
-                                            </button>
+                                            {formData.lessons.length > 1 && (
+                                                <button
+                                                    onClick={() =>
+                                                        handleRemoveLesson(
+                                                            lesson.id
+                                                        )
+                                                    }
+                                                    className="text-red-600 hover:text-red-700 p-1.5 rounded-lg cursor-pointer hover:bg-red-50 transition-colors"
+                                                    disabled={saving}
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            )}
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                             <div>
-                                                <label className="block text-xs text-gray-600 mb-2">
-                                                    Title *
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Lesson Type
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    value={lesson.title}
+                                                <select
+                                                    value={
+                                                        lesson.lessonType ||
+                                                        "text"
+                                                    }
                                                     onChange={(e) =>
                                                         handleLessonChange(
-                                                            index,
-                                                            "title",
+                                                            lesson.id,
+                                                            "lessonType",
                                                             e.target.value
                                                         )
                                                     }
-                                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
-                                                        errors[
-                                                            `lesson_${index}_title`
-                                                        ]
-                                                            ? "border-red-300 bg-red-50"
-                                                            : "border-gray-300"
-                                                    }`}
-                                                    placeholder="Lesson title"
-                                                    disabled={loading}
-                                                />
-                                                {errors[
-                                                    `lesson_${index}_title`
-                                                ] && (
-                                                    <p className="mt-2 text-xs text-red-600 animate-fadeIn">
-                                                        {
-                                                            errors[
-                                                                `lesson_${index}_title`
-                                                            ]
-                                                        }
-                                                    </p>
-                                                )}
+                                                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer disabled:opacity-50"
+                                                    disabled={saving}
+                                                >
+                                                    <option value="text">
+                                                        Text Lesson
+                                                    </option>
+                                                    <option value="video">
+                                                        Video Lesson
+                                                    </option>
+                                                    <option value="quiz">
+                                                        Quiz Lesson
+                                                    </option>
+                                                    <option value="reading">
+                                                        Reading Material
+                                                    </option>
+                                                </select>
                                             </div>
                                             <div>
-                                                <label className="block text-xs text-gray-600 mb-2">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                                     Duration *
                                                 </label>
                                                 <input
@@ -1191,90 +1298,409 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                                                     value={lesson.duration}
                                                     onChange={(e) =>
                                                         handleLessonChange(
-                                                            index,
+                                                            lesson.id,
                                                             "duration",
                                                             e.target.value
                                                         )
                                                     }
-                                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
+                                                    className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
                                                         errors[
-                                                            `lesson_${index}_duration`
+                                                            `lesson_${lesson.id}_duration`
                                                         ]
                                                             ? "border-red-300 bg-red-50"
                                                             : "border-gray-300"
                                                     }`}
                                                     placeholder="Duration (e.g., 30 mins)"
-                                                    disabled={loading}
+                                                    disabled={saving}
                                                 />
                                                 {errors[
-                                                    `lesson_${index}_duration`
+                                                    `lesson_${lesson.id}_duration`
                                                 ] && (
                                                     <p className="mt-2 text-xs text-red-600 animate-fadeIn">
                                                         {
                                                             errors[
-                                                                `lesson_${index}_duration`
+                                                                `lesson_${lesson.id}_duration`
                                                             ]
                                                         }
                                                     </p>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="mb-3">
-                                            <label className="block text-xs text-gray-600 mb-2">
-                                                Video URL (Optional)
+
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Title *
                                             </label>
                                             <input
-                                                type="url"
-                                                value={lesson.videoUrl || ""}
+                                                type="text"
+                                                value={lesson.title}
                                                 onChange={(e) =>
                                                     handleLessonChange(
-                                                        index,
-                                                        "videoUrl",
+                                                        lesson.id,
+                                                        "title",
                                                         e.target.value
                                                     )
                                                 }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
-                                                placeholder="https://youtube.com/embed/..."
-                                                disabled={loading}
+                                                className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
+                                                    errors[
+                                                        `lesson_${lesson.id}_title`
+                                                    ]
+                                                        ? "border-red-300 bg-red-50"
+                                                        : "border-gray-300"
+                                                }`}
+                                                placeholder="Lesson title"
+                                                disabled={saving}
                                             />
+                                            {errors[
+                                                `lesson_${lesson.id}_title`
+                                            ] && (
+                                                <p className="mt-2 text-xs text-red-600 animate-fadeIn">
+                                                    {
+                                                        errors[
+                                                            `lesson_${lesson.id}_title`
+                                                        ]
+                                                    }
+                                                </p>
+                                            )}
                                         </div>
-                                        <div>
-                                            <label className="block text-xs text-gray-600 mb-2">
-                                                Content/Description
-                                            </label>
-                                            <textarea
-                                                value={lesson.content}
-                                                onChange={(e) =>
-                                                    handleLessonChange(
-                                                        index,
-                                                        "content",
-                                                        e.target.value
+
+                                        {/* Dynamic Content Based on Lesson Type - FIXED */}
+                                        {lesson.lessonType === "video" && (
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    YouTube Video URL
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    value={
+                                                        lesson.videoUrl || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleLessonChange(
+                                                            lesson.id,
+                                                            "videoUrl",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                                    placeholder="https://youtube.com/embed/..."
+                                                    disabled={saving}
+                                                />
+                                                <p className="text-xs text-gray-500 mt-2">
+                                                    Paste YouTube embed URL or
+                                                    video ID
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {lesson.lessonType === "reading" && (
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Reading Material
+                                                </label>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-xs text-gray-600 mb-2">
+                                                            File URL
+                                                        </label>
+                                                        <input
+                                                            type="url"
+                                                            value={
+                                                                lesson.attachmentUrl ||
+                                                                ""
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleLessonChange(
+                                                                    lesson.id,
+                                                                    "attachmentUrl",
+                                                                    e.target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                                            placeholder="https://cloudinary.com/..."
+                                                            disabled={saving}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs text-gray-600 mb-2">
+                                                            File Name
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={
+                                                                lesson.attachmentName ||
+                                                                ""
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleLessonChange(
+                                                                    lesson.id,
+                                                                    "attachmentName",
+                                                                    e.target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                                            placeholder="Study Guide.pdf"
+                                                            disabled={saving}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {lesson.lessonType === "quiz" && (
+                                            <div className="mb-4">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <label className="block text-sm font-medium text-gray-700">
+                                                        Quiz Questions
+                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleAddQuizQuestion(
+                                                                lesson.id
+                                                            )
+                                                        }
+                                                        className="flex items-center px-4 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 cursor-pointer transition-colors disabled:opacity-50"
+                                                        disabled={saving}
+                                                    >
+                                                        <Plus
+                                                            size={14}
+                                                            className="mr-2"
+                                                        />
+                                                        Add Question
+                                                    </button>
+                                                </div>
+
+                                                {lesson.quizQuestions?.map(
+                                                    (question, qIndex) => (
+                                                        <div
+                                                            key={question.id}
+                                                            className="mb-4 p-4 border border-gray-200 rounded-lg bg-white"
+                                                        >
+                                                            <div className="flex justify-between items-start mb-3">
+                                                                <label className="block text-sm font-medium text-gray-700">
+                                                                    Question{" "}
+                                                                    {qIndex + 1}
+                                                                </label>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleRemoveQuizQuestion(
+                                                                            lesson.id,
+                                                                            question.id
+                                                                        )
+                                                                    }
+                                                                    className="text-red-600 hover:text-red-800 cursor-pointer disabled:opacity-50"
+                                                                    disabled={
+                                                                        saving
+                                                                    }
+                                                                >
+                                                                    <X
+                                                                        size={
+                                                                            16
+                                                                        }
+                                                                    />
+                                                                </button>
+                                                            </div>
+
+                                                            <input
+                                                                type="text"
+                                                                value={
+                                                                    question.question
+                                                                }
+                                                                onChange={(e) =>
+                                                                    handleQuizQuestionChange(
+                                                                        lesson.id,
+                                                                        question.id,
+                                                                        "question",
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 mb-3 ${
+                                                                    errors[
+                                                                        `lesson_${lesson.id}_quiz_${question.id}_question`
+                                                                    ]
+                                                                        ? "border-red-300 bg-red-50"
+                                                                        : "border-gray-300"
+                                                                }`}
+                                                                placeholder="Enter question"
+                                                                disabled={
+                                                                    saving
+                                                                }
+                                                            />
+
+                                                            <div className="space-y-2">
+                                                                {[
+                                                                    0, 1, 2, 3,
+                                                                ].map(
+                                                                    (
+                                                                        optIndex
+                                                                    ) => (
+                                                                        <div
+                                                                            key={
+                                                                                optIndex
+                                                                            }
+                                                                            className="flex items-center gap-3"
+                                                                        >
+                                                                            <input
+                                                                                type="radio"
+                                                                                name={`lesson_${lesson.id}_question_${question.id}`}
+                                                                                checked={
+                                                                                    question.correctAnswer ===
+                                                                                    optIndex
+                                                                                }
+                                                                                onChange={() =>
+                                                                                    handleQuizQuestionChange(
+                                                                                        lesson.id,
+                                                                                        question.id,
+                                                                                        "correctAnswer",
+                                                                                        optIndex
+                                                                                    )
+                                                                                }
+                                                                                className="text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                                                disabled={
+                                                                                    saving
+                                                                                }
+                                                                            />
+                                                                            <input
+                                                                                type="text"
+                                                                                value={
+                                                                                    question
+                                                                                        .options[
+                                                                                        optIndex
+                                                                                    ] ||
+                                                                                    ""
+                                                                                }
+                                                                                onChange={(
+                                                                                    e
+                                                                                ) =>
+                                                                                    handleQuizOptionChange(
+                                                                                        lesson.id,
+                                                                                        question.id,
+                                                                                        optIndex,
+                                                                                        e
+                                                                                            .target
+                                                                                            .value
+                                                                                    )
+                                                                                }
+                                                                                className={`flex-1 px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50 ${
+                                                                                    errors[
+                                                                                        `lesson_${lesson.id}_quiz_${question.id}_options`
+                                                                                    ]
+                                                                                        ? "border-red-300 bg-red-50"
+                                                                                        : "border-gray-300"
+                                                                                }`}
+                                                                                placeholder={`Option ${String.fromCharCode(
+                                                                                    65 +
+                                                                                        optIndex
+                                                                                )}`}
+                                                                                disabled={
+                                                                                    saving
+                                                                                }
+                                                                            />
+                                                                        </div>
+                                                                    )
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     )
-                                                }
-                                                rows={2}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
-                                                placeholder="Lesson content/description"
-                                                disabled={loading}
-                                            />
-                                        </div>
+                                                )}
+
+                                                {/* 🆕 ADD: + Add Another Question button for quizzes */}
+                                                {lesson.quizQuestions &&
+                                                    lesson.quizQuestions
+                                                        .length > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleAddQuizQuestion(
+                                                                    lesson.id
+                                                                )
+                                                            }
+                                                            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:border-purple-400 hover:text-purple-600 transition duration-200 cursor-pointer mt-4"
+                                                            disabled={saving}
+                                                        >
+                                                            + Add Another
+                                                            Question
+                                                        </button>
+                                                    )}
+                                            </div>
+                                        )}
+
+                                        {/* Default Content for Text Lessons */}
+                                        {(lesson.lessonType === "text" ||
+                                            !lesson.lessonType) && (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Content/Description
+                                                </label>
+                                                <textarea
+                                                    value={lesson.content}
+                                                    onChange={(e) =>
+                                                        handleLessonChange(
+                                                            lesson.id,
+                                                            "content",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    rows={3}
+                                                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-text disabled:opacity-50"
+                                                    placeholder="Lesson content/description"
+                                                    disabled={saving}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
+
+                            {/* 🆕 ADD: The beautiful "+ Add Another Lesson" button from EducationSection */}
+                            <button
+                                type="button"
+                                onClick={handleAddLesson}
+                                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:border-blue-400 hover:text-blue-600 transition duration-200 cursor-pointer mt-4"
+                                disabled={saving}
+                            >
+                                + Add Another Lesson
+                            </button>
+
+                            {formData.lessons.length === 0 && (
+                                <div className="text-center py-8">
+                                    <div className="bg-gray-100 rounded-full p-4 inline-flex mb-4">
+                                        <Book
+                                            size={32}
+                                            className="text-gray-400"
+                                        />
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-800 mb-2">
+                                        No lessons added yet
+                                    </h3>
+                                    <p className="text-gray-600 text-sm">
+                                        Start by adding your first lesson to
+                                        create the course content.
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Status */}
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                name="isActive"
-                                checked={formData.isActive}
-                                onChange={handleChange}
-                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer disabled:opacity-50"
-                                disabled={loading}
-                            />
-                            <label className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
-                                Active Course
-                            </label>
+                        <div className="bg-white rounded-xl border border-gray-100 p-6">
+                            <div className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    name="isActive"
+                                    checked={formData.isActive}
+                                    onChange={handleChange}
+                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer disabled:opacity-50"
+                                    disabled={saving}
+                                />
+                                <label className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                                    Active Course (Visible to students)
+                                </label>
+                            </div>
                         </div>
 
                         {/* Submit Error */}
@@ -1294,23 +1720,28 @@ const EditCourseModal = ({ isOpen, onClose, course, onCourseUpdated }) => {
                         type="button"
                         onClick={handleClose}
                         className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 cursor-pointer disabled:opacity-50"
-                        disabled={loading}
+                        disabled={saving}
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         onClick={handleSubmit}
-                        disabled={loading}
-                        className="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
+                        disabled={saving}
+                        className={`px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center cursor-pointer ${
+                            saving ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                     >
-                        {loading ? (
-                            <span className="flex items-center gap-2">
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                Updating...
-                            </span>
+                        {saving ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Updating Course...
+                            </>
                         ) : (
-                            "Update Course"
+                            <>
+                                <Save size={16} className="mr-2" />
+                                Update Course
+                            </>
                         )}
                     </button>
                 </div>

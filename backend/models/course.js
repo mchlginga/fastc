@@ -83,6 +83,28 @@ const courseSchema = new mongoose.Schema(
                     type: Boolean,
                     default: true,
                 },
+                lessonType: {
+                    type: String,
+                    enum: ["video", "quiz", "reading", "text"],
+                    default: "text",
+                },
+                videoUrl: {
+                    type: String,
+                    trim: true,
+                },
+                quizQuestions: [
+                    {
+                        question: String,
+                        options: [String], // Array of choices
+                        correctAnswer: Number, // Index of correct option (0, 1, 2, 3)
+                    },
+                ],
+                attachmentUrl: {
+                    type: String,
+                },
+                attachmentName: {
+                    type: String,
+                },
             },
         ],
         requirements: [

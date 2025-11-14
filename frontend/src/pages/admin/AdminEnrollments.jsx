@@ -599,6 +599,7 @@ function AdminEnrollments() {
                             onBulkDelete={confirmBulkDelete}
                             stats={stats}
                             loading={loading && enrollments.length > 0}
+                            onRefresh={fetchEnrollments}
                         />
                     </div>
 
