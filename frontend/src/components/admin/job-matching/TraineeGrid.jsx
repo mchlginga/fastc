@@ -110,20 +110,6 @@ const TraineeGrid = memo(
                             )}
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3">
-                            <select
-                                value={sortBy}
-                                onChange={(e) => onSortChange(e.target.value)}
-                                className="px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer bg-white"
-                            >
-                                <option value="matchScoreDesc">
-                                    Best Match First
-                                </option>
-                                <option value="matchScoreAsc">
-                                    Lowest Match First
-                                </option>
-                                <option value="nameAsc">Name A-Z</option>
-                                <option value="nameDesc">Name Z-A</option>
-                            </select>
                             <button
                                 onClick={onExport}
                                 disabled={

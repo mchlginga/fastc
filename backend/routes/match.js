@@ -27,8 +27,4 @@ router.post(
     logCsvExport
 );
 
-// Company routes (similar functionality but for company perspective)
-router.get("/company/matches", checkRoles(["company"]), getJobMatches);
-router.post("/company/log-export", checkRoles(["company"]), logCsvExport);
-
 module.exports = router;

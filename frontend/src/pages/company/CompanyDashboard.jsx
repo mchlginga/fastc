@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     getJobMatches,
     getMatchingStats,
@@ -23,7 +23,7 @@ import {
 // Skeleton Component
 import AdminJobMatchingSkeleton from "../../components/admin/job-matching/AdminJobMatchingSkeleton";
 
-// 🆕 NEW: Company Profile Alert
+// Company Components
 import CompanyProfileAlert from "../../components/company/CompanyProfileAlert";
 
 const CompanyDashboard = () => {
@@ -68,15 +68,99 @@ const CompanyDashboard = () => {
     });
     const [toastNotification, setToastNotification] = useState(null);
 
-    // 🆕 UPDATED: Check access based on role AND profile status
+    // Access control
     const hasAccess =
         user && (user.role === "company" || user.role === "superAdmin");
     const isPendingCompany =
         user?.role === "company" && user?.profileStatus === "pending";
-    const canExportCSV = !isPendingCompany; // 🆕 NEW: Block CSV export for pending companies
+
+    // Memoized filter application (same as Admin)
+    const applyFilters = useCallback((traineesList, currentFilters) => {
+        if (!traineesList.length) return [];
+
+        return traineesList.filter((trainee) => {
+            // Skills filter
+            if (currentFilters.skills.length > 0) {
+                const traineeSkills =
+                    trainee.match.factors?.skillDetails?.map((s) => s.name) ||
+                    [];
+                const hasMatchingSkill = currentFilters.skills.some(
+                    (filterSkill) =>
+                        traineeSkills.some((traineeSkill) =>
+                            traineeSkill
+                                .toLowerCase()
+                                .includes(filterSkill.toLowerCase())
+                        )
+                );
+                if (!hasMatchingSkill) return false;
+            }
+
+            // Certifications filter
+            if (currentFilters.certifications.length > 0) {
+                const traineeCerts =
+                    trainee.certificates?.map((c) => c.title) || [];
+                const hasMatchingCert = currentFilters.certifications.some(
+                    (filterCert) =>
+                        traineeCerts.some((traineeCert) =>
+                            traineeCert
+                                .toLowerCase()
+                                .includes(filterCert.toLowerCase())
+                        )
+                );
+                if (!hasMatchingCert) return false;
+            }
+
+            // Availability filter
+            if (currentFilters.availability.length > 0) {
+                if (
+                    !currentFilters.availability.includes(trainee.availability)
+                ) {
+                    return false;
+                }
+            }
+
+            // Issuer filter
+            if (currentFilters.issuer.length > 0) {
+                const traineeIssuers =
+                    trainee.certificates?.map((c) => c.issuedBy) || [];
+                const hasMatchingIssuer = currentFilters.issuer.some((issuer) =>
+                    traineeIssuers.includes(issuer)
+                );
+                if (!hasMatchingIssuer) return false;
+            }
+
+            // Category filter
+            if (currentFilters.category.length > 0) {
+                if (!currentFilters.category.includes(trainee.match.category)) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }, []);
+
+    // Memoized sorting (same as Admin)
+    const sortTrainees = useCallback((traineesList, sortMethod) => {
+        const sorted = [...traineesList];
+        switch (sortMethod) {
+            case "matchScoreDesc":
+                return sorted.sort((a, b) => b.match.score - a.match.score);
+            case "matchScoreAsc":
+                return sorted.sort((a, b) => a.match.score - b.match.score);
+            case "nameAsc":
+                return sorted.sort((a, b) => a.name.localeCompare(b.name));
+            case "nameDesc":
+                return sorted.sort((a, b) => b.name.localeCompare(a.name));
+            default:
+                return sorted;
+        }
+    }, []);
 
     useEffect(() => {
         const fetchTraineesAndData = async () => {
+            if (!hasAccess) return;
+
             setLoading(true);
             try {
                 const params = {};
@@ -92,25 +176,7 @@ const CompanyDashboard = () => {
                     params.category = filters.category.join(",");
 
                 const data = await getJobMatches(params);
-
-                let sortedTrainees = data.trainees;
-                if (sortBy === "matchScoreDesc") {
-                    sortedTrainees = sortedTrainees.sort(
-                        (a, b) => b.match.score - a.match.score
-                    );
-                } else if (sortBy === "matchScoreAsc") {
-                    sortedTrainees = sortedTrainees.sort(
-                        (a, b) => a.match.score - b.match.score
-                    );
-                } else if (sortBy === "nameAsc") {
-                    sortedTrainees = sortedTrainees.sort((a, b) =>
-                        a.name.localeCompare(b.name)
-                    );
-                } else if (sortBy === "nameDesc") {
-                    sortedTrainees = sortedTrainees.sort((a, b) =>
-                        b.name.localeCompare(a.name)
-                    );
-                }
+                const sortedTrainees = sortTrainees(data.trainees, sortBy);
 
                 setTrainees(sortedTrainees);
                 setFilteredTrainees(sortedTrainees);
@@ -135,30 +201,20 @@ const CompanyDashboard = () => {
             }
         };
 
-        if (hasAccess) {
-            fetchTraineesAndData();
-            fetchStats();
-        } else if (user) {
-            // User is logged in but doesn't have access
-            setError("Access denied. Company or Super Admin role required.");
-            setLoading(false);
-        }
-        // If user is null, we're still loading auth - don't set loading to false
-    }, [user, filters, sortBy, hasAccess]);
+        fetchTraineesAndData();
+        fetchStats();
+    }, [user, filters, sortBy, hasAccess, sortTrainees]);
 
-    // Add timeout for loading state
+    // Apply filters locally when possible (same as Admin)
     useEffect(() => {
-        const timer = setTimeout(() => {
-            if (loading && !hasAccess && !user) {
-                setError("Authentication timeout. Please refresh the page.");
-                setLoading(false);
-            }
-        }, 10000); // 10 second timeout
+        if (trainees.length > 0) {
+            const filtered = applyFilters(trainees, filters);
+            const sorted = sortTrainees(filtered, sortBy);
+            setFilteredTrainees(sorted);
+        }
+    }, [trainees, filters, sortBy, applyFilters, sortTrainees]);
 
-        return () => clearTimeout(timer);
-    }, [loading, hasAccess, user]);
-
-    const handleFilterChange = (category, value) => {
+    const handleFilterChange = useCallback((category, value) => {
         setFilters((prev) => {
             const currentValues = prev[category];
             const newValues = currentValues.includes(value)
@@ -166,21 +222,20 @@ const CompanyDashboard = () => {
                 : [...currentValues, value];
             return { ...prev, [category]: newValues };
         });
-    };
+    }, []);
 
-    // 🆕 NEW: Handle individual filter removal
-    const handleRemoveFilter = (category, value) => {
+    const handleRemoveFilter = useCallback((category, value) => {
         setFilters((prev) => ({
             ...prev,
             [category]: prev[category].filter((v) => v !== value),
         }));
-    };
+    }, []);
 
-    const toggleSection = (section) => {
+    const toggleSection = useCallback((section) => {
         setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
-    };
+    }, []);
 
-    const clearFilters = () => {
+    const clearFilters = useCallback(() => {
         setFilters({
             skills: [],
             certifications: [],
@@ -191,10 +246,10 @@ const CompanyDashboard = () => {
         setSkillSearch("");
         setCertSearch("");
         setCategorySearch("");
-    };
+    }, []);
 
     const exportToCSV = async () => {
-        // 🆕 NEW: Block CSV export for pending companies
+        // Block CSV export for pending companies
         if (isPendingCompany) {
             setToastNotification({
                 message:
@@ -225,9 +280,11 @@ const CompanyDashboard = () => {
                 trainee.name,
                 trainee.email,
                 trainee.contactNumber || "N/A",
-                trainee.skills?.join(", ") || "None",
+                trainee.match.factors?.skillDetails
+                    ?.map((s) => s.name)
+                    .join(", ") || "None",
                 trainee.certificates
-                    ?.map((c) => `${c.name} (${c.issuer})`)
+                    ?.map((c) => `${c.title} (${c.issuedBy})`)
                     .join(", ") || "None",
                 trainee.availability || "N/A",
                 `${trainee.match.score}%`,
@@ -347,19 +404,19 @@ const CompanyDashboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* 🆕 NEW: Company Profile Alert */}
+                {/* Company Profile Alert */}
                 <CompanyProfileAlert user={user} />
 
                 {/* Header - Dynamic based on role */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
                                 {getHeaderTitle()}
                             </h1>
-                            <p className="text-gray-600">
+                            <p className="text-gray-600 text-sm">
                                 {getHeaderDescription()}
                             </p>
                         </div>
@@ -378,21 +435,18 @@ const CompanyDashboard = () => {
 
                 {/* Stats Cards */}
                 <div className="mb-6">
-                    <JobMatchingStats stats={stats} />
+                    <JobMatchingStats stats={stats} loading={loading} />
                 </div>
 
                 {/* Main Content */}
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Filter Panel */}
-                    <div className="w-full lg:w-80 flex-shrink-0">
+                    <div className="w-full lg:w-80 shrink-0">
                         <JobMatchingFilters
                             filters={filters}
                             filterOptions={filterOptions}
                             expandedSections={expandedSections}
                             isFilterOpen={isFilterOpen}
-                            skillSearch={skillSearch}
-                            certSearch={certSearch}
-                            categorySearch={categorySearch}
                             hasFilters={hasFilters}
                             onFilterChange={handleFilterChange}
                             onToggleSection={toggleSection}
@@ -408,15 +462,13 @@ const CompanyDashboard = () => {
                     <div className="flex-1">
                         <TraineeGrid
                             trainees={filteredTrainees}
-                            sortBy={sortBy}
                             exporting={exporting}
                             hasFilters={hasFilters}
-                            onSortChange={setSortBy}
                             onExport={exportToCSV}
                             onClearFilters={clearFilters}
-                            filters={filters} // 🆕 NEW: Pass filters for active filter display
-                            onRemoveFilter={handleRemoveFilter} // 🆕 NEW: Pass remove filter function
-                            isPendingCompany={isPendingCompany} // 🆕 NEW: Pass pending status
+                            filters={filters}
+                            onRemoveFilter={handleRemoveFilter}
+                            isPendingCompany={isPendingCompany}
                         />
                     </div>
                 </div>
