@@ -11,6 +11,8 @@ import { useState } from "react";
 const AttendanceFilters = ({
     searchTerm,
     setSearchTerm,
+    onSearch,
+    onClearSearch,
     dateFilter,
     setDateFilter,
     courseFilter,
@@ -39,8 +41,23 @@ const AttendanceFilters = ({
         }
     };
 
-    const handleClearSearch = () => {
+    const handleKeyPress = (e) => {
+        if (e.key === "Enter") {
+            handleManualSearch();
+        }
+    };
+
+    const handleManualSearch = () => {
+        onSearch(searchTerm);
+    };
+
+    const handleInputChange = (value) => {
+        setSearchTerm(value);
+    };
+
+    const handleClear = () => {
         setSearchTerm("");
+        onClearSearch();
     };
 
     const handleClearDateRange = () => {
@@ -84,20 +101,23 @@ const AttendanceFilters = ({
                             type="text"
                             placeholder="Search by trainee name, email, or course..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-10 py-2.5 text-gray-700 placeholder-gray-500 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 cursor-text"
+                            onChange={(e) => handleInputChange(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            className="w-full pl-10 pr-20 py-2.5 text-gray-700 placeholder-gray-500 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 cursor-text"
                             disabled={loading}
                         />
-                        {/* Clear Search Button */}
+                        {/* Search and Clear Buttons */}
                         {searchTerm && (
-                            <button
-                                onClick={handleClearSearch}
-                                disabled={loading}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer"
-                                title="Clear search"
-                            >
-                                <X size={16} />
-                            </button>
+                            <>
+                                <button
+                                    onClick={handleClear}
+                                    disabled={loading}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer"
+                                    title="Clear search"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>

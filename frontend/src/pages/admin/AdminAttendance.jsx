@@ -4,7 +4,6 @@ import { Clock, Calendar, Users, CheckCircle } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import { adminAttendanceService } from "../../services/attendanceService";
 
-// Components
 import {
     AttendanceStats,
     AttendanceFilters,
@@ -12,17 +11,14 @@ import {
     AttendanceDetailsModal,
 } from "../../components/admin/attendance";
 
-// Common Components
 import {
     LoadingState,
     ErrorState,
     ToastNotification,
 } from "../../components/common";
 
-// Skeleton Component
 import AdminAttendanceSkeleton from "../../components/admin/attendance/AdminAttendanceSkeleton";
 
-// Debounce hook
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -50,7 +46,6 @@ function AdminAttendance() {
     const [selectedRecord, setSelectedRecord] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-    // NEW: Add stats state to store total statistics
     const [stats, setStats] = useState({
         total: 0,
         today: 0,
@@ -59,9 +54,9 @@ function AdminAttendance() {
         failed: 0,
     });
 
-    // Filters and search
     const [searchTerm, setSearchTerm] = useState("");
-    const debouncedSearchTerm = useDebounce(searchTerm, 500);
+    const [activeSearchTerm, setActiveSearchTerm] = useState("");
+    const debouncedSearchTerm = useDebounce(activeSearchTerm, 500);
     const [dateFilter, setDateFilter] = useState(
         searchParams.get("date") || "all"
     );
@@ -73,11 +68,9 @@ function AdminAttendance() {
     );
     const [showFilters, setShowFilters] = useState(false);
 
-    // Date range for custom filter
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
 
-    // Pagination
     const [pagination, setPagination] = useState({
         currentPage: 1,
         totalPages: 1,
@@ -85,14 +78,13 @@ function AdminAttendance() {
         recordsPerPage: 10,
     });
 
-    // Fetch attendance records with optimized dependencies
     const fetchAttendanceRecords = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
 
             const response = await adminAttendanceService.getAttendanceRecords({
-                search: debouncedSearchTerm,
+                search: debouncedSearchTerm || "",
                 date: dateFilter !== "all" ? dateFilter : "",
                 course: courseFilter !== "all" ? courseFilter : "",
                 status: statusFilter !== "all" ? statusFilter : "",
@@ -126,15 +118,24 @@ function AdminAttendance() {
         pagination.recordsPerPage,
     ]);
 
-    // NEW: Fetch total statistics separately
     const fetchAttendanceStats = useCallback(async () => {
         try {
             const response = await adminAttendanceService.getAttendanceStats();
             setStats(response.stats);
         } catch (err) {
             console.error("Error fetching attendance stats:", err);
-            // Don't set error state for stats failure, just log it
         }
+    }, []);
+
+    const handleSearch = useCallback(() => {
+        setActiveSearchTerm(searchTerm);
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    }, [searchTerm]);
+
+    const handleClearSearch = useCallback(() => {
+        setSearchTerm("");
+        setActiveSearchTerm("");
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
     }, []);
 
     const handleRefresh = async () => {
@@ -142,14 +143,11 @@ function AdminAttendance() {
         await fetchAttendanceStats();
     };
 
-    // Initial fetch and when filters change
     useEffect(() => {
         fetchAttendanceRecords();
-        // Fetch stats whenever filters change to get updated totals
         fetchAttendanceStats();
     }, [fetchAttendanceRecords, fetchAttendanceStats]);
 
-    // Reset to page 1 when filters change
     useEffect(() => {
         if (pagination.currentPage !== 1) {
             setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -163,7 +161,6 @@ function AdminAttendance() {
         endDate,
     ]);
 
-    // Update URL when filters change
     useEffect(() => {
         const params = new URLSearchParams();
         if (dateFilter !== "all") params.set("date", dateFilter);
@@ -206,7 +203,6 @@ function AdminAttendance() {
                 )
             );
 
-            // Refresh stats after manual verification
             fetchAttendanceStats();
 
             setToastNotification({
@@ -232,7 +228,6 @@ function AdminAttendance() {
                 endDate: endDate || undefined,
             });
 
-            // Create download link
             const blob = new Blob([response.data], { type: "text/csv" });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
@@ -257,10 +252,8 @@ function AdminAttendance() {
         }
     };
 
-    // Pagination handlers
     const handlePageChange = (newPage) => {
         setPagination((prev) => ({ ...prev, currentPage: newPage }));
-        // Smooth scroll to top
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -283,7 +276,6 @@ function AdminAttendance() {
     return (
         <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3 mb-2">
                         <div>
@@ -298,7 +290,6 @@ function AdminAttendance() {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
                 <div className="mb-6">
                     <AttendanceStats
                         stats={stats}
@@ -306,13 +297,13 @@ function AdminAttendance() {
                     />
                 </div>
 
-                {/* Main Content Card */}
                 <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
-                    {/* Filters Section */}
                     <div className="p-6 border-b border-gray-100">
                         <AttendanceFilters
                             searchTerm={searchTerm}
                             setSearchTerm={setSearchTerm}
+                            onSearch={handleSearch}
+                            onClearSearch={handleClearSearch}
                             dateFilter={dateFilter}
                             setDateFilter={setDateFilter}
                             courseFilter={courseFilter}
@@ -332,7 +323,6 @@ function AdminAttendance() {
                         />
                     </div>
 
-                    {/* Table Section */}
                     <div>
                         <AttendanceTable
                             records={attendanceRecords}
@@ -344,7 +334,6 @@ function AdminAttendance() {
                         />
                     </div>
 
-                    {/* Pagination */}
                     {pagination.totalPages > 1 && (
                         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
                             <Pagination
@@ -372,7 +361,6 @@ function AdminAttendance() {
                     />
                 )}
 
-                {/* Toast Notifications */}
                 {toastNotification && (
                     <ToastNotification
                         message={toastNotification.message}
@@ -385,7 +373,6 @@ function AdminAttendance() {
     );
 }
 
-// Pagination Component (keep the same as before)
 const Pagination = ({
     pagination,
     onPageChange,
@@ -439,7 +426,6 @@ const Pagination = ({
 
     return (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Records per page selector */}
             <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-700">Show</span>
                 <select
@@ -458,16 +444,13 @@ const Pagination = ({
                 <span className="text-sm text-gray-700">records per page</span>
             </div>
 
-            {/* Page info */}
             <div className="text-sm text-gray-700">
                 Showing {(currentPage - 1) * recordsPerPage + 1} to{" "}
                 {Math.min(currentPage * recordsPerPage, totalRecords)} of{" "}
                 {totalRecords} records
             </div>
 
-            {/* Page navigation */}
             <div className="flex items-center gap-1">
-                {/* First Page */}
                 <button
                     onClick={() => onPageChange(1)}
                     disabled={currentPage === 1 || loading}
@@ -476,7 +459,6 @@ const Pagination = ({
                     «
                 </button>
 
-                {/* Previous Page */}
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1 || loading}
@@ -485,7 +467,6 @@ const Pagination = ({
                     ‹
                 </button>
 
-                {/* Page Numbers */}
                 {getPageNumbers().map((page) => (
                     <button
                         key={page}
@@ -501,7 +482,6 @@ const Pagination = ({
                     </button>
                 ))}
 
-                {/* Next Page */}
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages || loading}
@@ -510,7 +490,6 @@ const Pagination = ({
                     ›
                 </button>
 
-                {/* Last Page */}
                 <button
                     onClick={() => onPageChange(totalPages)}
                     disabled={currentPage === totalPages || loading}

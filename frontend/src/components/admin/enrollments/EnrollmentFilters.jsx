@@ -9,7 +9,7 @@ import {
     Clock,
     Award,
     AlertCircle,
-    RefreshCw, //  ADD THIS IMPORT
+    RefreshCw,
 } from "react-feather";
 import { useState, useEffect } from "react";
 import { adminCourseService } from "../../../services/userService";
@@ -18,6 +18,8 @@ import { adminUserService } from "../../../services/userService";
 const EnrollmentFilters = ({
     searchTerm,
     setSearchTerm,
+    onSearch,
+    onClearSearch,
     statusFilter,
     setStatusFilter,
     courseFilter,
@@ -33,13 +35,13 @@ const EnrollmentFilters = ({
     onBulkApproveEnrollments,
     stats,
     loading = false,
-    onRefresh, //  ADD THIS PROP
+    onRefresh,
 }) => {
     const [courses, setCourses] = useState([]);
     const [users, setUsers] = useState([]);
     const [loadingData, setLoadingData] = useState(false);
     const [showBulkActions, setShowBulkActions] = useState(false);
-    const [refreshing, setRefreshing] = useState(false); //  ADD REFRESH STATE
+    const [refreshing, setRefreshing] = useState(false);
 
     // Fetch courses and users for filters
     useEffect(() => {
@@ -48,14 +50,32 @@ const EnrollmentFilters = ({
         }
     }, [showFilters]);
 
-    //  ADD REFRESH HANDLER
     const handleRefresh = async () => {
         setRefreshing(true);
         try {
-            await onRefresh(); // Call the parent refresh function
+            await onRefresh();
         } finally {
             setRefreshing(false);
         }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === "Enter") {
+            handleManualSearch();
+        }
+    };
+
+    const handleManualSearch = () => {
+        onSearch(searchTerm);
+    };
+
+    const handleInputChange = (value) => {
+        setSearchTerm(value);
+    };
+
+    const handleClear = () => {
+        setSearchTerm("");
+        onClearSearch();
     };
 
     const fetchFilterData = async () => {
@@ -75,11 +95,7 @@ const EnrollmentFilters = ({
         }
     };
 
-    const handleClearSearch = () => {
-        setSearchTerm("");
-    };
-
-    //  NEW: Check if any selected enrollments are pending
+    // Check if any selected enrollments are pending
     const hasPendingEnrollments = selectedEnrollments.size > 0;
 
     if (loading) {
@@ -118,27 +134,30 @@ const EnrollmentFilters = ({
                             type="text"
                             placeholder="Search by user name, email, or course title..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-10 py-2.5 text-gray-700 placeholder-gray-500 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 cursor-text"
+                            onChange={(e) => handleInputChange(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            className="w-full pl-10 pr-20 py-2.5 text-gray-700 placeholder-gray-500 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 cursor-text"
                             disabled={loading}
                         />
-                        {/* Clear Search Button */}
+                        {/* Search and Clear Buttons */}
                         {searchTerm && (
-                            <button
-                                onClick={handleClearSearch}
-                                disabled={loading}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer"
-                                title="Clear search"
-                            >
-                                <X size={16} />
-                            </button>
+                            <>
+                                <button
+                                    onClick={handleClear}
+                                    disabled={loading}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer"
+                                    title="Clear search"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2">
-                    {/*  REFRESH BUTTON */}
+                    {/* Refresh Button */}
                     <button
                         onClick={handleRefresh}
                         disabled={loading || refreshing}
@@ -147,9 +166,8 @@ const EnrollmentFilters = ({
                     >
                         <RefreshCw
                             size={16}
-                            className={` ${refreshing ? "animate-spin" : ""}`}
+                            className={`${refreshing ? "animate-spin" : ""}`}
                         />
-                        {/* {refreshing ? "Refreshing..." : "Refresh"} */}
                     </button>
 
                     {/* Add Enrollment Button */}

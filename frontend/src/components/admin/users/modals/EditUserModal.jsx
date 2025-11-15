@@ -2,7 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { X } from "react-feather";
 import { adminUserService } from "../../../../services/userService";
 
-const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
+const EditUserModal = ({
+    isOpen,
+    onClose,
+    user,
+    onUserUpdated,
+    onStatusUpdate,
+}) => {
     const [formData, setFormData] = useState({
         firstName: "",
         surname: "",
@@ -133,10 +139,27 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
 
         setLoading(true);
         try {
-            await adminUserService.updateUser(user._id, formData);
-            onUserUpdated();
+            console.log("Updating user with data:", formData);
+
+            // Update everything in a single API call
+            const response = await adminUserService.updateUser(
+                user._id,
+                formData
+            );
+
+            console.log("User update response:", response);
+
+            // Pass the updated user data to onUserUpdated
+            if (response.user) {
+                onUserUpdated(response.user);
+            } else {
+                // If response doesn't have user data, use our local updated data
+                onUserUpdated({ ...user, ...formData });
+            }
+
             handleClose();
         } catch (error) {
+            console.error("Update error:", error);
             setErrors({
                 submit:
                     error.message || "Failed to update user. Please try again.",
@@ -375,7 +398,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
-                                    Status
+                                    Status *
                                 </label>
                                 <select
                                     name="profileStatus"

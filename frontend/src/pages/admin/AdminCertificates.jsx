@@ -4,7 +4,6 @@ import { Award } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import { adminCertificateService } from "../../services/userService";
 
-// Components
 import {
     CertificateStats,
     CertificateFilters,
@@ -20,7 +19,6 @@ import {
     BulkExpireCertificateModal,
 } from "../../components/admin/certificates/modals";
 
-// Common Components
 import {
     LoadingState,
     ErrorState,
@@ -28,10 +26,8 @@ import {
     ConfirmationModal,
 } from "../../components/common";
 
-// Skeleton Component
 import AdminCertificatesSkeleton from "../../components/admin/certificates/AdminCertificatesSkeleton";
 
-// Debounce hook
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -66,9 +62,9 @@ function AdminCertificates() {
         expiringSoon: 0,
     });
 
-    // Filters and search
     const [searchTerm, setSearchTerm] = useState("");
-    const debouncedSearchTerm = useDebounce(searchTerm, 500);
+    const [activeSearchTerm, setActiveSearchTerm] = useState("");
+    const debouncedSearchTerm = useDebounce(activeSearchTerm, 500);
     const [statusFilter, setStatusFilter] = useState(
         searchParams.get("status") || "all"
     );
@@ -80,7 +76,6 @@ function AdminCertificates() {
     );
     const [showFilters, setShowFilters] = useState(false);
 
-    // Pagination
     const [pagination, setPagination] = useState({
         currentPage: 1,
         totalPages: 1,
@@ -88,11 +83,9 @@ function AdminCertificates() {
         certificatesPerPage: 10,
     });
 
-    // Selected certificates for bulk actions
     const [selectedCertificates, setSelectedCertificates] = useState(new Set());
     const [selectAll, setSelectAll] = useState(false);
 
-    // Modals
     const [selectedCertificate, setSelectedCertificate] = useState(null);
     const [showCertificateModal, setShowCertificateModal] = useState(false);
     const [showRevokeModal, setShowRevokeModal] = useState(false);
@@ -106,10 +99,8 @@ function AdminCertificates() {
     const [bulkDelete, setBulkDelete] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    // Add refresh trigger for modal updates
     const [refreshModal, setRefreshModal] = useState(false);
 
-    // Fetch certificates and stats with optimized dependencies
     const fetchCertificates = useCallback(async () => {
         try {
             setLoading(true);
@@ -125,7 +116,6 @@ function AdminCertificates() {
             setCertificates(response.certificates);
             setFilteredCertificates(response.certificates);
 
-            // Update pagination if available
             if (response.pagination) {
                 setPagination((prev) => ({
                     ...prev,
@@ -159,25 +149,37 @@ function AdminCertificates() {
         }
     };
 
+    const handleSearch = useCallback(() => {
+        setActiveSearchTerm(searchTerm);
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        setSelectedCertificates(new Set());
+        setSelectAll(false);
+    }, [searchTerm]);
+
+    const handleClearSearch = useCallback(() => {
+        setSearchTerm("");
+        setActiveSearchTerm("");
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        setSelectedCertificates(new Set());
+        setSelectAll(false);
+    }, []);
+
     const handleRefresh = async () => {
         await fetchCertificates();
         await fetchCertificateStats();
     };
 
-    // Initial fetch
     useEffect(() => {
         fetchCertificates();
         fetchCertificateStats();
-    }, []);
+    }, [fetchCertificates]);
 
-    // Reset to page 1 when filters change
     useEffect(() => {
         if (pagination.currentPage !== 1) {
             setPagination((prev) => ({ ...prev, currentPage: 1 }));
         }
     }, [debouncedSearchTerm, statusFilter, courseFilter, userFilter]);
 
-    // Update URL when filters change
     useEffect(() => {
         const params = new URLSearchParams();
         if (statusFilter !== "all") params.set("status", statusFilter);
@@ -222,7 +224,6 @@ function AdminCertificates() {
                 )
             );
 
-            // Refresh stats
             fetchCertificateStats();
 
             setToastNotification({
@@ -244,15 +245,12 @@ function AdminCertificates() {
                 "active"
             );
 
-            // Refresh the certificates list
             await fetchCertificates();
 
-            // If the certificate detail modal is open, update the selected certificate
             if (
                 selectedCertificate &&
                 selectedCertificate._id === certificateId
             ) {
-                // Find the updated certificate from the current list
                 const updatedCert = certificates.find(
                     (c) => c._id === certificateId
                 );
@@ -278,12 +276,9 @@ function AdminCertificates() {
 
     const handleBulkStatusUpdate = async (newStatus) => {
         try {
-            // Validate certificate IDs before making the request
             const certificateIds = Array.from(selectedCertificates);
 
-            // Filter out any invalid IDs
             const validCertificateIds = certificateIds.filter((id) => {
-                // Check if it's a valid 24-character hex string (MongoDB ObjectId)
                 return (
                     id && typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id)
                 );
@@ -337,10 +332,8 @@ function AdminCertificates() {
             setSelectedCertificates(new Set());
             setSelectAll(false);
 
-            // Trigger modal refresh
             setRefreshModal((prev) => !prev);
 
-            // Refresh stats
             fetchCertificateStats();
 
             setToastNotification({
@@ -360,10 +353,8 @@ function AdminCertificates() {
         try {
             await adminCertificateService.revokeCertificate(certificateId);
 
-            // Refresh the certificates list
             await fetchCertificates();
 
-            // Update selected certificate if modal is open
             if (
                 selectedCertificate &&
                 selectedCertificate._id === certificateId
@@ -424,10 +415,8 @@ function AdminCertificates() {
                 )
             );
 
-            // Trigger modal refresh
             setRefreshModal((prev) => !prev);
 
-            // Refresh stats
             fetchCertificateStats();
 
             setToastNotification({
@@ -451,7 +440,6 @@ function AdminCertificates() {
 
             const results = await Promise.allSettled(regeneratePromises);
 
-            // Count successful and failed operations
             const successful = results.filter(
                 (result) => result.status === "fulfilled"
             ).length;
@@ -475,7 +463,7 @@ function AdminCertificates() {
                     if (certificateIndex !== -1) {
                         updatedCertificates[certificateIndex] = {
                             ...result.value.certificate,
-                            status: "active", // 🆕 Ensure status is set to active
+                            status: "active",
                             effectiveStatus: "active",
                             isExpired: false,
                         };
@@ -495,17 +483,13 @@ function AdminCertificates() {
             setCertificates(updatedCertificates);
             setFilteredCertificates(updatedFilteredCertificates);
 
-            // Trigger modal refresh
             setRefreshModal((prev) => !prev);
 
-            // Refresh stats
             fetchCertificateStats();
 
-            // Clear selection
             setSelectedCertificates(new Set());
             setSelectAll(false);
 
-            // Show appropriate notification
             if (failed === 0) {
                 setToastNotification({
                     message: `Successfully regenerated ${successful} certificates`,
@@ -561,10 +545,8 @@ function AdminCertificates() {
             setSelectedCertificates(new Set());
             setSelectAll(false);
 
-            // Trigger modal refresh
             setRefreshModal((prev) => !prev);
 
-            // Refresh stats
             fetchCertificateStats();
 
             setToastNotification({
@@ -591,10 +573,8 @@ function AdminCertificates() {
                 prev.filter((certificate) => certificate._id !== certificateId)
             );
 
-            // Trigger modal refresh
             setRefreshModal((prev) => !prev);
 
-            // Refresh stats
             fetchCertificateStats();
 
             setToastNotification({
@@ -635,10 +615,8 @@ function AdminCertificates() {
             setSelectedCertificates(new Set());
             setSelectAll(false);
 
-            // Trigger modal refresh
             setRefreshModal((prev) => !prev);
 
-            // Refresh stats
             fetchCertificateStats();
 
             setToastNotification({
@@ -753,7 +731,6 @@ function AdminCertificates() {
         setSelectAll(newSelected.size === filteredCertificates.length);
     };
 
-    // Pagination handlers
     const handlePageChange = (newPage) => {
         setPagination((prev) => ({ ...prev, currentPage: newPage }));
         setSelectedCertificates(new Set());
@@ -782,7 +759,6 @@ function AdminCertificates() {
     return (
         <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3 mb-2">
                         <div>
@@ -797,7 +773,6 @@ function AdminCertificates() {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
                 <div className="mb-6">
                     <CertificateStats
                         stats={stats}
@@ -805,13 +780,13 @@ function AdminCertificates() {
                     />
                 </div>
 
-                {/* Unified Container for Filters and Table */}
                 <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
-                    {/* Filters Section */}
                     <div className="p-6 border-b border-gray-100">
                         <CertificateFilters
                             searchTerm={searchTerm}
                             setSearchTerm={setSearchTerm}
+                            onSearch={handleSearch}
+                            onClearSearch={handleClearSearch}
                             statusFilter={statusFilter}
                             setStatusFilter={setStatusFilter}
                             courseFilter={courseFilter}
@@ -832,7 +807,6 @@ function AdminCertificates() {
                         />
                     </div>
 
-                    {/* Table Section */}
                     <div>
                         <CertificateTable
                             certificates={filteredCertificates}
@@ -860,7 +834,6 @@ function AdminCertificates() {
                         />
                     </div>
 
-                    {/* Pagination */}
                     {pagination.totalPages > 1 && (
                         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
                             <Pagination
@@ -875,7 +848,6 @@ function AdminCertificates() {
                     )}
                 </div>
 
-                {/* Modals */}
                 <CertificateDetailModal
                     isOpen={showCertificateModal}
                     onClose={() => {
@@ -915,9 +887,7 @@ function AdminCertificates() {
                             );
                             setShowRevokeModal(false);
                             setSelectedCertificate(null);
-                        } catch (error) {
-                            // Error is already handled in handleRevokeCertificate
-                        }
+                        } catch (error) {}
                     }}
                 />
 
@@ -935,9 +905,7 @@ function AdminCertificates() {
                             );
                             setShowRegenerateModal(false);
                             setSelectedCertificate(null);
-                        } catch (error) {
-                            // Error is already handled in handleRegenerateCertificate
-                        }
+                        } catch (error) {}
                     }}
                 />
 
@@ -1000,7 +968,6 @@ function AdminCertificates() {
                     isLoading={deleteLoading}
                 />
 
-                {/* Toast Notifications */}
                 {toastNotification && (
                     <ToastNotification
                         message={toastNotification.message}
@@ -1013,7 +980,6 @@ function AdminCertificates() {
     );
 }
 
-// Pagination Component
 const Pagination = ({
     pagination,
     onPageChange,
@@ -1067,7 +1033,6 @@ const Pagination = ({
 
     return (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Certificates per page selector */}
             <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-700">Show</span>
                 <select
@@ -1088,16 +1053,13 @@ const Pagination = ({
                 </span>
             </div>
 
-            {/* Page info */}
             <div className="text-sm text-gray-700">
                 Showing {(currentPage - 1) * certificatesPerPage + 1} to{" "}
                 {Math.min(currentPage * certificatesPerPage, totalCertificates)}{" "}
                 of {totalCertificates} certificates
             </div>
 
-            {/* Page navigation */}
             <div className="flex items-center gap-1">
-                {/* First Page */}
                 <button
                     onClick={() => onPageChange(1)}
                     disabled={currentPage === 1 || loading}
@@ -1106,7 +1068,6 @@ const Pagination = ({
                     «
                 </button>
 
-                {/* Previous Page */}
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1 || loading}
@@ -1115,7 +1076,6 @@ const Pagination = ({
                     ‹
                 </button>
 
-                {/* Page Numbers */}
                 {getPageNumbers().map((page) => (
                     <button
                         key={page}
@@ -1131,7 +1091,6 @@ const Pagination = ({
                     </button>
                 ))}
 
-                {/* Next Page */}
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages || loading}
@@ -1140,7 +1099,6 @@ const Pagination = ({
                     ›
                 </button>
 
-                {/* Last Page */}
                 <button
                     onClick={() => onPageChange(totalPages)}
                     disabled={currentPage === totalPages || loading}

@@ -12,6 +12,8 @@ const UserTable = ({
     onStatusUpdate,
     onDeleteUser,
     statusFilter,
+    roleFilter,
+    searchTerm,
     setStatusFilter,
     stats,
     loading = false,

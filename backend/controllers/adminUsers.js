@@ -276,8 +276,9 @@ exports.updateUser = async (req, res, next) => {
             role,
             contactNumber,
             address,
-            // skills,
+            profileStatus,
             availability,
+            representative,
         } = req.body;
 
         const updateData = {};
@@ -287,12 +288,20 @@ exports.updateUser = async (req, res, next) => {
         if (role) updateData.role = role;
         if (contactNumber) updateData.contactNumber = contactNumber;
         if (address) updateData.address = address;
-        // if (skills) updateData.skills = skills;
         if (availability) updateData.availability = availability;
 
+        // ADDED: Handle profileStatus update
+        if (
+            profileStatus &&
+            ["pending", "approved", "rejected"].includes(profileStatus)
+        ) {
+            updateData.profileStatus = profileStatus;
+        }
+
         // Role-specific fields
-        if (role === "company" && companyName) {
-            updateData.companyName = companyName;
+        if (role === "company") {
+            if (companyName) updateData.companyName = companyName;
+            if (representative) updateData.representative = representative;
         } else if (firstName && surname) {
             updateData.firstName = firstName;
             updateData.surname = surname;

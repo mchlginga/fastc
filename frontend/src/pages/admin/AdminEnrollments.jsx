@@ -4,7 +4,6 @@ import { Users } from "react-feather";
 import { useAuth } from "../../context/AuthContext";
 import { adminEnrollmentService } from "../../services/userService";
 
-// Components
 import {
     EnrollmentStats,
     EnrollmentFilters,
@@ -17,7 +16,6 @@ import {
     EnrollmentDetailModal,
 } from "../../components/admin/enrollments/modals";
 
-// Common Components
 import {
     LoadingState,
     ErrorState,
@@ -25,10 +23,8 @@ import {
     ConfirmationModal,
 } from "../../components/common";
 
-// Skeleton Component
 import AdminEnrollmentsSkeleton from "../../components/admin/enrollments/AdminEnrollmentsSkeleton";
 
-// Debounce hook
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -54,9 +50,9 @@ function AdminEnrollments() {
     const [error, setError] = useState(null);
     const [toastNotification, setToastNotification] = useState(null);
 
-    // Filters and search
     const [searchTerm, setSearchTerm] = useState("");
-    const debouncedSearchTerm = useDebounce(searchTerm, 500);
+    const [activeSearchTerm, setActiveSearchTerm] = useState("");
+    const debouncedSearchTerm = useDebounce(activeSearchTerm, 500);
     const [statusFilter, setStatusFilter] = useState(
         searchParams.get("status") || "all"
     );
@@ -68,7 +64,6 @@ function AdminEnrollments() {
     );
     const [showFilters, setShowFilters] = useState(false);
 
-    // Pagination
     const [pagination, setPagination] = useState({
         currentPage: 1,
         totalPages: 1,
@@ -76,11 +71,9 @@ function AdminEnrollments() {
         enrollmentsPerPage: 10,
     });
 
-    // Selected enrollments for bulk actions
     const [selectedEnrollments, setSelectedEnrollments] = useState(new Set());
     const [selectAll, setSelectAll] = useState(false);
 
-    // Modals
     const [selectedEnrollment, setSelectedEnrollment] = useState(null);
     const [showUserModal, setShowUserModal] = useState(false);
     const [showAddEnrollmentModal, setShowAddEnrollmentModal] = useState(false);
@@ -91,7 +84,6 @@ function AdminEnrollments() {
     const [bulkDelete, setBulkDelete] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    // Stats
     const [stats, setStats] = useState({
         total: 0,
         pending: 0,
@@ -103,7 +95,6 @@ function AdminEnrollments() {
         recentEnrollments: 0,
     });
 
-    // Fetch enrollments with optimized dependencies
     const fetchEnrollments = useCallback(async () => {
         try {
             setLoading(true);
@@ -143,7 +134,6 @@ function AdminEnrollments() {
         pagination.enrollmentsPerPage,
     ]);
 
-    // Fetch enrollment stats
     const fetchEnrollmentStats = async () => {
         try {
             const response = await adminEnrollmentService.getEnrollmentStats();
@@ -164,20 +154,32 @@ function AdminEnrollments() {
         }
     };
 
-    // Initial fetch and when filters change
+    const handleSearch = useCallback(() => {
+        setActiveSearchTerm(searchTerm);
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        setSelectedEnrollments(new Set());
+        setSelectAll(false);
+    }, [searchTerm]);
+
+    const handleClearSearch = useCallback(() => {
+        setSearchTerm("");
+        setActiveSearchTerm("");
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        setSelectedEnrollments(new Set());
+        setSelectAll(false);
+    }, []);
+
     useEffect(() => {
         fetchEnrollments();
         fetchEnrollmentStats();
     }, [fetchEnrollments]);
 
-    // Reset to page 1 when filters change
     useEffect(() => {
         if (pagination.currentPage !== 1) {
             setPagination((prev) => ({ ...prev, currentPage: 1 }));
         }
     }, [debouncedSearchTerm, statusFilter, courseFilter, userFilter]);
 
-    // Update URL when filters change
     useEffect(() => {
         const params = new URLSearchParams();
         if (statusFilter !== "all") params.set("status", statusFilter);
@@ -209,7 +211,6 @@ function AdminEnrollments() {
                 )
             );
 
-            // Refresh stats
             fetchEnrollmentStats();
 
             setToastNotification({
@@ -254,7 +255,6 @@ function AdminEnrollments() {
             setSelectedEnrollments(new Set());
             setSelectAll(false);
 
-            // Refresh stats
             fetchEnrollmentStats();
 
             setToastNotification({
@@ -277,7 +277,6 @@ function AdminEnrollments() {
                 prev.filter((enrollment) => enrollment._id !== enrollmentId)
             );
 
-            // Refresh stats
             fetchEnrollmentStats();
 
             setToastNotification({
@@ -321,7 +320,6 @@ function AdminEnrollments() {
             setSelectedEnrollments(new Set());
             setSelectAll(false);
 
-            // Refresh stats
             fetchEnrollmentStats();
 
             setToastNotification({
@@ -370,13 +368,12 @@ function AdminEnrollments() {
                         ? {
                               ...enrollment,
                               status: "active",
-                              enrolledAt: new Date().toISOString(), // Update enrolledAt
+                              enrolledAt: new Date().toISOString(),
                           }
                         : enrollment
                 )
             );
 
-            // Refresh stats
             fetchEnrollmentStats();
 
             setToastNotification({
@@ -405,7 +402,6 @@ function AdminEnrollments() {
                 return;
             }
 
-            // 🆕 NEW: Check if any selected enrollments are actually pending
             const pendingEnrollments = enrollments.filter(
                 (enrollment) =>
                     selectedEnrollments.has(enrollment._id) &&
@@ -422,12 +418,11 @@ function AdminEnrollments() {
             }
 
             console.log(
-                `🔄 Approving ${pendingEnrollments.length} pending enrollments...`
+                `Approving ${pendingEnrollments.length} pending enrollments...`
             );
 
             await adminEnrollmentService.bulkApproveEnrollments(enrollmentIds);
 
-            // Update local state - only update enrollments that were actually approved
             setEnrollments((prev) =>
                 prev.map((enrollment) =>
                     selectedEnrollments.has(enrollment._id) &&
@@ -435,7 +430,7 @@ function AdminEnrollments() {
                         ? {
                               ...enrollment,
                               status: "active",
-                              enrolledAt: new Date().toISOString(), // Update enrolledAt
+                              enrolledAt: new Date().toISOString(),
                           }
                         : enrollment
                 )
@@ -444,7 +439,6 @@ function AdminEnrollments() {
             setSelectedEnrollments(new Set());
             setSelectAll(false);
 
-            // Refresh stats
             fetchEnrollmentStats();
 
             setToastNotification({
@@ -519,13 +513,10 @@ function AdminEnrollments() {
         setSelectAll(newSelected.size === enrollments.length);
     };
 
-    // Pagination handlers
     const handlePageChange = (newPage) => {
         setPagination((prev) => ({ ...prev, currentPage: newPage }));
         setSelectedEnrollments(new Set());
         setSelectAll(false);
-
-        // Smooth scroll to top
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -550,7 +541,6 @@ function AdminEnrollments() {
     return (
         <div className="min-h-screen bg-gray-50/60 py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3 mb-2">
                         <div>
@@ -565,7 +555,6 @@ function AdminEnrollments() {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
                 <div className="mb-6">
                     <EnrollmentStats
                         stats={stats}
@@ -573,13 +562,13 @@ function AdminEnrollments() {
                     />
                 </div>
 
-                {/* Main Content Card */}
                 <div className="bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden">
-                    {/* Filters Section */}
                     <div className="p-6 border-b border-gray-100">
                         <EnrollmentFilters
                             searchTerm={searchTerm}
                             setSearchTerm={setSearchTerm}
+                            onSearch={handleSearch}
+                            onClearSearch={handleClearSearch}
                             statusFilter={statusFilter}
                             setStatusFilter={setStatusFilter}
                             courseFilter={courseFilter}
@@ -603,7 +592,6 @@ function AdminEnrollments() {
                         />
                     </div>
 
-                    {/* Table Section */}
                     <div>
                         <EnrollmentTable
                             enrollments={enrollments}
@@ -628,7 +616,6 @@ function AdminEnrollments() {
                         />
                     </div>
 
-                    {/* Pagination */}
                     {pagination.totalPages > 1 && (
                         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
                             <Pagination
@@ -643,7 +630,6 @@ function AdminEnrollments() {
                     )}
                 </div>
 
-                {/* Modals */}
                 <AddEnrollmentModal
                     isOpen={showAddEnrollmentModal}
                     onClose={() => setShowAddEnrollmentModal(false)}
@@ -706,7 +692,6 @@ function AdminEnrollments() {
                     isLoading={deleteLoading}
                 />
 
-                {/* Toast Notifications */}
                 {toastNotification && (
                     <ToastNotification
                         message={toastNotification.message}
@@ -719,7 +704,6 @@ function AdminEnrollments() {
     );
 }
 
-// Pagination Component
 const Pagination = ({
     pagination,
     onPageChange,
@@ -773,7 +757,6 @@ const Pagination = ({
 
     return (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Enrollments per page selector */}
             <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-700">Show</span>
                 <select
@@ -794,16 +777,13 @@ const Pagination = ({
                 </span>
             </div>
 
-            {/* Page info */}
             <div className="text-sm text-gray-700">
                 Showing {(currentPage - 1) * enrollmentsPerPage + 1} to{" "}
                 {Math.min(currentPage * enrollmentsPerPage, totalEnrollments)}{" "}
                 of {totalEnrollments} enrollments
             </div>
 
-            {/* Page navigation */}
             <div className="flex items-center gap-1">
-                {/* First Page */}
                 <button
                     onClick={() => onPageChange(1)}
                     disabled={currentPage === 1 || loading}
@@ -812,7 +792,6 @@ const Pagination = ({
                     «
                 </button>
 
-                {/* Previous Page */}
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1 || loading}
@@ -821,7 +800,6 @@ const Pagination = ({
                     ‹
                 </button>
 
-                {/* Page Numbers */}
                 {getPageNumbers().map((page) => (
                     <button
                         key={page}
@@ -837,7 +815,6 @@ const Pagination = ({
                     </button>
                 ))}
 
-                {/* Next Page */}
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages || loading}
@@ -846,7 +823,6 @@ const Pagination = ({
                     ›
                 </button>
 
-                {/* Last Page */}
                 <button
                     onClick={() => onPageChange(totalPages)}
                     disabled={currentPage === totalPages || loading}

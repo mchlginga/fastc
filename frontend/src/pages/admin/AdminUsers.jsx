@@ -28,23 +28,6 @@ import {
 // Skeleton Component
 import AdminUsersSkeleton from "../../components/admin/users/AdminUsersSkeleton";
 
-// Debounce hook
-const useDebounce = (value, delay) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
-
-    return debouncedValue;
-};
-
 function AdminUsers() {
     const { user: adminUser } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -56,7 +39,7 @@ function AdminUsers() {
 
     // Filters and search
     const [searchTerm, setSearchTerm] = useState("");
-    const debouncedSearchTerm = useDebounce(searchTerm, 500);
+    const [activeSearchTerm, setActiveSearchTerm] = useState(""); // What actually gets searched
     const [statusFilter, setStatusFilter] = useState(
         searchParams.get("status") || "all"
     );
@@ -94,7 +77,7 @@ function AdminUsers() {
             setError(null);
 
             const response = await adminUserService.getUsers({
-                search: debouncedSearchTerm,
+                search: activeSearchTerm,
                 status: statusFilter !== "all" ? statusFilter : "",
                 role: roleFilter !== "all" ? roleFilter : "",
                 page: pagination.currentPage,
@@ -115,7 +98,7 @@ function AdminUsers() {
             setLoading(false);
         }
     }, [
-        debouncedSearchTerm,
+        activeSearchTerm,
         statusFilter,
         roleFilter,
         pagination.currentPage,
@@ -126,28 +109,57 @@ function AdminUsers() {
         await fetchUsers();
     };
 
+    // Handle manual search
+    const handleSearch = useCallback(
+        (term = null) => {
+            const searchValue = term !== null ? term : searchTerm;
+            setActiveSearchTerm(searchValue);
+            setPagination((prev) => ({ ...prev, currentPage: 1 }));
+            setSelectedUsers(new Set());
+            setSelectAll(false);
+        },
+        [searchTerm]
+    );
+
+    // Handle clear search
+    const handleClearSearch = useCallback(() => {
+        setSearchTerm("");
+        setActiveSearchTerm("");
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        setSelectedUsers(new Set());
+        setSelectAll(false);
+    }, []);
+
     // Initial fetch and when filters change
     useEffect(() => {
         fetchUsers();
     }, [fetchUsers]);
 
-    // Reset to page 1 when filters change
+    // Reset to page 1 when filters change (except search)
     useEffect(() => {
         if (pagination.currentPage !== 1) {
             setPagination((prev) => ({ ...prev, currentPage: 1 }));
         }
-    }, [debouncedSearchTerm, statusFilter, roleFilter]);
+    }, [statusFilter, roleFilter]);
 
     // Update URL when filters change
     useEffect(() => {
         const params = new URLSearchParams();
         if (statusFilter !== "all") params.set("status", statusFilter);
         if (roleFilter !== "all") params.set("role", roleFilter);
+        if (activeSearchTerm) params.set("search", activeSearchTerm);
         if (pagination.currentPage > 1)
             params.set("page", pagination.currentPage);
         setSearchParams(params);
-    }, [statusFilter, roleFilter, pagination.currentPage, setSearchParams]);
+    }, [
+        statusFilter,
+        roleFilter,
+        activeSearchTerm,
+        pagination.currentPage,
+        setSearchParams,
+    ]);
 
+    // Rest of your existing methods remain the same...
     const handleStatusUpdate = async (userId, newStatus) => {
         try {
             await adminUserService.updateUserStatus(userId, newStatus);
@@ -296,8 +308,19 @@ function AdminUsers() {
         setShowEditUserModal(true);
     };
 
-    const handleUserUpdated = () => {
-        fetchUsers();
+    const handleUserUpdated = (updatedUser) => {
+        if (updatedUser) {
+            // Update specific user
+            setUsers((prev) =>
+                prev.map((user) =>
+                    user._id === updatedUser._id ? updatedUser : user
+                )
+            );
+        } else {
+            // Refresh entire list
+            fetchUsers();
+        }
+
         setToastNotification({
             message: "User updated successfully",
             type: "success",
@@ -437,6 +460,8 @@ function AdminUsers() {
                         <UserFilters
                             searchTerm={searchTerm}
                             setSearchTerm={setSearchTerm}
+                            onSearch={handleSearch}
+                            onClearSearch={handleClearSearch}
                             statusFilter={statusFilter}
                             setStatusFilter={setStatusFilter}
                             roleFilter={roleFilter}
@@ -472,6 +497,8 @@ function AdminUsers() {
                             setStatusFilter={setStatusFilter}
                             stats={stats}
                             loading={loading && users.length > 0}
+                            roleFilter={roleFilter}
+                            searchTerm={activeSearchTerm}
                         />
                     </div>
 
@@ -503,6 +530,7 @@ function AdminUsers() {
                     }}
                     user={selectedUser}
                     onUserUpdated={handleUserUpdated}
+                    onStatusUpdate={handleStatusUpdate}
                 />
 
                 <UserDetailModal
@@ -562,13 +590,14 @@ function AdminUsers() {
     );
 }
 
-// Pagination Component
+// Pagination Component (keep your existing Pagination component)
 const Pagination = ({
     pagination,
     onPageChange,
     onUsersPerPageChange,
     loading = false,
 }) => {
+    // ... your existing Pagination component code remains the same
     const { currentPage, totalPages, totalUsers, usersPerPage } = pagination;
 
     const getPageNumbers = () => {

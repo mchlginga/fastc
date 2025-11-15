@@ -20,7 +20,7 @@ const StatCard = ({
                 </h3>
                 <p className="text-sm font-medium text-gray-500 mt-1">
                     {loading ? (
-                        <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                        <span className="inline-block h-4 bg-gray-200 rounded w-20 animate-pulse"></span>
                     ) : (
                         title
                     )}
