@@ -43,20 +43,6 @@ const DashboardHeader = ({
                         Overview of your FAST-C training center
                     </p>
                 </div>
-                <div className="flex items-center space-x-4 mt-4 lg:mt-0">
-                    <div className="flex items-center bg-white px-4 py-2 rounded-xl shadow-xs border border-gray-100">
-                        <Activity size={18} className="text-green-500 mr-2" />
-                        <span className="text-sm font-medium text-gray-700">
-                            {onlineUsers} online
-                        </span>
-                    </div>
-                    <div className="flex items-center bg-white px-4 py-2 rounded-xl shadow-xs border border-gray-100">
-                        <Clock size={18} className="text-blue-500 mr-2" />
-                        <span className="text-sm text-gray-600">
-                            {formatTimeWithoutSeconds(lastUpdated)}
-                        </span>
-                    </div>
-                </div>
             </div>
         </div>
     );
